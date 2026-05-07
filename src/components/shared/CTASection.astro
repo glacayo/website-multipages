@@ -1,0 +1,59 @@
+---
+/**
+ * CTASection - Reusable call-to-action section
+ * Displays phone number, free estimate message, and scheduling info
+ */
+import { getSiteContent } from '../../data/loaders';
+
+interface Props {
+  headline?: string;
+  buttonText?: string;
+  phoneNumber?: string;
+  className?: string;
+}
+
+const content = getSiteContent();
+
+// Default values from content
+const headline = Astro.props.headline || content.company_estimate || 'Ready to Get Started?';
+const buttonText = Astro.props.buttonText || 'Call Now';
+const phoneNumber = Astro.props.phoneNumber || content.company_phone?.[0] || '';
+const phoneLink = `tel:${phoneNumber.replace(/[^0-9]/g, '')}`;
+---
+
+<section class="bg-primary py-12 md:py-16" aria-labelledby="cta-heading">
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+    <h2 id="cta-heading" class="text-2xl md:text-3xl font-bold text-white mb-4">
+      {headline}
+    </h2>
+    <p class="text-gray-200 mb-8 max-w-4xl mx-auto">
+      {content.company_schedule?.[0]} • {content.company_years_experience}
+    </p>
+
+    <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+      <a
+        href={phoneLink}
+        class="inline-flex items-center gap-3 bg-accent text-white px-8 py-4 rounded-lg text-lg font-bold hover:bg-opacity-90 transition-all duration-200 cursor-pointer shadow-lg hover:shadow-xl"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+        </svg>
+        <span>{buttonText}: {phoneNumber}</span>
+      </a>
+
+      <a
+        href="/contact"
+        class="inline-flex items-center gap-2 border-2 border-white text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-white hover:text-primary transition-all duration-200 cursor-pointer"
+      >
+        Get Free Estimate
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+        </svg>
+      </a>
+    </div>
+
+    <p class="text-gray-300 text-sm mt-6">
+      {content.company_payment_method} • {content.company_type_services}
+    </p>
+  </div>
+</section>

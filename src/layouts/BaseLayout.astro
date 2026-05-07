@@ -1,0 +1,82 @@
+---
+/**
+ * BaseLayout - Master layout wrapping all pages
+ * Injects brand CSS variables, SEO head, navbar, and footer
+ */
+import { getSiteContent } from '../data/loaders';
+import SeoHead from '../components/seo/SeoHead.astro';
+import Navbar from '../components/site/Navbar.astro';
+import Footer from '../components/site/Footer.astro';
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description: string;
+  path: string;
+  image?: string;
+  type?: 'website' | 'article';
+  canonicalUrl?: string;
+}
+
+const {
+  title,
+  description,
+  path,
+  image,
+  type,
+  canonicalUrl,
+} = Astro.props;
+
+// Get site content for brand colors
+const content = getSiteContent();
+const brandColors = content.company_colors;
+---
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="generator" content={Astro.generator} />
+
+    <!-- Inject brand CSS variables -->
+    <style define:vars={{
+      brandPrimary: brandColors.primary,
+      brandAccent: brandColors.accent,
+      brandLight: brandColors.light,
+      brandDark: brandColors.dark
+    }}>
+      :root {
+        --brand-primary: var(--brandPrimary);
+        --brand-accent: var(--brandAccent);
+        --brand-light: var(--brandLight);
+        --brand-dark: var(--brandDark);
+      }
+    </style>
+
+    <!-- SEO Head -->
+    <SeoHead
+      title={title}
+      description={description}
+      path={path}
+      image={image}
+      type={type}
+      canonicalUrl={canonicalUrl}
+    />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="/images/logo.png" />
+  </head>
+  <body class="min-h-screen flex flex-col">
+    <!-- Navigation -->
+    <Navbar currentPath={path} />
+
+    <!-- Main Content -->
+    <main class="flex-1">
+      <slot />
+    </main>
+
+    <!-- Footer -->
+    <Footer currentPath={path} />
+  </body>
+</html>

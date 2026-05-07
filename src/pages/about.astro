@@ -1,0 +1,143 @@
+---
+/**
+ * About Page - about.astro
+ * Company story, mission, vision, and why choose us
+ */
+import { getSiteContent } from '../data/loaders';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SectionHeading from '../components/shared/SectionHeading.astro';
+import CTASection from '../components/shared/CTASection.astro';
+
+const content = getSiteContent();
+
+// SEO props
+const pageTitle = `About Us | ${content.company_name}`;
+const pageDescription = content.about_content[0] || `Learn about ${content.company_name} - your trusted masonry contractor in Hampton Roads.`;
+const pagePath = '/about';
+---
+
+<BaseLayout
+  title={pageTitle}
+  description={pageDescription}
+  path={pagePath}
+>
+  <!-- Page Hero -->
+  <section class="bg-primary py-16 md:py-20">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <h1 class="text-4xl md:text-5xl font-bold text-white mb-4">
+        About {content.company_name}
+      </h1>
+      <p class="text-xl text-gray-200 max-w-4xl mx-auto">
+        {content.company_years_experience} of trusted masonry and hardscape craftsmanship in Hampton Roads
+      </p>
+    </div>
+  </section>
+
+  <!-- About Content -->
+  <section class="py-16 md:py-20">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="max-w-4xl mx-auto">
+        <SectionHeading
+          title="Our Story"
+          align="center"
+        />
+
+        <div class="space-y-6 text-text-secondary text-lg leading-relaxed">
+          {content.about_content.map((paragraph) => (
+            <p>{paragraph}</p>
+          ))}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Mission, Vision, Why Choose Us -->
+  <section class="py-16 md:py-20 bg-gray-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <SectionHeading
+        title="Why Choose Us"
+        subtitle="Our commitment to excellence sets us apart"
+        align="center"
+      />
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <!-- Mission -->
+        <article class="bg-white rounded-xl p-8 shadow-md border border-gray-100">
+          <div class="w-14 h-14 rounded-lg bg-primary/10 flex items-center justify-center mb-6 text-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold text-dark mb-4">Our Mission</h3>
+          <p class="text-text-secondary leading-relaxed">
+            {content.company_mission}
+          </p>
+        </article>
+
+        <!-- Vision -->
+        <article class="bg-white rounded-xl p-8 shadow-md border border-gray-100">
+          <div class="w-14 h-14 rounded-lg bg-primary/10 flex items-center justify-center mb-6 text-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold text-dark mb-4">Our Vision</h3>
+          <p class="text-text-secondary leading-relaxed">
+            {content.company_vision}
+          </p>
+        </article>
+
+        <!-- Why Choose Us -->
+        <article class="bg-white rounded-xl p-8 shadow-md border border-gray-100">
+          <div class="w-14 h-14 rounded-lg bg-primary/10 flex items-center justify-center mb-6 text-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold text-dark mb-4">Why Choose Us</h3>
+          <p class="text-text-secondary leading-relaxed">
+            {content.company_why_choose_us}
+          </p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- Company Details -->
+  <section class="py-16 md:py-20">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <!-- Years of Experience -->
+        <div class="text-center">
+          <p class="text-4xl md:text-5xl font-bold text-primary mb-2">{content.company_years_experience}+</p>
+          <p class="text-text-secondary font-medium">Years Experience</p>
+        </div>
+
+        <!-- Service Area -->
+        <div class="text-center">
+          <p class="text-4xl md:text-5xl font-bold text-primary mb-2">{content.company_cover_area.split(',').length}</p>
+          <p class="text-text-secondary font-medium">Cities Served</p>
+        </div>
+
+        <!-- Services -->
+        <div class="text-center">
+          <p class="text-4xl md:text-5xl font-bold text-primary mb-2">13</p>
+          <p class="text-text-secondary font-medium">Services Offered</p>
+        </div>
+
+        <!-- Contact -->
+        <div class="text-center">
+          <p class="text-accent font-bold text-lg mb-1">{content.company_phone[0]}</p>
+          <p class="text-text-secondary text-sm">{content.company_schedule[0]}</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <CTASection
+    headline="Ready to Work With Us?"
+    buttonText="Get Free Estimate"
+  />
+</BaseLayout>

@@ -1,0 +1,158 @@
+---
+/**
+ * Services Page - services.astro
+ * Full grid of all 13 services with descriptions
+ */
+import { getSiteContent } from '../data/loaders';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ServiceCard from '../components/services/ServiceCard.astro';
+import SectionHeading from '../components/shared/SectionHeading.astro';
+import CTASection from '../components/shared/CTASection.astro';
+
+const content = getSiteContent();
+const services = content.services;
+
+// SEO props
+const pageTitle = `Our Services | ${content.company_name}`;
+const pageDescription = `Professional masonry and hardscape services in Hampton Roads. From concrete and pavers to patios and walkways, we deliver quality craftsmanship.`;
+const pagePath = '/services';
+---
+
+<BaseLayout
+  title={pageTitle}
+  description={pageDescription}
+  path={pagePath}
+>
+  <!-- Hero Section -->
+  <section class="bg-primary py-16 md:py-20">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <h1 class="text-4xl md:text-5xl font-bold text-white mb-4">
+        Our Services
+      </h1>
+      <p class="text-xl text-gray-200 max-w-4xl mx-auto">
+        Comprehensive masonry and hardscape solutions for residential and commercial properties
+      </p>
+    </div>
+  </section>
+
+  <!-- Services Overview -->
+  <section class="py-16 md:py-20">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-12">
+        <p class="text-lg text-text-secondary max-w-4xl mx-auto">
+          With over {content.company_years_experience.toLowerCase()}, we offer expert craftsmanship in all aspects of masonry and hardscape construction. Each service is delivered with the same commitment to quality and customer satisfaction.
+        </p>
+      </div>
+
+      <!-- Service Cards Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {services.map((service, index) => (
+          <ServiceCard service={service} index={index} />
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- Service Process -->
+  <section class="py-16 md:py-20 bg-gray-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <SectionHeading
+        title="Our Process"
+        subtitle="From initial consultation to project completion"
+        align="center"
+      />
+
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <!-- Step 1 -->
+        <div class="text-center">
+          <div class="w-16 h-16 rounded-full bg-primary text-white flex items-center justify-center text-2xl font-bold mx-auto mb-4">
+            1
+          </div>
+          <h3 class="text-lg font-bold text-dark mb-2">Free Consultation</h3>
+          <p class="text-text-secondary text-sm">
+            Contact us to discuss your project needs and schedule a free estimate
+          </p>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="text-center">
+          <div class="w-16 h-16 rounded-full bg-primary text-white flex items-center justify-center text-2xl font-bold mx-auto mb-4">
+            2
+          </div>
+          <h3 class="text-lg font-bold text-dark mb-2">Site Assessment</h3>
+          <p class="text-text-secondary text-sm">
+            We evaluate your property and provide a detailed quote
+          </p>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="text-center">
+          <div class="w-16 h-16 rounded-full bg-primary text-white flex items-center justify-center text-2xl font-bold mx-auto mb-4">
+            3
+          </div>
+          <h3 class="text-lg font-bold text-dark mb-2">Professional Installation</h3>
+          <p class="text-text-secondary text-sm">
+            Our skilled team completes your project with quality craftsmanship
+          </p>
+        </div>
+
+        <!-- Step 4 -->
+        <div class="text-center">
+          <div class="w-16 h-16 rounded-full bg-primary text-white flex items-center justify-center text-2xl font-bold mx-auto mb-4">
+            4
+          </div>
+          <h3 class="text-lg font-bold text-dark mb-2">Final Walkthrough</h3>
+          <p class="text-text-secondary text-sm">
+            We ensure your complete satisfaction before finishing the project
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Service Areas -->
+  <section class="py-16 md:py-20">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+        <div>
+          <SectionHeading
+            title="Service Areas"
+            subtitle="Proudly serving homeowners across Hampton Roads"
+            align="left"
+          />
+
+          <p class="text-text-secondary text-lg leading-relaxed mb-6">
+            {content.company_name} provides professional masonry and hardscape services throughout the Hampton Roads region. Our team is familiar with local soil conditions, climate considerations, and architectural styles.
+          </p>
+
+          <div class="grid grid-cols-2 gap-3">
+            {content.company_cover_area.split(',').map((city: string) => (
+              <div class="flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-primary flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <span class="text-text-secondary">{city.trim()}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <img
+            src="/images/hardscaping-services-virginia-beach-va.jpg"
+            alt="Professional masonry services in Hampton Roads"
+            class="rounded-xl shadow-lg w-full h-auto object-cover"
+            loading="lazy"
+          />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <CTASection
+    headline="Need a Free Estimate?"
+    buttonText="Contact Us Today"
+  />
+</BaseLayout>

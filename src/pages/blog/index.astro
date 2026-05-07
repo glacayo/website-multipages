@@ -1,0 +1,61 @@
+---
+/**
+ * Blog Index - src/pages/blog/index.astro
+ * Lists all blog posts in a grid layout
+ */
+import { getBlogPosts, getSiteContent } from '../../data/loaders';
+import BlogLayout from '../../layouts/BlogLayout.astro';
+import BlogCard from '../../components/blog/BlogCard.astro';
+import SectionHeading from '../../components/shared/SectionHeading.astro';
+import CTASection from '../../components/shared/CTASection.astro';
+
+const data = getBlogPosts();
+const posts = data.posts;
+const content = getSiteContent();
+
+// SEO props
+const pageTitle = `Blog | ${content.company_name}`;
+const pageDescription = `Expert insights on masonry, hardscape, and concrete projects. Tips, guides, and industry news from ${content.company_name}.`;
+const pagePath = '/blog';
+---
+
+<BlogLayout
+  title={pageTitle}
+  description={pageDescription}
+  path={pagePath}
+>
+  <!-- Page Hero -->
+  <section class="bg-primary py-16 md:py-20">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <h1 class="text-4xl md:text-5xl font-bold text-white mb-4">
+        Masonry &amp; Hardscape Blog
+      </h1>
+      <p class="text-xl text-gray-200 max-w-4xl mx-auto">
+        Expert insights, tips, and guides for your next project
+      </p>
+    </div>
+  </section>
+
+  <!-- Blog Grid -->
+  <section class="py-16 md:py-20 bg-gray-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {posts.length > 0 ? (
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {posts.map((post) => (
+            <BlogCard post={post} />
+          ))}
+        </div>
+      ) : (
+        <div class="text-center py-12">
+          <p class="text-text-secondary text-lg">No blog posts available yet. Check back soon!</p>
+        </div>
+      )}
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <CTASection
+    headline="Ready to Start Your Project?"
+    buttonText="Get Free Estimate"
+  />
+</BlogLayout>

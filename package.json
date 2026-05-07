@@ -1,0 +1,21 @@
+{
+  "name": "website-multipages",
+  "version": "1.0.0",
+  "description": "Multipage marketing website for Home Improvement Contractors",
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@astrojs/sitemap": "^3.7.2",
+    "@tailwindcss/postcss": "^4.2.4",
+    "astro": "^6.3.0",
+    "postcss": "^8.5.14",
+    "tailwindcss": "^4.2.4"
+  }
+}

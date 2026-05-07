@@ -1,0 +1,30 @@
+---
+/**
+ * LandingLayout - Layout for service landing pages
+ * Wraps BaseLayout with landing-specific styling
+ */
+import BaseLayout from './BaseLayout.astro';
+
+interface Props {
+  title: string;
+  description: string;
+  path: string;
+  image?: string;
+}
+
+const {
+  title,
+  description,
+  path,
+  image,
+} = Astro.props;
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  path={path}
+  image={image}
+>
+  <slot />
+</BaseLayout>
