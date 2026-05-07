@@ -40,3 +40,6 @@ __pycache__/
 CONTENT.json
 LANDINGS.json
 BLOGS.json
+
+# Client images (use placeholder images for template)
+public/images/
