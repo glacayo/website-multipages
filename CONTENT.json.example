@@ -1,0 +1,71 @@
+{
+    "_instructions": {
+        "_readme": "Two types of fields exist in this file. Fill CLIENT DATA fields before handing off to the agent. Leave AI COPY fields as-is — the agent will write them based on your client data.",
+        "_client_data": "Fill these manually before starting the project",
+        "_ai_copy": "Leave these as [PLACEHOLDER] — the agent writes them",
+        "phrases": "Each phrase: min 6 words, max 8 words",
+        "content_paragraphs": "Each paragraph: min 50 words, max 60 words",
+        "service_description": "Each service description: min 30 words, max 40 words",
+        "mission_vision_why": "These fields must be exactly 50 words each"
+    },
+
+    "__CLIENT_DATA__": "─── Fill these fields ───",
+
+    "company_name": "[COMPANY NAME]",
+    "company_phone": ["[PHONE]"],
+    "company_email": ["[EMAIL]"],
+    "company_address": "[STREET, CITY, STATE ZIP]",
+    "company_schedule": ["[e.g. Mon–Fri 8am–6pm]"],
+    "company_license": "[LICENSE or NO LICENSE]",
+    "company_license_insurance": "[INSURANCE or NO INSURANCE]",
+    "company_payment_method": "[e.g. Cash, Credit Card]",
+    "company_estimate": "[e.g. Free Estimates Available]",
+    "company_years_experience": "[e.g. 10 Years of experience]",
+    "company_cover_area": "[CITY1, CITY2, CITY3]",
+    "company_type_services": "[e.g. Residential & Commercial]",
+    "company_colors": {
+        "_note": "Provide hex values or describe the brand colors",
+        "primary": "[HEX or description]",
+        "accent": "[HEX or description]",
+        "light": "[HEX or description]",
+        "dark": "[HEX or description]"
+    },
+    "social_media": {
+        "facebook": "[URL or NO FACEBOOK]",
+        "google": "[URL or NO GOOGLE]",
+        "instagram": "[URL or NO INSTAGRAM]",
+        "youtube": "[URL or NO YOUTUBE]",
+        "tiktok": "[URL or NO TIKTOK]"
+    },
+    "services": [
+        { "name": "[SERVICE 1]", "description": "[PLACEHOLDER]" },
+        { "name": "[SERVICE 2]", "description": "[PLACEHOLDER]" },
+        { "name": "[SERVICE 3]", "description": "[PLACEHOLDER]" },
+        { "name": "[SERVICE 4]", "description": "[PLACEHOLDER]" },
+        { "name": "[SERVICE 5]", "description": "[PLACEHOLDER]" },
+        { "name": "[SERVICE 6]", "description": "[PLACEHOLDER]" }
+    ],
+
+    "__AI_COPY__": "─── Leave these as [PLACEHOLDER] — the agent writes them ───",
+
+    "phrases": [
+        "[PLACEHOLDER]",
+        "[PLACEHOLDER]",
+        "[PLACEHOLDER]",
+        "[PLACEHOLDER]",
+        "[PLACEHOLDER]"
+    ],
+    "home_content": [
+        "[PLACEHOLDER]",
+        "[PLACEHOLDER]",
+        "[PLACEHOLDER]"
+    ],
+    "about_content": [
+        "[PLACEHOLDER]",
+        "[PLACEHOLDER]",
+        "[PLACEHOLDER]"
+    ],
+    "company_mission": "[PLACEHOLDER]",
+    "company_vision": "[PLACEHOLDER]",
+    "company_why_choose_us": "[PLACEHOLDER]"
+}

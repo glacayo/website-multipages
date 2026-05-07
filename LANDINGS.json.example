@@ -1,0 +1,43 @@
+{
+    "_instructions": {
+        "_readme": "Landing pages data for contractor/home-service websites. Fill CLIENT DATA fields manually. Leave AI COPY fields as [PLACEHOLDER] — the agent writes them based on your client data.",
+        "_client_data": "Fill these manually: name and slug",
+        "_ai_copy": "Leave these as [PLACEHOLDER] — the agent writes them",
+        "hero_headline": "1 headline, max 12 words",
+        "hero_paragraph": "1 paragraph, min 50 words, max 60 words",
+        "images": "Just the filename with extension, no path. E.g. masonry-hero.jpg",
+        "section_headline": "1 headline per section, max 10 words",
+        "section_paragraphs": "3 paragraphs per section, min 50 words, max 60 words each"
+    },
+
+    "__CLIENT_DATA__": "─── Fill name + slug per landing page ───",
+
+    "landing_pages": [
+        {
+            "name": "[LANDING PAGE NAME — e.g. Masonry Contractor in City, ST]",
+            "slug": "[landing-page-slug]",
+            "hero": {
+                "headline": "[PLACEHOLDER]",
+                "paragraph": "[PLACEHOLDER]",
+                "image": "[PLACEHOLDER — filename, e.g. masonry-hero.jpg]"
+            },
+            "sections": [
+                {
+                    "headline": "[PLACEHOLDER]",
+                    "image": "[PLACEHOLDER]",
+                    "paragraphs": ["[PLACEHOLDER]", "[PLACEHOLDER]", "[PLACEHOLDER]"]
+                },
+                {
+                    "headline": "[PLACEHOLDER]",
+                    "image": "[PLACEHOLDER]",
+                    "paragraphs": ["[PLACEHOLDER]", "[PLACEHOLDER]", "[PLACEHOLDER]"]
+                },
+                {
+                    "headline": "[PLACEHOLDER]",
+                    "image": "[PLACEHOLDER]",
+                    "paragraphs": ["[PLACEHOLDER]", "[PLACEHOLDER]", "[PLACEHOLDER]"]
+                }
+            ]
+        }
+    ]
+}

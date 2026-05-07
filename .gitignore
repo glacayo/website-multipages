@@ -35,3 +35,8 @@ npm-debug.log*
 
 __pycache__/
 __pycache__/
+
+# Client content (use .example files as template)
+CONTENT.json
+LANDINGS.json
+BLOGS.json
