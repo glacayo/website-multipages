@@ -1,0 +1,166 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import TopBar from '../components/layout/TopBar.astro';
+import Header from '../components/layout/Header.astro';
+import content from '../data/content.json';
+
+const { company_name, company_phone, company_email, company_address, company_schedule, company_estimate, company_payment_method, company_license } = content;
+---
+
+<BaseLayout
+  title={`Contact Us | ${company_name}`}
+  description="Request a free estimate from WG Masonry & Hardscape 757. Serving Hampton Roads with expert masonry and hardscape services."
+>
+  <TopBar />
+  <Header />
+
+  <!-- ===== Page Header ===== -->
+  <section class="relative -mt-[5.5rem] md:-mt-[6.5rem]">
+    <div class="relative h-[40vh] min-h-[300px] md:min-h-[400px] overflow-hidden bg-dark">
+      <div class="absolute inset-0 shimmer-bg">
+        <img
+          src="/images/breadcrumb/3.jpeg"
+          alt=""
+          class="w-full h-full object-cover shimmer-img"
+          loading="eager"
+          onload="this.classList.add('loaded')"
+        />
+      </div>
+      <div class="absolute inset-0 bg-gradient-to-br from-dark/90 via-primary/40 to-accent/60"></div>
+
+      <div class="relative z-10 container-site h-full flex flex-col items-center justify-center text-center text-white">
+        <h1 class="font-heading text-3xl md:text-5xl lg:text-6xl font-bold mb-4" data-reveal>
+          Contact Us
+        </h1>
+        <nav class="flex items-center justify-center gap-2 text-sm text-white/70" aria-label="Breadcrumb" data-reveal data-reveal-delay="0.1">
+          <a href="/" class="hover:text-accent transition-colors">Home</a>
+          <i class="fa-solid fa-chevron-right text-[10px]"></i>
+          <span class="text-accent">Contact Us</span>
+        </nav>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Contact Section ===== -->
+  <section class="py-16 md:py-24 bg-white">
+    <div class="container-site">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16">
+
+        <!-- Left Column: Contact Info -->
+        <div>
+          <span class="inline-flex items-center gap-2 text-accent font-semibold text-sm uppercase tracking-[0.2em] mb-3" data-reveal>
+            <span class="w-8 h-[2px] bg-accent"></span>
+            Get In Touch
+          </span>
+          <h2 class="font-heading text-3xl md:text-4xl font-bold text-dark mb-6" data-reveal data-reveal-delay="0.1">
+            Let&rsquo;s Talk About <span class="text-primary">Your Project</span>
+          </h2>
+          <p class="text-gray-500 leading-relaxed mb-8" data-reveal data-reveal-delay="0.15">
+            Have a question or ready to get started? Reach out to us and our team will get back to you promptly with a free, no-obligation estimate.
+          </p>
+
+          <!-- Contact Details -->
+          <div class="space-y-6" data-reveal data-reveal-delay="0.2">
+            <div class="flex items-start gap-4">
+              <div class="w-11 h-11 bg-accent/10 text-accent rounded-xl flex items-center justify-center flex-shrink-0">
+                <i class="fa-solid fa-location-dot"></i>
+              </div>
+              <div>
+                <p class="font-semibold text-dark text-sm mb-1">Our Address</p>
+                <p class="text-gray-500 text-sm">{company_address}</p>
+              </div>
+            </div>
+
+            <div class="flex items-start gap-4">
+              <div class="w-11 h-11 bg-accent/10 text-accent rounded-xl flex items-center justify-center flex-shrink-0">
+                <i class="fa-solid fa-phone"></i>
+              </div>
+              <div>
+                <p class="font-semibold text-dark text-sm mb-1">Phone</p>
+                <a href={`tel:${company_phone[0].replace(/\D/g, '')}`} class="text-gray-500 text-sm hover:text-accent transition-colors">{company_phone[0]}</a>
+              </div>
+            </div>
+
+            <div class="flex items-start gap-4">
+              <div class="w-11 h-11 bg-accent/10 text-accent rounded-xl flex items-center justify-center flex-shrink-0">
+                <i class="fa-solid fa-envelope"></i>
+              </div>
+              <div>
+                <p class="font-semibold text-dark text-sm mb-1">Email</p>
+                <a href={`mailto:${company_email[0]}`} class="text-gray-500 text-sm hover:text-accent transition-colors">{company_email[0]}</a>
+              </div>
+            </div>
+
+            <div class="flex items-start gap-4">
+              <div class="w-11 h-11 bg-accent/10 text-accent rounded-xl flex items-center justify-center flex-shrink-0">
+                <i class="fa-solid fa-clock"></i>
+              </div>
+              <div>
+                <p class="font-semibold text-dark text-sm mb-1">Working Hours</p>
+                <p class="text-gray-500 text-sm">{company_schedule[0]}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Info -->
+          <div class="grid grid-cols-2 gap-4 mt-8 pt-8 border-t border-gray-100" data-reveal data-reveal-delay="0.25">
+            <div class="flex items-center gap-2">
+              <i class="fa-solid fa-check-circle text-accent text-sm"></i>
+              <span class="text-gray-600 text-sm">{company_estimate}</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <i class="fa-solid fa-credit-card text-accent text-sm"></i>
+              <span class="text-gray-600 text-sm">{company_payment_method}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column: Contact Form -->
+        <div class="bg-gray-50 rounded-2xl p-6 md:p-10" data-reveal data-reveal-delay="0.15">
+          <h3 class="font-heading font-bold text-xl text-dark mb-6">Send Us a Message</h3>
+          <form class="space-y-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <input type="text" placeholder="Full Name" required class="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors" />
+              <input type="email" placeholder="Email Address" required class="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors" />
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <input type="tel" placeholder="Phone Number" class="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors" />
+              <select class="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg text-sm text-gray-500 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors">
+                <option value="">Select a Service</option>
+                <option>Concrete</option>
+                <option>Paver</option>
+                <option>Masonry</option>
+                <option>Hardscape</option>
+                <option>Patios</option>
+                <option>Driveway</option>
+                <option>House Foundation</option>
+                <option>Other</option>
+              </select>
+            </div>
+            <textarea placeholder="Tell us about your project..." rows="5" required class="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors resize-none"></textarea>
+            <button type="submit" class="w-full px-8 py-3.5 bg-accent text-white font-semibold rounded-lg hover:bg-accent/85 hover:shadow-lg hover:shadow-accent/30 transition-all duration-300 shine-effect">
+              <i class="fa-solid fa-paper-plane mr-2"></i>
+              Send Message
+            </button>
+          </form>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Google Map ===== -->
+  <section class="w-full">
+    <iframe
+      src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3192.2440598230144!2d-76.3417!3d36.7951!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMzbCsDQ5JzU3LjAiTiA3NsKwMjInMjIuOCJX!5e0!3m2!1sen!2sus!4v1680000000000"
+      width="100%"
+      height="600"
+      style="border:0; display:block;"
+      allowfullscreen=""
+      loading="lazy"
+      referrerpolicy="no-referrer-when-downgrade"
+      title="Our Location"
+    ></iframe>
+  </section>
+
+</BaseLayout>

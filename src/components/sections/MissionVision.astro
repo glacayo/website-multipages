@@ -1,0 +1,62 @@
+---
+import content from '../../data/content.json';
+
+const { company_mission, company_vision, company_why_choose_us, mission_vision_labels } = content;
+
+const columns = [
+  {
+    icon: 'fa-solid fa-bullseye',
+    title: mission_vision_labels.our_mission,
+    text: company_mission,
+  },
+  {
+    icon: 'fa-solid fa-eye',
+    title: mission_vision_labels.our_vision,
+    text: company_vision,
+  },
+  {
+    icon: 'fa-solid fa-star',
+    title: mission_vision_labels.why_choose_us,
+    text: company_why_choose_us,
+  },
+];
+---
+
+<section class="py-16 md:py-24 bg-accent relative overflow-hidden">
+  <!-- Subtle pattern -->
+  <div class="absolute inset-0 opacity-10 pointer-events-none">
+    <div class="absolute inset-0" style="background-image: radial-gradient(circle at 30% 40%, rgba(255,255,255,0.4) 1px, transparent 1px); background-size: 32px 32px;"></div>
+  </div>
+
+  <div class="container-site relative z-10">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+      {columns.map((col, i) => (
+        <div
+          data-reveal
+          data-reveal-delay={String(i * 0.15)}
+          class="glass-card shine-effect group relative overflow-hidden rounded-2xl p-8 md:p-10 transition-all duration-300 hover:-translate-y-1"
+        >
+          {/* Glass base */}
+          <div class="absolute inset-0 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl"></div>
+          
+          {/* Reflection shine */}
+          <div class="absolute -top-20 -right-20 w-40 h-40 bg-gradient-to-bl from-white/20 to-transparent rounded-full pointer-events-none"></div>
+          <div class="absolute -bottom-10 -left-10 w-32 h-32 bg-gradient-to-tr from-white/10 to-transparent rounded-full pointer-events-none"></div>
+
+          {/* Content */}
+          <div class="relative z-10">
+            <div class="w-14 h-14 bg-white/15 text-white rounded-xl flex items-center justify-center mb-6 group-hover:bg-white group-hover:text-accent transition-colors duration-300">
+              <i class={`${col.icon} text-xl`}></i>
+            </div>
+            <h3 class="font-heading font-bold text-xl text-white mb-4">
+              {col.title}
+            </h3>
+            <p class="text-white/75 text-sm md:text-base leading-relaxed">
+              {col.text}
+            </p>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>

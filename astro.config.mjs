@@ -1,10 +1,11 @@
 import { defineConfig } from 'astro/config';
-import sitemap from '@astrojs/sitemap';
+import tailwind from '@astrojs/tailwind';
 
 export default defineConfig({
-  site: 'https://wgmasonryhardscape757.com',
+  integrations: [tailwind()],
+  site: 'https://wgmasonry757.com',
   output: 'static',
-  integrations: [
-    sitemap(),
-  ],
+  build: {
+    format: 'directory'
+  }
 });

@@ -1,0 +1,48 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import TopBar from '../components/layout/TopBar.astro';
+import Header from '../components/layout/Header.astro';
+import CTABar from '../components/sections/CTABar.astro';
+import content from '../data/content.json';
+
+const { company_name, company_phone } = content;
+---
+
+<BaseLayout
+  title={`Thank You | ${company_name}`}
+  description="Your message has been received. We will get back to you shortly."
+>
+  <TopBar />
+  <Header />
+
+  <section class="relative -mt-[5.5rem] md:-mt-[6.5rem]">
+    <div class="relative min-h-[70vh] bg-dark flex items-center overflow-hidden">
+      <div class="absolute inset-0 shimmer-bg">
+        <img         src="/images/breadcrumb/2.jpeg" alt="" class="w-full h-full object-cover shimmer-img" loading="eager" onload="this.classList.add('loaded')" />
+      </div>
+      <div class="absolute inset-0 bg-gradient-to-br from-dark/90 via-primary/40 to-accent/60"></div>
+
+      <div class="relative z-10 container-site text-center text-white py-20">
+        <div class="max-w-lg mx-auto">
+          <div class="w-20 h-20 bg-accent/20 backdrop-blur-sm rounded-full flex items-center justify-center mx-auto mb-6">
+            <i class="fa-solid fa-check text-3xl text-accent"></i>
+          </div>
+          <h1 class="font-heading text-3xl md:text-5xl font-bold mb-4">Thank You!</h1>
+          <p class="text-white/70 text-base md:text-lg mb-8 leading-relaxed">
+            Your message has been received. One of our team members will get back to you within 24 hours to discuss your project.
+          </p>
+          <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <a href="/" class="px-7 py-3 bg-accent text-white font-semibold rounded-md hover:bg-accent/85 transition-all duration-300 text-sm">
+              <i class="fa-solid fa-home mr-2"></i>Back to Home
+            </a>
+            <a href={`tel:${company_phone[0].replace(/\D/g, '')}`} class="px-7 py-3 border border-white/30 text-white font-semibold rounded-md hover:bg-white hover:text-primary transition-all duration-300 text-sm">
+              <i class="fa-solid fa-phone mr-2"></i>{company_phone[0]}
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <CTABar />
+</BaseLayout>

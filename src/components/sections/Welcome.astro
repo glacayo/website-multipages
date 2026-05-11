@@ -1,0 +1,132 @@
+---
+import content from '../../data/content.json';
+
+const { company_name, company_years_experience, about_content, company_cover_area, stats, section_headings } = content;
+const { welcome: wHeadings } = section_headings;
+
+const yearsCount = company_years_experience.match(/\d+/)?.[0] ?? '13';
+---
+
+<section class="relative py-16 md:py-28 bg-white overflow-hidden">
+  <!-- Decorative background element -->
+  <div class="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/[0.03] rounded-bl-full pointer-events-none hidden lg:block"></div>
+
+  <div class="container-site relative z-10">
+    <div class="grid grid-cols-1 lg:grid-cols-[5fr_7fr] gap-10 lg:gap-20 items-center">
+      
+      <!-- Left Column: Image + Floating Badge -->
+      <div class="relative mx-auto lg:mx-0 max-w-md lg:max-w-none">
+        <!-- Decorative dots -->
+        <div class="absolute -top-6 -left-6 w-24 h-24 hidden sm:block opacity-30 pointer-events-none">
+          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="10" cy="10" r="4" fill="#962e20"/><circle cx="30" cy="10" r="4" fill="#962e20"/><circle cx="50" cy="10" r="4" fill="#962e20"/>
+            <circle cx="10" cy="30" r="4" fill="#962e20"/><circle cx="30" cy="30" r="4" fill="#962e20"/><circle cx="50" cy="30" r="4" fill="#962e20"/>
+            <circle cx="10" cy="50" r="4" fill="#962e20"/><circle cx="30" cy="50" r="4" fill="#962e20"/><circle cx="50" cy="50" r="4" fill="#962e20"/>
+          </svg>
+        </div>
+
+        <!-- Main Image -->
+        <div class="relative rounded-2xl overflow-hidden shadow-xl shimmer-bg" data-reveal>
+          <img
+            src="/images/about/3.jpeg"
+            alt={wHeadings.image_alt}
+            class="w-full h-[320px] md:h-[420px] lg:h-[480px] object-cover shimmer-img"
+            loading="lazy"
+            onload="this.classList.add('loaded')"
+          />
+          <!-- Gradient overlay on image -->
+          <div class="absolute inset-0 bg-gradient-to-t from-dark/30 to-transparent"></div>
+        </div>
+
+        <!-- Floating Experience Badge -->
+        <div class="absolute -bottom-5 right-6 sm:right-10 lg:-right-8 lg:-bottom-6 bg-accent text-white rounded-xl px-6 py-4 shadow-2xl shadow-accent/30 z-20 text-center min-w-[120px]" data-reveal data-reveal-delay="0.3">
+          <span data-count={parseInt(yearsCount)} data-suffix="+" class="block font-heading font-extrabold text-3xl md:text-4xl leading-none counter-target">0+</span>
+          <span class="block text-xs md:text-sm font-medium text-white/80 mt-1 leading-tight">{wHeadings.years_badge.split('\n')[0]}<br/>{wHeadings.years_badge.split('\n')[1]}</span>
+        </div>
+      </div>
+
+      <!-- Right Column: Content -->
+      <div>
+        <span class="inline-flex items-center gap-2 text-accent font-semibold text-sm uppercase tracking-[0.2em] mb-3" data-reveal data-reveal-delay="0.1">
+          <span class="w-8 h-[2px] bg-accent"></span>
+          {wHeadings.badge}
+        </span>
+        
+        <h2 class="font-heading text-3xl md:text-4xl lg:text-5xl font-bold text-dark leading-[1.15] mb-4" data-reveal data-reveal-delay="0.2">
+          {wHeadings.headline_line1}<br/>
+          <span class="text-primary">{wHeadings.headline_line2}</span>
+        </h2>
+
+        <p class="text-gray-500 text-lg mb-6" data-reveal data-reveal-delay="0.3">
+          {wHeadings.subtitle_prefix}{company_cover_area}.
+        </p>
+
+        <div class="space-y-4 text-gray-600 leading-relaxed" data-reveal data-reveal-delay="0.4">
+          <p>{about_content[0].slice(0, -1)}.</p>
+          <p>{about_content[1].slice(0, -1)}.</p>
+        </div>
+
+        <!-- Mini Stats Row -->
+        <div class="stats-row grid grid-cols-3 gap-3 md:gap-4 mt-8 pt-8 border-t border-gray-100" data-reveal data-reveal-delay="0.55">
+          {stats.map((stat) => (
+            <div class="text-center border border-gray-200 rounded-xl py-4 px-2">
+              <span
+                data-count={stat.value}
+                data-suffix={stat.suffix}
+                class="block font-heading font-bold text-2xl md:text-3xl text-primary"
+              >0{stat.suffix}</span>
+              <span class="block text-[11px] md:text-xs text-gray-500 mt-1 leading-tight">{stat.label}</span>
+            </div>
+          ))}
+        </div>
+
+        <!-- CTA -->
+        <div class="mt-8" data-reveal data-reveal-delay="0.7">
+          <a
+            href="/about-us"
+            class="inline-flex items-center gap-2 px-8 py-3.5 bg-primary text-white font-semibold rounded-md hover:bg-primary/90 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 shine-effect"
+          >
+            Learn More About Us
+            <i class="fa-solid fa-arrow-right text-sm"></i>
+          </a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<script>
+  function animateCounter(el: HTMLElement, target: number, suffix: string, duration: number = 1800) {
+    const startTime = performance.now();
+
+    function update(now: number) {
+      const progress = Math.min((now - startTime) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const current = Math.round(target * eased);
+      el.textContent = `${current}${suffix}`;
+      if (progress < 1) requestAnimationFrame(update);
+    }
+
+    requestAnimationFrame(update);
+  }
+
+  const section = document.querySelector('.stats-row')?.closest('section');
+  if (section) {
+    const counterObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.querySelectorAll<HTMLElement>('[data-count]').forEach((el) => {
+              animateCounter(el, parseInt(el.dataset.count || '0'), el.dataset.suffix || '');
+            });
+            counterObserver.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.3 }
+    );
+
+    counterObserver.observe(section);
+  }
+</script>

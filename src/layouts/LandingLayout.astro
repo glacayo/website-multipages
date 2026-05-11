@@ -1,30 +1,161 @@
 ---
-/**
- * LandingLayout - Layout for service landing pages
- * Wraps BaseLayout with landing-specific styling
- */
 import BaseLayout from './BaseLayout.astro';
+import TopBar from '../components/layout/TopBar.astro';
+import Header from '../components/layout/Header.astro';
+import Testimonials from '../components/sections/Testimonials.astro';
+import CTABar from '../components/sections/CTABar.astro';
+import CoveredAreas from '../components/sections/CoveredAreas.astro';
+import DirectoryBadges from '../components/sections/DirectoryBadges.astro';
+import Gallery from '../components/sections/Gallery.astro';
+import landingsData from '../data/landings.json';
 
 interface Props {
-  title: string;
-  description: string;
-  path: string;
-  image?: string;
+  slug: string;
 }
 
-const {
-  title,
-  description,
-  path,
-  image,
-} = Astro.props;
+const { slug } = Astro.props;
+const pages = landingsData.landing_pages || [];
+const page = pages.find((p: any) => p.slug === slug);
+const sections = page?.sections || [];
+
+function imgUrl(name: string | undefined): string {
+  return "/images/landing/" + (name || "5.jpg");
+}
 ---
 
 <BaseLayout
-  title={title}
-  description={description}
-  path={path}
-  image={image}
+  title={`${page?.name || 'Service'} | WG Masonry & Hardscape 757`}
+  description={page?.hero?.paragraph?.slice(0, 160)}
 >
-  <slot />
+  <TopBar />
+  <Header />
+
+  <section class="relative -mt-[5.5rem] md:-mt-[6.5rem]">
+    <div class="relative min-h-[600px] md:min-h-[650px] overflow-hidden bg-dark">
+      <div class="absolute inset-0 shimmer-bg">
+        <img src={imgUrl(page?.hero?.image)} alt="" class="w-full h-full object-cover shimmer-img" loading="eager" onload="this.classList.add('loaded')" />
+      </div>
+      <div class="absolute inset-0 bg-gradient-to-br from-dark/90 via-primary/40 to-accent/60"></div>
+
+      <div class="relative z-10 container-site pt-[15rem] pb-[10rem] md:h-full flex items-center">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center w-full">
+          
+          <!-- Left: Text -->
+          <div class="text-white">
+            <h1 class="font-heading text-2xl sm:text-4xl md:text-5xl font-bold mb-4 leading-tight">
+              {page?.hero?.headline || page?.name}
+            </h1>
+            <p class="text-white/80 text-sm md:text-base mb-6 leading-relaxed">
+              {page?.hero?.paragraph}
+            </p>
+            <div class="flex flex-col sm:flex-row items-start gap-3">
+              <a href="/contact-us" class="px-7 py-3 bg-accent text-white font-semibold rounded-md hover:bg-accent/85 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 text-sm">
+                <i class="fa-solid fa-calendar-check mr-2"></i>Get a Free Estimate
+              </a>
+              <a href="tel:7579443411" class="px-7 py-3 border border-white/30 text-white font-semibold rounded-md hover:bg-white hover:text-primary transition-all duration-300 text-sm">
+                <i class="fa-solid fa-phone mr-2"></i>(757) 944-3411
+              </a>
+            </div>
+          </div>
+
+          <!-- Right: Form -->
+          <div class="bg-primary/30 backdrop-blur-md border border-white/15 rounded-2xl p-6 md:p-8">
+            <h3 class="font-heading font-bold text-lg text-white mb-4">Request a Free Estimate</h3>
+            <form class="space-y-3">
+              <input type="text" placeholder="Full Name" required class="w-full px-4 py-2.5 bg-white/10 border border-white/20 rounded-lg text-sm text-white placeholder:text-white/50 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-colors" />
+              <input type="email" placeholder="Email Address" required class="w-full px-4 py-2.5 bg-white/10 border border-white/20 rounded-lg text-sm text-white placeholder:text-white/50 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-colors" />
+              <input type="tel" placeholder="Phone Number" class="w-full px-4 py-2.5 bg-white/10 border border-white/20 rounded-lg text-sm text-white placeholder:text-white/50 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-colors" />
+              <select class="w-full px-4 py-2.5 bg-white/10 border border-white/20 rounded-lg text-sm text-white/70 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-colors">
+                <option value="" class="text-dark">Select a Service</option>
+                <option value="masonry" class="text-dark">Masonry</option>
+                <option value="concrete" class="text-dark">Concrete</option>
+                <option value="hardscape" class="text-dark">Hardscape</option>
+                <option value="paver" class="text-dark">Paver</option>
+                <option value="patios" class="text-dark">Patios</option>
+                <option value="other" class="text-dark">Other</option>
+              </select>
+              <textarea placeholder="Tell us about your project..." rows="3" class="w-full px-4 py-2.5 bg-white/10 border border-white/20 rounded-lg text-sm text-white placeholder:text-white/50 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-colors resize-none"></textarea>
+              <button type="submit" class="w-full py-2.5 bg-accent text-white font-semibold rounded-lg hover:bg-accent/85 transition-all duration-300 text-sm">
+                <i class="fa-solid fa-paper-plane mr-2"></i>Send Message
+              </button>
+            </form>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Breadcrumb Bar -->
+    <div class="bg-dark/50 backdrop-blur-sm border-b border-white/10">
+      <div class="container-site py-2.5">
+        <nav class="flex items-center gap-2 text-xs text-white/60" aria-label="Breadcrumb">
+          <a href="/" class="hover:text-accent transition-colors">Home</a>
+          <i class="fa-solid fa-chevron-right text-[8px]"></i>
+          <a href="/services" class="hover:text-accent transition-colors">Services</a>
+          <i class="fa-solid fa-chevron-right text-[8px]"></i>
+          <span class="text-white/90">{page?.name}</span>
+        </nav>
+      </div>
+    </div>
+  </section>
+
+  {sections[0] && (
+    <section class="py-16 md:py-24 bg-white">
+      <div class="container-site">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+          <div>
+            <h2 class="font-heading text-2xl md:text-3xl font-bold text-dark mb-6">{sections[0].headline}</h2>
+            <div class="space-y-4 text-gray-600 leading-relaxed text-sm md:text-base">
+              {sections[0].paragraphs.map((p: string) => <p>{p}</p>)}
+            </div>
+          </div>
+          <div class="rounded-2xl overflow-hidden shadow-lg shimmer-bg">
+            <img src={imgUrl(sections[0]?.image)} alt="" class="w-full h-[350px] md:h-[400px] object-cover" loading="lazy" />
+          </div>
+        </div>
+      </div>
+    </section>
+  )}
+
+  {sections[1] && (
+    <section class="py-16 md:py-24 bg-dark">
+      <div class="container-site">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+          <div class="order-2 lg:order-1 rounded-2xl overflow-hidden shadow-lg shimmer-bg">
+            <img src={imgUrl(sections[1]?.image)} alt="" class="w-full h-[350px] md:h-[400px] object-cover" loading="lazy" />
+          </div>
+          <div class="order-1 lg:order-2">
+            <h2 class="font-heading text-2xl md:text-3xl font-bold text-white mb-6">{sections[1].headline}</h2>
+            <div class="space-y-4 text-gray-400 leading-relaxed text-sm md:text-base">
+              {sections[1].paragraphs.map((p: string) => <p>{p}</p>)}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  )}
+
+  <Testimonials />
+  <Gallery />
+  {sections[2] && (
+    <section class="py-16 md:py-24 bg-gray-50">
+      <div class="container-site">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+          <div>
+            <h2 class="font-heading text-2xl md:text-3xl font-bold text-dark mb-6">{sections[2].headline}</h2>
+            <div class="space-y-4 text-gray-600 leading-relaxed text-sm md:text-base">
+              {sections[2].paragraphs.map((p: string) => <p>{p}</p>)}
+            </div>
+          </div>
+          <div class="rounded-2xl overflow-hidden shadow-lg shimmer-bg">
+            <img src={imgUrl(sections[2]?.image)} alt="" class="w-full h-[350px] md:h-[400px] object-cover" loading="lazy" />
+          </div>
+        </div>
+      </div>
+    </section>
+  )}
+
+  <CoveredAreas />
+  <DirectoryBadges />
+  <CTABar />
 </BaseLayout>

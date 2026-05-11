@@ -1,174 +1,40 @@
 ---
-/**
- * Homepage - index.astro
- * Main entry point for the masonry and hardscape contractor
- */
-import { getSiteContent } from '../data/loaders';
 import BaseLayout from '../layouts/BaseLayout.astro';
-import HeroSection from '../components/home/HeroSection.astro';
-import ServiceCard from '../components/services/ServiceCard.astro';
-import SectionHeading from '../components/shared/SectionHeading.astro';
-import CTASection from '../components/shared/CTASection.astro';
+import TopBar from '../components/layout/TopBar.astro';
+import Header from '../components/layout/Header.astro';
+import HeroSlider from '../components/sections/HeroSlider.astro';
+import CTABar from '../components/sections/CTABar.astro';
+import DirectoryBadges from '../components/sections/DirectoryBadges.astro';
+import Welcome from '../components/sections/Welcome.astro';
+import Services from '../components/sections/Services.astro';
+import Testimonials from '../components/sections/Testimonials.astro';
+import Gallery from '../components/sections/Gallery.astro';
+import About from '../components/sections/About.astro';
+import MissionVision from '../components/sections/MissionVision.astro';
+import ContactForm from '../components/sections/ContactForm.astro';
+import FAQ from '../components/sections/FAQ.astro';
+import CoveredAreas from '../components/sections/CoveredAreas.astro';
+import content from '../data/content.json';
 
-const content = getSiteContent();
-const services = content.services;
-
-// SEO props
-const pageTitle = `${content.company_name} | ${content.company_cover_area.split(',')[0]} Masonry Contractor`;
-const pageDescription = content.home_content[0] || 'Professional masonry and hardscape services in Hampton Roads. Quality craftsmanship for driveways, patios, foundations, and more.';
-const pagePath = '/';
-
-// Select a background image for the hero
-const heroImage = '/images/hardscaping-services-portsmouth-va.jpg';
+const { seo } = content;
 ---
 
-<BaseLayout
-  title={pageTitle}
-  description={pageDescription}
-  path={pagePath}
+<BaseLayout 
+  title={seo.home_title}
+  description={seo.home_description}
 >
-  <!-- Hero Section -->
-  <HeroSection
-    headline={content.phrases[0]}
-    subtext={content.home_content[0]}
-    buttonText="Get Free Estimate"
-    backgroundImage={heroImage}
-  />
-
-  <!-- Phrases Strip -->
-  <section class="bg-primary py-6">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex flex-wrap justify-center gap-4 md:gap-8">
-        {content.phrases.slice(0, 4).map((phrase) => (
-          <div class="flex items-center gap-2 text-white/90">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-accent flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-            </svg>
-            <span class="text-sm md:text-base font-medium">{phrase}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  </section>
-
-  <!-- Services Section -->
-  <section class="py-16 md:py-20 bg-gray-50">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <SectionHeading
-        title="Our Services"
-        subtitle="Comprehensive masonry and hardscape solutions for residential and commercial properties"
-        align="center"
-      />
-
-      <!-- Service Cards Grid -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {services.map((service, index) => (
-          <ServiceCard service={service} index={index} />
-        ))}
-      </div>
-
-      <div class="text-center mt-10">
-        <a
-          href="/services"
-          class="inline-flex items-center gap-2 bg-primary text-white px-8 py-4 rounded-lg text-lg font-bold hover:bg-primary/90 transition-all duration-200 cursor-pointer shadow-lg hover:shadow-xl"
-        >
-          View All Services
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-          </svg>
-        </a>
-      </div>
-    </div>
-  </section>
-
-  <!-- About Preview Section -->
-  <section class="py-16 md:py-20">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-        <!-- Text Content -->
-        <div>
-          <SectionHeading
-            title={`About ${content.company_name}`}
-            subtitle={`${content.company_years_experience} of Trusted Service`}
-            align="left"
-          />
-
-          <p class="text-text-secondary text-lg leading-relaxed mb-6">
-            {content.home_content[1]}
-          </p>
-
-          <div class="flex flex-wrap gap-4 mb-8">
-            <div class="flex items-center gap-2 text-primary">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-              </svg>
-              <span class="font-medium">Free Estimates</span>
-            </div>
-            <div class="flex items-center gap-2 text-primary">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-              </svg>
-              <span class="font-medium">Licensed & Insured</span>
-            </div>
-            <div class="flex items-center gap-2 text-primary">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-              </svg>
-              <span class="font-medium">Quality Guaranteed</span>
-            </div>
-          </div>
-
-          <a
-            href="/about"
-            class="inline-flex items-center gap-2 text-accent font-semibold hover:gap-3 transition-all duration-200 cursor-pointer"
-          >
-            Learn More About Us
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-            </svg>
-          </a>
-        </div>
-
-        <!-- Image -->
-        <div class="relative">
-          <img
-            src="/images/masonry-contractor.jpg"
-            alt="WG Masonry & Hardscape professional team"
-            class="rounded-xl shadow-lg w-full h-auto object-cover"
-            loading="lazy"
-          />
-          <!-- Badge -->
-          <div class="absolute -bottom-4 -left-4 bg-accent text-white p-4 rounded-lg shadow-lg">
-            <p class="text-2xl font-bold">13+</p>
-            <p class="text-sm">Years Experience</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Service Areas -->
-  <section class="py-12 bg-primary">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="text-center">
-        <h2 class="text-2xl md:text-3xl font-bold text-white mb-4">Serving Hampton Roads</h2>
-        <p class="text-gray-200 max-w-4xl mx-auto">
-          Proudly serving homeowners across {content.company_cover_area}
-        </p>
-        <div class="flex flex-wrap justify-center gap-3 mt-6">
-          {content.company_cover_area.split(',').map((city: string) => (
-            <span class="bg-white/10 text-white px-4 py-2 rounded-full text-sm font-medium">
-              {city.trim()}
-            </span>
-          ))}
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- CTA Section -->
-  <CTASection
-    headline="Ready to Start Your Project?"
-    buttonText="Get Free Estimate"
-  />
+  <TopBar />
+  <Header />
+  <HeroSlider />
+  <CTABar />
+  <Welcome />
+  <Services />
+  <Testimonials />
+  <Gallery />
+  <About />
+  <MissionVision />
+  <ContactForm />
+  <FAQ />
+  <CoveredAreas />
+  <DirectoryBadges />
 </BaseLayout>

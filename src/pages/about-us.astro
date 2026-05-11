@@ -1,0 +1,132 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import TopBar from '../components/layout/TopBar.astro';
+import Header from '../components/layout/Header.astro';
+import MissionVision from '../components/sections/MissionVision.astro';
+import CTABar from '../components/sections/CTABar.astro';
+import content from '../data/content.json';
+
+const { company_name, about_content, company_years_experience } = content;
+
+const stats = [
+  { value: 850, suffix: '+', label: 'Projects Finished' },
+  { value: 1500, suffix: '+', label: 'Happy Clients' },
+  { value: 7, suffix: '', label: 'Cities Served' },
+];
+---
+
+<BaseLayout
+  title={`About Us | ${company_name}`}
+  description="Learn about WG Masonry & Hardscape 757. 13 years of trusted craftsmanship across Hampton Roads."
+>
+  <TopBar />
+  <Header />
+
+  <!-- ===== Page Header ===== -->
+  <section class="relative -mt-[5.5rem] md:-mt-[6.5rem]">
+    <div class="relative h-[50vh] min-h-[400px] md:min-h-[500px] overflow-hidden bg-dark">
+      <div class="absolute inset-0 shimmer-bg">
+        <img
+          src="/images/about/1.jpeg"
+          alt=""
+          class="w-full h-full object-cover shimmer-img"
+          loading="eager"
+          onload="this.classList.add('loaded')"
+        />
+      </div>
+      <div class="absolute inset-0 bg-gradient-to-br from-dark/90 via-primary/40 to-accent/60"></div>
+
+      <div class="relative z-10 container-site h-full flex flex-col items-center justify-center text-center text-white">
+        <h1 class="font-heading text-3xl md:text-5xl lg:text-6xl font-bold mb-4" data-reveal>
+          About Us
+        </h1>
+        <nav class="flex items-center justify-center gap-2 text-sm text-white/70" aria-label="Breadcrumb" data-reveal data-reveal-delay="0.1">
+          <a href="/" class="hover:text-accent transition-colors">Home</a>
+          <i class="fa-solid fa-chevron-right text-[10px]"></i>
+          <span class="text-accent">About Us</span>
+        </nav>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Company Story (2 columns) ===== -->
+  <section class="py-16 md:py-24 bg-white overflow-hidden">
+    <div class="container-site">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+        <!-- Left: Content -->
+        <div>
+          <span class="inline-flex items-center gap-2 text-accent font-semibold text-sm uppercase tracking-[0.2em] mb-3" data-reveal>
+            <span class="w-8 h-[2px] bg-accent"></span>
+            Our Story
+          </span>
+          <h2 class="font-heading text-3xl md:text-4xl font-bold text-dark mb-6" data-reveal data-reveal-delay="0.1">
+            {company_years_experience} of <span class="text-primary">Building Excellence</span>
+          </h2>
+          <div class="space-y-4 text-gray-600 leading-relaxed text-base" data-reveal data-reveal-delay="0.15">
+            <p>{about_content[0]}</p>
+            <p>{about_content[1]}</p>
+            <p>{about_content[2]}</p>
+          </div>
+
+          <!-- Stats Row -->
+          <div class="stats-row grid grid-cols-3 gap-3 mt-8 pt-8 border-t border-gray-100" data-reveal data-reveal-delay="0.25">
+            {stats.map((s) => (
+              <div class="text-center border border-gray-200 rounded-xl py-4 px-2">
+                <span data-count={s.value} data-suffix={s.suffix} class="block font-heading font-bold text-2xl md:text-3xl text-primary">0{s.suffix}</span>
+                <span class="block text-xs text-gray-500 mt-1">{s.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <!-- Right: Image -->
+        <div class="relative mx-auto lg:mx-0 max-w-md lg:max-w-none" data-reveal data-reveal-delay="0.15">
+          <div class="relative rounded-2xl overflow-hidden shadow-xl shimmer-bg">
+            <img
+              src="/images/about/2.jpeg"
+              alt="Masonry craftsmanship"
+              class="w-full h-[350px] md:h-[450px] lg:h-[520px] object-cover shimmer-img"
+              loading="lazy"
+              onload="this.classList.add('loaded')"
+            />
+            <div class="absolute inset-0 bg-gradient-to-t from-dark/30 to-transparent"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Reused: Mission / Vision / Why Choose Us ===== -->
+  <MissionVision />
+
+  <!-- ===== Reused: CTA Bar ===== -->
+  <CTABar />
+
+</BaseLayout>
+
+<script>
+  function animateCounter(el: HTMLElement, target: number, suffix: string, duration = 1800) {
+    const startTime = performance.now();
+    function update(now: number) {
+      const p = Math.min((now - startTime) / duration, 1);
+      el.textContent = Math.round(target * (1 - Math.pow(1 - p, 3))) + suffix;
+      if (p < 1) requestAnimationFrame(update);
+    }
+    requestAnimationFrame(update);
+  }
+
+  const section = document.querySelector('.stats-row')?.closest('section');
+  if (section) {
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach((e) => {
+        if (e.isIntersecting) {
+          e.target.querySelectorAll<HTMLElement>('[data-count]').forEach((el) => {
+            animateCounter(el, parseInt(el.dataset.count || '0'), el.dataset.suffix || '');
+          });
+          obs.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.3 });
+    obs.observe(section);
+  }
+</script>

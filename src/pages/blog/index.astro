@@ -1,61 +1,129 @@
 ---
-/**
- * Blog Index - src/pages/blog/index.astro
- * Lists all blog posts in a grid layout
- */
-import { getBlogPosts, getSiteContent } from '../../data/loaders';
-import BlogLayout from '../../layouts/BlogLayout.astro';
-import BlogCard from '../../components/blog/BlogCard.astro';
-import SectionHeading from '../../components/shared/SectionHeading.astro';
-import CTASection from '../../components/shared/CTASection.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import TopBar from '../../components/layout/TopBar.astro';
+import Header from '../../components/layout/Header.astro';
+import CTABar from '../../components/sections/CTABar.astro';
+import blogsData from '../../data/blogs.json';
 
-const data = getBlogPosts();
-const posts = data.posts;
-const content = getSiteContent();
+const posts = blogsData.posts || [];
+const postsPerPage = 10;
+const totalPages = Math.ceil(posts.length / postsPerPage);
+const currentPage = 1;
+const pagePosts = posts.slice(0, postsPerPage);
 
-// SEO props
-const pageTitle = `Blog | ${content.company_name}`;
-const pageDescription = `Expert insights on masonry, hardscape, and concrete projects. Tips, guides, and industry news from ${content.company_name}.`;
-const pagePath = '/blog';
+function formatDate(dateStr: string): string {
+  return new Date(dateStr).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+}
+
+function truncateExcerpt(text: string, max: number = 25): string {
+  const words = text.split(' ');
+  return words.slice(0, max).join(' ') + (words.length > max ? '...' : '');
+}
 ---
 
-<BlogLayout
-  title={pageTitle}
-  description={pageDescription}
-  path={pagePath}
+<BaseLayout
+  title="Blog | WG Masonry & Hardscape 757"
+  description="Tips, guides, and insights on masonry, hardscape, and outdoor living from WG Masonry & Hardscape 757."
 >
-  <!-- Page Hero -->
-  <section class="bg-primary py-16 md:py-20">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-      <h1 class="text-4xl md:text-5xl font-bold text-white mb-4">
-        Masonry &amp; Hardscape Blog
-      </h1>
-      <p class="text-xl text-gray-200 max-w-4xl mx-auto">
-        Expert insights, tips, and guides for your next project
-      </p>
+  <TopBar />
+  <Header />
+
+  <!-- ===== Page Header ===== -->
+  <section class="relative -mt-[5.5rem] md:-mt-[6.5rem]">
+    <div class="relative h-[40vh] min-h-[300px] md:min-h-[400px] overflow-hidden bg-dark">
+      <div class="absolute inset-0 shimmer-bg">
+        <img
+          src="/images/blog/5.jpg"
+          alt=""
+          class="w-full h-full object-cover shimmer-img"
+          loading="eager"
+          onload="this.classList.add('loaded')"
+        />
+      </div>
+      <div class="absolute inset-0 bg-gradient-to-br from-dark/90 via-primary/40 to-accent/60"></div>
+
+      <div class="relative z-10 container-site h-full flex flex-col items-center justify-center text-center text-white">
+        <h1 class="font-heading text-3xl md:text-5xl lg:text-6xl font-bold mb-4" data-reveal>
+          Our Blog
+        </h1>
+        <nav class="flex items-center justify-center gap-2 text-sm text-white/70" aria-label="Breadcrumb" data-reveal data-reveal-delay="0.1">
+          <a href="/" class="hover:text-accent transition-colors">Home</a>
+          <i class="fa-solid fa-chevron-right text-[10px]"></i>
+          <span class="text-accent">Blog</span>
+        </nav>
+      </div>
     </div>
   </section>
 
-  <!-- Blog Grid -->
-  <section class="py-16 md:py-20 bg-gray-50">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      {posts.length > 0 ? (
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {posts.map((post) => (
-            <BlogCard post={post} />
+  <!-- ===== Blog Posts ===== -->
+  <section class="py-16 md:py-24 bg-gray-50">
+    <div class="container-site">
+      <div class="max-w-4xl mx-auto space-y-8">
+        {pagePosts.map((post: any, i: number) => (
+          <article
+            data-reveal
+            data-reveal-delay={String(i * 0.06)}
+            class="bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden group flex flex-col sm:flex-row"
+          >
+            <!-- Image -->
+            <a href={`/blog/${post.slug}`} class="relative sm:w-64 md:w-72 shrink-0 h-48 sm:h-auto overflow-hidden shimmer-bg">
+              <img
+                src={"/images/blog/" + (post.image_filename || "5.jpg")}
+                alt={post.headline}
+                class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                loading="lazy"
+              />
+            </a>
+
+            <!-- Content -->
+            <div class="p-6 md:p-8 flex flex-col justify-center flex-1">
+              <div class="flex flex-wrap items-center gap-3 text-xs text-gray-400 mb-3">
+                <span class="flex items-center gap-1"><i class="fa-solid fa-calendar text-accent"></i> {formatDate(post.date)}</span>
+                <span class="flex items-center gap-1"><i class="fa-solid fa-user text-accent"></i> {post.author}</span>
+                <span class="flex items-center gap-1"><i class="fa-solid fa-tag text-accent"></i> {post.category}</span>
+                <span class="flex items-center gap-1"><i class="fa-solid fa-clock text-accent"></i> {post.reading_time}</span>
+              </div>
+
+              <a href={`/blog/${post.slug}`}>
+                <h2 class="font-heading font-bold text-lg md:text-xl text-dark mb-2 group-hover:text-primary transition-colors duration-300">
+                  {post.headline}
+                </h2>
+              </a>
+
+              <p class="text-gray-500 text-sm leading-relaxed mb-4">
+                {truncateExcerpt(post.excerpt, 28)}
+              </p>
+
+              <a
+                href={`/blog/${post.slug}`}
+                class="inline-flex items-center gap-1 text-accent font-semibold text-sm hover:text-primary transition-colors duration-200"
+              >
+                Read More
+                <i class="fa-solid fa-arrow-right text-xs"></i>
+              </a>
+            </div>
+          </article>
+        ))}
+      </div>
+
+      <!-- Pagination -->
+      {totalPages > 1 && (
+        <nav class="flex items-center justify-center gap-2 mt-12" aria-label="Pagination">
+          <span class="w-10 h-10 rounded-lg bg-primary text-white flex items-center justify-center font-semibold text-sm">1</span>
+          {Array.from({ length: totalPages - 1 }, (_, i) => i + 2).map((p) => (
+            <a href={`/blog/${p}`} class="w-10 h-10 rounded-lg bg-white border border-gray-200 text-gray-600 hover:border-accent hover:text-accent flex items-center justify-center font-semibold text-sm transition-colors">
+              {p}
+            </a>
           ))}
-        </div>
-      ) : (
-        <div class="text-center py-12">
-          <p class="text-text-secondary text-lg">No blog posts available yet. Check back soon!</p>
-        </div>
+          {totalPages > 1 && (
+            <a href="/blog/2" class="w-10 h-10 rounded-lg bg-white border border-gray-200 text-gray-600 hover:border-accent hover:text-accent flex items-center justify-center text-sm transition-colors">
+              <i class="fa-solid fa-chevron-right"></i>
+            </a>
+          )}
+        </nav>
       )}
     </div>
   </section>
 
-  <!-- CTA Section -->
-  <CTASection
-    headline="Ready to Start Your Project?"
-    buttonText="Get Free Estimate"
-  />
-</BlogLayout>
+  <CTABar />
+</BaseLayout>

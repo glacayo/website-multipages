@@ -1,0 +1,59 @@
+---
+import content from '../../data/content.json';
+
+const { company_phone, company_email, social_media, social_media_labels } = content;
+
+const socialLinks = [
+  { name: social_media_labels.facebook, icon: 'fa-brands fa-facebook-f', url: social_media.facebook },
+  { name: social_media_labels.google, icon: 'fa-brands fa-google', url: social_media.google },
+  { name: social_media_labels.instagram, icon: 'fa-brands fa-instagram', url: social_media.instagram },
+  { name: social_media_labels.youtube, icon: 'fa-brands fa-youtube', url: social_media.youtube },
+  { name: social_media_labels.tiktok, icon: 'fa-brands fa-tiktok', url: social_media.tiktok },
+].filter(s => s.url && s.url !== '#');
+---
+
+<div class="bg-dark text-white py-2 relative z-50">
+  <div class="container-site">
+    <div class="grid grid-flow-col auto-cols-max items-center justify-end gap-4 md:gap-6 text-sm">
+      <!-- Phone -->
+      {company_phone && company_phone.length > 0 && (
+        <a 
+          href={`tel:${company_phone[0].replace(/\D/g, '')}`} 
+          class="hidden sm:flex items-center gap-2 hover:text-accent transition-colors duration-300"
+        >
+          <i class="fa-solid fa-phone text-accent text-xs"></i>
+          <span class="font-medium">{company_phone[0]}</span>
+        </a>
+      )}
+      
+      <!-- Email -->
+      {company_email && company_email.length > 0 && (
+        <a 
+          href={`mailto:${company_email[0]}`} 
+          class="hidden md:flex items-center gap-2 hover:text-accent transition-colors duration-300"
+        >
+          <i class="fa-solid fa-envelope text-accent text-xs"></i>
+          <span class="font-medium">{company_email[0]}</span>
+        </a>
+      )}
+      
+      <!-- Separator -->
+      <div class="hidden lg:block w-px h-4 bg-white/20"></div>
+      
+      <!-- Social Icons -->
+      <div class="flex items-center gap-3">
+        {socialLinks.map((social) => (
+          <a 
+            href={social.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center hover:bg-accent hover:scale-110 transition-all duration-300"
+            aria-label={social.name}
+          >
+            <i class={`${social.icon} text-xs`}></i>
+          </a>
+        ))}
+      </div>
+    </div>
+  </div>
+</div>

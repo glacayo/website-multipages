@@ -1,0 +1,74 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import TopBar from '../components/layout/TopBar.astro';
+import Header from '../components/layout/Header.astro';
+import CTABar from '../components/sections/CTABar.astro';
+import content from '../data/content.json';
+
+const { company_name, gallery_images } = content;
+
+const allImages = Array.from({ length: 82 }, (_, i) => `/images/gallery/${i + 1}.jpeg`);
+const initialCount = 12;
+---
+
+<BaseLayout
+  title={`Gallery | ${company_name}`}
+  description="Browse our masonry and hardscape projects across Hampton Roads."
+>
+  <TopBar />
+  <Header />
+
+  <section class="relative -mt-[5.5rem] md:-mt-[6.5rem]">
+    <div class="relative h-[45vh] min-h-[350px] md:min-h-[450px] overflow-hidden bg-dark">
+      <div class="absolute inset-0 shimmer-bg">
+        <img         src="/images/breadcrumb/1.jpeg" alt="" class="w-full h-full object-cover shimmer-img" loading="eager" onload="this.classList.add('loaded')" />
+      </div>
+      <div class="absolute inset-0 bg-gradient-to-br from-dark/90 via-primary/40 to-accent/60"></div>
+      <div class="relative z-10 container-site h-full flex flex-col items-center justify-center text-center text-white">
+        <h1 class="font-heading text-3xl md:text-5xl lg:text-6xl font-bold mb-4" data-reveal>Project Gallery</h1>
+        <nav class="flex items-center justify-center gap-2 text-sm text-white/70" aria-label="Breadcrumb" data-reveal data-reveal-delay="0.1">
+          <a href="/" class="hover:text-accent transition-colors">Home</a>
+          <i class="fa-solid fa-chevron-right text-[10px]"></i>
+          <span class="text-accent">Gallery</span>
+        </nav>
+      </div>
+    </div>
+  </section>
+
+  <section class="py-16 md:py-24 bg-white" x-data={`{ visible: ${initialCount} }`}>
+    <div class="container-site">
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+      {allImages.map((src, i) => (
+        <div
+          x-show={`${i} < visible`}
+          class="gallery-item group relative overflow-hidden aspect-[4/3] cursor-pointer"
+        >
+          <div class="absolute inset-0 shimmer-bg"></div>
+          <img
+            src={src}
+            alt={`Project ${i + 1}`}
+            class="relative z-10 w-full h-full object-cover transition-transform duration-600 ease-out group-hover:scale-110"
+            loading="lazy"
+          />
+          <div class="absolute inset-0 z-20 bg-dark/0 group-hover:bg-dark/70 transition-all duration-400 flex flex-col items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
+            <i class="fa-solid fa-magnifying-glass text-white text-2xl md:text-3xl drop-shadow-lg scale-75 group-hover:scale-100 transition-transform duration-400"></i>
+            <span class="text-white font-semibold text-sm tracking-wider drop-shadow-lg translate-y-2 group-hover:translate-y-0 transition-transform duration-400">Zoom</span>
+          </div>
+        </div>
+      ))}
+    </div>
+
+    <div class="text-center py-10" x-show={`visible < ${allImages.length}`}>
+      <button
+        @click={`visible = Math.min(visible + 8, ${allImages.length})`}
+        class="inline-flex items-center gap-2 px-8 py-3.5 bg-primary text-white font-semibold rounded-md hover:bg-primary/90 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 shine-effect"
+      >
+        <i class="fa-solid fa-plus"></i>
+        Load More Images
+      </button>
+    </div>
+    </div>
+  </section>
+
+  <CTABar />
+</BaseLayout>

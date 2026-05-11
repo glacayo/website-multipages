@@ -1,0 +1,53 @@
+# WG Masonry & Hardscape 757 - Site Information for AI/LLM
+
+## Business Overview
+- **Name**: WG Masonry & Hardscape 757
+- **Service**: Professional masonry, hardscape, concrete, paver, and outdoor living services
+- **Location**: 2805 Victory Blvd, Portsmouth, VA 23702
+- **Phone**: (757) 944-3411
+- **Email**: wilmargonsales47@gmail.com
+- **Hours**: Mon - Sun, 7AM - 10PM
+- **Experience**: 13+ years serving Hampton Roads
+- **Service Areas**: Chesapeake, Suffolk, Virginia Beach, Norfolk, Newport News, Hampton, Portsmouth
+
+## Key Pages
+- **Home**: / — Hero slider, services overview, testimonials, gallery
+- **About Us**: /about-us — Company story, mission, vision, why choose us
+- **Services**: /services — 13 service categories with descriptions
+- **Gallery**: /gallery — Project photo gallery with lightbox
+- **Blog**: /blog — 60+ articles on masonry, concrete, hardscape topics
+- **Contact Us**: /contact-us — Form, map, contact information
+- **Landing Pages**: /services/masonry/*, /services/concrete/*, /services/hardscape/* — 19 city-specific service landing pages
+- **Thank You**: /thank-you — Post-form submission confirmation
+- **404**: /404 — Custom not-found page
+
+## Services Offered
+- Concrete (driveways, foundations, slabs, stamped)
+- Paver Installation (patios, walkways, driveways)
+- Curbing
+- Masonry (brick, stone, concrete block)
+- Hardscape Design (retaining walls, fire pits, outdoor kitchens)
+- House Foundations
+- Driveways (installation, resurfacing)
+- Patios (concrete, pavers, natural stone)
+- Walkways
+- Stair Works
+
+## Features
+- Free estimates available
+- Residential & Commercial services
+- Cash & Checks accepted
+- Stamped concrete and decorative finishes
+- Full project gallery with lightbox
+- SEO-optimized landing pages for 7 cities across 3 service categories
+- Mobile-responsive design
+- Scroll reveal animations
+- Alpine.js interactive components
+
+## Technology
+- Built with Astro (static site generation)
+- Tailwind CSS for styling
+- Alpine.js for interactivity
+- Swiper.js for carousels
+- Font Awesome 6 for icons
+- Google Maps integration
