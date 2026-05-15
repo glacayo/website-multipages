@@ -3,7 +3,7 @@ import tailwind from '@astrojs/tailwind';
 
 export default defineConfig({
   integrations: [tailwind()],
-  site: 'https://wgmasonry757.com',
+  site: 'https://example.com',
   output: 'static',
   build: {
     format: 'directory'

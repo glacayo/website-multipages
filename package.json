@@ -1,14 +1,18 @@
 {
   "name": "website-contractor-multipages",
   "version": "1.0.0",
-  "description": "WG Masonry & Hardscape 757 - Contractor Website",
+  "description": "Multipage contractor website template with placeholder content",
   "type": "module",
   "scripts": {
-    "dev": "astro dev",
-    "start": "astro dev",
-    "build": "astro build",
-    "preview": "astro preview",
-    "astro": "astro"
+    "guard:pm": "node ./scripts/enforce-package-manager.cjs",
+    "preinstall": "node ./scripts/enforce-package-manager.cjs",
+    "dev": "node ./scripts/enforce-package-manager.cjs && astro dev",
+    "start": "node ./scripts/enforce-package-manager.cjs && astro dev",
+    "build": "node ./scripts/enforce-package-manager.cjs && astro build",
+    "preview": "node ./scripts/enforce-package-manager.cjs && astro preview",
+    "astro": "node ./scripts/enforce-package-manager.cjs && astro",
+    "ci:install": "pnpm install --frozen-lockfile",
+    "deps:outdated": "pnpm outdated"
   },
   "keywords": [
     "astro",
@@ -29,5 +33,15 @@
   "devDependencies": {
     "@types/alpinejs": "^3.13.11",
     "sharp": "^0.34.5"
+  },
+  "engines": {
+    "pnpm": ">=11.1.2"
+  },
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": ">=11.1.2",
+      "onFail": "error"
+    }
   }
 }

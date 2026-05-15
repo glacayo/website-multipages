@@ -1,7 +1,7 @@
 import blogsData from '../data/blogs.json';
 import landingsData from '../data/landings.json';
 
-const BASE = 'https://wgmasonry757.com';
+const BASE = 'https://example.com';
 
 const mainPages = ['', 'about-us', 'services', 'gallery', 'blog', 'contact-us'];
 
