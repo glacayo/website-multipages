@@ -1,0 +1,60 @@
+---
+/**
+ * Document head SEO: title, description, canonical, OG, Twitter, favicon.
+ * Accepts either pre-built SeoMetadata from buildSeo() or raw overrides.
+ */
+import { buildSeo, type SeoMetadata } from '../../utils/seo';
+import OpenGraph from './OpenGraph.astro';
+import TwitterCard from './TwitterCard.astro';
+
+export interface Props {
+  title?: string;
+  description?: string;
+  path?: string;
+  image?: string;
+  type?: string;
+  noindex?: boolean;
+  /** Pre-composed SEO object from buildSeo(); preferred when available. */
+  seo?: SeoMetadata;
+}
+
+const props = Astro.props;
+
+const seo: SeoMetadata =
+  props.seo ??
+  buildSeo({
+    title: props.title,
+    description: props.description,
+    path: props.path,
+    image: props.image,
+    type: props.type,
+    noindex: props.noindex,
+  });
+---
+
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>{seo.title}</title>
+<meta name="description" content={seo.description} />
+<link rel="canonical" href={seo.canonical} />
+{seo.noindex && <meta name="robots" content="noindex, nofollow" />}
+
+<OpenGraph
+  title={seo.title}
+  description={seo.description}
+  url={seo.canonical}
+  image={seo.image}
+  type={seo.type}
+  locale={seo.locale}
+  siteName={seo.siteName}
+/>
+
+<TwitterCard
+  title={seo.title}
+  description={seo.description}
+  image={seo.image}
+  twitterHandle={seo.twitterHandle}
+/>
+
+<link rel="icon" href={seo.faviconSrc} sizes="any" />
+{seo.appleTouchIcon && <link rel="apple-touch-icon" href={seo.appleTouchIcon} />}

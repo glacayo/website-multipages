@@ -1,40 +1,39 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import TopBar from '../components/layout/TopBar.astro';
-import Header from '../components/layout/Header.astro';
-import HeroSlider from '../components/sections/HeroSlider.astro';
+import HeroSlider from '../components/sections/HeroSlider/HeroSlider.astro';
 import CTABar from '../components/sections/CTABar.astro';
-import DirectoryBadges from '../components/sections/DirectoryBadges.astro';
+import DirectoryBadges from '../components/sections/DirectoryBadges/DirectoryBadges.astro';
 import Welcome from '../components/sections/Welcome.astro';
-import Services from '../components/sections/Services.astro';
-import Testimonials from '../components/sections/Testimonials.astro';
-import Gallery from '../components/sections/Gallery.astro';
+import Services from '../components/sections/Services/Services.astro';
+import Testimonials from '../components/sections/Testimonials/Testimonials.astro';
+import Gallery from '../components/sections/Gallery/Gallery.astro';
 import About from '../components/sections/About.astro';
 import MissionVision from '../components/sections/MissionVision.astro';
-import ContactForm from '../components/sections/ContactForm.astro';
-import FAQ from '../components/sections/FAQ.astro';
-import CoveredAreas from '../components/sections/CoveredAreas.astro';
-import content from '../data/content.json';
+import ContactForm from '../components/sections/ContactForm/ContactForm.astro';
+import FAQ from '../components/sections/FAQ/FAQ.astro';
+import CoveredAreas from '../components/sections/CoveredAreas/CoveredAreas.astro';
+import { getSite } from '../data/loaders';
 
-const { seo } = content;
+const site = getSite();
 ---
 
-<BaseLayout 
-  title={seo.home_title}
-  description={seo.home_description}
+<BaseLayout
+  title={site.seo.default_title}
+  description={site.seo.default_description}
+  path="/"
+  pageType="home"
+  includeFaq={site.features.enable_faq}
 >
-  <TopBar />
-  <Header />
   <HeroSlider />
   <CTABar />
   <Welcome />
   <Services />
-  <Testimonials />
-  <Gallery />
+  {site.features.enable_testimonials && <Testimonials />}
+  {site.features.enable_gallery && <Gallery />}
   <About />
   <MissionVision />
   <ContactForm />
-  <FAQ />
-  <CoveredAreas />
-  <DirectoryBadges />
+  {site.features.enable_faq && <FAQ />}
+  {site.features.enable_areas && <CoveredAreas />}
+  {site.features.enable_directories && <DirectoryBadges />}
 </BaseLayout>

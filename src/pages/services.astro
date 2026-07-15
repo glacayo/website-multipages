@@ -1,84 +1,43 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import TopBar from '../components/layout/TopBar.astro';
-import Header from '../components/layout/Header.astro';
 import CTABar from '../components/sections/CTABar.astro';
-import content from '../data/content.json';
+import Services from '../components/sections/Services/Services.astro';
+import { getBusiness, getSite, getServices } from '../data/loaders';
 
-const { company_name, services } = content;
+const business = getBusiness();
+const site = getSite();
+const servicesData = getServices();
 ---
 
 <BaseLayout
-  title={`Services | ${company_name}`}
-  description="Placeholder service descriptions for a reusable contractor website template."
+  title={`Services${site.seo.title_separator}${business.name}`}
+  description={servicesData.section_subtitle || `Explore ${business.type_of_services}`}
+  path="/services"
+  pageType="services"
 >
-  <TopBar />
-  <Header />
-
   <!-- ===== Page Header ===== -->
-  <section class="relative -mt-[5.5rem] md:-mt-[6.5rem]">
-    <div class="relative h-[45vh] min-h-[350px] md:min-h-[450px] overflow-hidden bg-dark">
-      <div class="absolute inset-0 shimmer-bg">
-        <img
-          src="/images/breadcrumb/2.jpeg"
-          alt=""
-          class="w-full h-full object-cover shimmer-img"
-          loading="eager"
-          onload="this.classList.add('loaded')"
-        />
-      </div>
-      <div class="absolute inset-0 bg-gradient-to-br from-dark/90 via-primary/40 to-accent/60"></div>
-
+  <section class="relative">
+    <div class="relative h-[40vh] min-h-[300px] md:min-h-[380px] overflow-hidden bg-dark">
+      <div class="absolute inset-0 bg-gradient-to-br from-dark via-primary to-accent/70"></div>
       <div class="relative z-10 container-site h-full flex flex-col items-center justify-center text-center text-white">
         <h1 class="font-heading text-3xl md:text-5xl lg:text-6xl font-bold mb-4" data-reveal>
-          Our Services
+          {servicesData.section_title}
         </h1>
-        <nav class="flex items-center justify-center gap-2 text-sm text-white/70" aria-label="Breadcrumb" data-reveal data-reveal-delay="0.1">
+        <nav
+          class="flex items-center justify-center gap-2 text-sm text-white/70"
+          aria-label="Breadcrumb"
+          data-reveal
+          data-reveal-delay="0.1"
+        >
           <a href="/" class="hover:text-accent transition-colors">Home</a>
-          <i class="fa-solid fa-chevron-right text-[10px]"></i>
+          <span aria-hidden="true">/</span>
           <span class="text-accent">Services</span>
         </nav>
       </div>
     </div>
   </section>
 
-  <!-- ===== Services List ===== -->
-  <section class="py-16 md:py-24 bg-gray-50">
-    <div class="container-site">
-      <div class="space-y-6 max-w-5xl mx-auto">
-        {services.map((service, i) => (
-          <article
-            data-reveal
-            data-reveal-delay={String(i * 0.06)}
-            class="shine-effect group bg-white rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col sm:flex-row"
-          >
-            <!-- Image -->
-            <div class="relative sm:w-56 md:w-64 lg:w-72 shrink-0 h-48 sm:h-auto overflow-hidden shimmer-bg">
-              <img
-                src={service.image}
-                alt={service.name}
-                class="w-full h-full object-cover shimmer-img group-hover:scale-110 transition-transform duration-500"
-                loading="lazy"
-                onload="this.classList.add('loaded')"
-              />
-            </div>
+  <Services />
 
-            <!-- Content -->
-            <div class="flex flex-col justify-center p-6 md:p-8 flex-1">
-              <h2 class="font-heading font-bold text-xl md:text-2xl text-dark mb-3 group-hover:text-primary transition-colors duration-300">
-                {service.name}
-              </h2>
-              <p class="text-gray-600 text-sm md:text-base leading-relaxed">
-                {service.description}
-              </p>
-            </div>
-          </article>
-        ))}
-      </div>
-    </div>
-  </section>
-
-  <!-- ===== Reused: CTA Bar ===== -->
   <CTABar />
-
 </BaseLayout>
