@@ -1,59 +1,90 @@
 ---
-import content from '../../data/content.json';
+/**
+ * Compact top utility bar: phone, email, hours snippet, social links.
+ * Reads business.json + site.json via loaders (no client copy hardcoded).
+ */
+import { getBusiness } from '../../data/loaders';
+import Phone from '@lucide/astro/icons/phone';
+import Mail from '@lucide/astro/icons/mail';
+import Clock from '@lucide/astro/icons/clock';
 
-const { company_phone, company_email, social_media, social_media_labels } = content;
+const business = getBusiness();
+const primaryPhone = business.phones[0];
+const primaryEmail = business.emails[0];
+const primaryHours = business.hours[0];
+const telHref = primaryPhone ? `tel:${primaryPhone.replace(/\D/g, '')}` : undefined;
 
-const socialLinks = [
-  { name: social_media_labels.facebook, icon: 'fa-brands fa-facebook-f', url: social_media.facebook },
-  { name: social_media_labels.google, icon: 'fa-brands fa-google', url: social_media.google },
-  { name: social_media_labels.instagram, icon: 'fa-brands fa-instagram', url: social_media.instagram },
-  { name: social_media_labels.youtube, icon: 'fa-brands fa-youtube', url: social_media.youtube },
-  { name: social_media_labels.tiktok, icon: 'fa-brands fa-tiktok', url: social_media.tiktok },
-].filter(s => s.url && s.url !== '#');
+const socialEntries = [
+  { label: 'Facebook', url: business.social.facebook },
+  { label: 'Instagram', url: business.social.instagram },
+  { label: 'YouTube', url: business.social.youtube },
+  { label: 'Google Business', url: business.social.google_business },
+  { label: 'TikTok', url: business.social.tiktok },
+  { label: 'LinkedIn', url: business.social.linkedin },
+  { label: 'X', url: business.social.x },
+].filter((s): s is { label: string; url: string } => Boolean(s.url && s.url !== '#'));
 ---
 
-<div class="bg-dark text-white py-2 relative z-50">
+<div class="bg-dark text-white py-2 relative z-50" data-topbar>
   <div class="container-site">
-    <div class="grid grid-flow-col auto-cols-max items-center justify-end gap-4 md:gap-6 text-sm">
-      <!-- Phone -->
-      {company_phone && company_phone.length > 0 && (
-        <a 
-          href={`tel:${company_phone[0].replace(/\D/g, '')}`} 
-          class="hidden sm:flex items-center gap-2 hover:text-accent transition-colors duration-300"
-        >
-          <i class="fa-solid fa-phone text-accent text-xs"></i>
-          <span class="font-medium">{company_phone[0]}</span>
-        </a>
-      )}
-      
-      <!-- Email -->
-      {company_email && company_email.length > 0 && (
-        <a 
-          href={`mailto:${company_email[0]}`} 
-          class="hidden md:flex items-center gap-2 hover:text-accent transition-colors duration-300"
-        >
-          <i class="fa-solid fa-envelope text-accent text-xs"></i>
-          <span class="font-medium">{company_email[0]}</span>
-        </a>
-      )}
-      
-      <!-- Separator -->
-      <div class="hidden lg:block w-px h-4 bg-white/20"></div>
-      
-      <!-- Social Icons -->
-      <div class="flex items-center gap-3">
-        {socialLinks.map((social) => (
-          <a 
-            href={social.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            class="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center hover:bg-accent hover:scale-110 transition-all duration-300"
-            aria-label={social.name}
-          >
-            <i class={`${social.icon} text-xs`}></i>
-          </a>
-        ))}
+    <div
+      class="flex flex-wrap items-center justify-between gap-3 text-sm"
+    >
+      <div class="flex flex-wrap items-center gap-4 md:gap-6">
+        {
+          primaryPhone && telHref && (
+            <a
+              href={telHref}
+              class="inline-flex items-center gap-2 hover:text-accent transition-colors duration-300"
+            >
+              <Phone class="size-3.5 text-accent" aria-hidden="true" />
+              <span class="font-medium">{primaryPhone}</span>
+            </a>
+          )
+        }
+
+        {
+          primaryEmail && (
+            <a
+              href={`mailto:${primaryEmail}`}
+              class="hidden sm:inline-flex items-center gap-2 hover:text-accent transition-colors duration-300"
+            >
+              <Mail class="size-3.5 text-accent" aria-hidden="true" />
+              <span class="font-medium">{primaryEmail}</span>
+            </a>
+          )
+        }
+
+        {
+          primaryHours && (
+            <span class="hidden md:inline-flex items-center gap-2 text-white/80">
+              <Clock class="size-3.5 text-accent" aria-hidden="true" />
+              <span>
+                {primaryHours.days}: {primaryHours.time}
+              </span>
+            </span>
+          )
+        }
       </div>
+
+      {
+        socialEntries.length > 0 && (
+          <div class="flex items-center gap-2 ml-auto">
+            {socialEntries.map((social) => (
+              <a
+                href={social.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center text-[10px] font-semibold uppercase tracking-wide hover:bg-accent hover:scale-110 transition-all duration-300"
+                aria-label={social.label}
+                title={social.label}
+              >
+                {social.label.charAt(0)}
+              </a>
+            ))}
+          </div>
+        )
+      }
     </div>
   </div>
 </div>

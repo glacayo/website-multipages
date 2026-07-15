@@ -1,0 +1,41 @@
+---
+/**
+ * Compact footer: single-row brand, legal links, copyright.
+ */
+import { getBusiness, getNavigation, getSite } from '../../../../data/loaders';
+
+const site = getSite();
+const business = getBusiness();
+const navigation = getNavigation();
+const year = new Date().getFullYear();
+---
+
+<footer data-footer-variant="compact" class="border-t border-border bg-surface text-dark">
+  <div class="container-site flex flex-col items-center justify-between gap-4 py-8 md:flex-row">
+    <a href="/" class="inline-flex items-center gap-3">
+      <img
+        src={site.logo.src}
+        alt={site.logo.alt || business.name}
+        width={site.logo.width || 160}
+        height={site.logo.height || 40}
+        class="h-8 w-auto object-contain"
+      />
+      <span class="text-sm font-semibold text-dark">{business.name}</span>
+    </a>
+
+    <div class="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-muted">
+      {
+        navigation.legal.map((link) => (
+          <a href={link.href} class="transition-colors hover:text-accent">
+            {link.label}
+          </a>
+        ))
+      }
+      <a href="/contact-us" class="transition-colors hover:text-accent">Contact</a>
+    </div>
+
+    <p class="text-sm text-muted">
+      &copy; {year} {business.name}
+    </p>
+  </div>
+</footer>

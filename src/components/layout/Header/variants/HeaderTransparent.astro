@@ -1,0 +1,88 @@
+---
+/**
+ * Transparent header: overlays hero; solidifies on scroll.
+ */
+import { getBusiness, getSite } from '../../../../data/loaders';
+import NavMenu from '../../NavMenu.astro';
+import Button from '../../../ui/Button.astro';
+import Menu from '@lucide/astro/icons/menu';
+import X from '@lucide/astro/icons/x';
+
+const site = getSite();
+const business = getBusiness();
+---
+
+<header
+  data-header-variant="transparent"
+  class="absolute inset-x-0 top-0 z-40 transition-all duration-300"
+  x-data="{
+    scrolled: false,
+    menuOpen: false,
+    init() {
+      this.scrolled = window.scrollY > 40;
+      window.addEventListener('scroll', () => {
+        this.scrolled = window.scrollY > 40;
+      }, { passive: true });
+    }
+  }"
+  x-bind:class="scrolled || menuOpen
+    ? 'bg-white/95 text-dark shadow-lg backdrop-blur-md border-b border-border/60'
+    : 'bg-transparent text-white'"
+  x-on:keydown.escape.window="menuOpen = false"
+>
+  <div class="container-site">
+    <div class="flex h-16 items-center justify-between gap-4 md:h-20">
+      <a href="/" class="relative z-50 shrink-0 group">
+        <img
+          src={site.logo.src}
+          alt={site.logo.alt || business.name}
+          width={site.logo.width || 200}
+          height={site.logo.height || 50}
+          class="h-10 w-auto object-contain transition-all duration-300 group-hover:scale-105 md:h-12"
+          x-bind:class="scrolled || menuOpen ? '' : 'brightness-0 invert'"
+        />
+      </a>
+
+      <div class="hidden flex-1 justify-center lg:flex">
+        <NavMenu />
+      </div>
+
+      <div class="flex items-center gap-3">
+        <Button href="/contact-us" size="sm" class="hidden lg:inline-flex">
+          {business.free_estimate}
+        </Button>
+
+        <button
+          type="button"
+          class="inline-flex size-10 items-center justify-center rounded-md transition-colors lg:hidden"
+          x-bind:class="scrolled || menuOpen ? 'text-dark hover:bg-gray-100' : 'text-white hover:bg-white/10'"
+          x-on:click="menuOpen = !menuOpen"
+          :aria-expanded="menuOpen.toString()"
+          aria-controls="mobile-nav-transparent"
+          aria-label="Toggle menu"
+        >
+          <Menu class="size-6" x-show="!menuOpen" aria-hidden="true" />
+          <X class="size-6" x-show="menuOpen" x-cloak aria-hidden="true" style="display: none;" />
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div
+    id="mobile-nav-transparent"
+    class="border-t border-border bg-white text-dark shadow-xl lg:hidden"
+    x-show="menuOpen"
+    x-cloak
+    x-transition
+    style="display: none;"
+  >
+    <div class="container-site py-4" x-on:click="if ($event.target.closest('a')) menuOpen = false">
+      <NavMenu mobile />
+      <div class="mt-4 border-t border-border pt-4">
+        <Button href="/contact-us" class="w-full">
+          {business.free_estimate}
+        </Button>
+      </div>
+    </div>
+  </div>
+</header>
