@@ -1,88 +1,168 @@
 ---
-import type { NavItem } from '../../utils/navigation';
+/**
+ * Desktop / mobile navigation from navigation.json.
+ * Dropdowns and expanders use Alpine.js.
+ */
+import { getNavigation } from '../../data/loaders';
+import type { NavItem } from '../../data/types';
+import ChevronDown from '@lucide/astro/icons/chevron-down';
 
 interface Props {
-  items: NavItem[];
+  /** When true, renders stacked mobile styles. */
   mobile?: boolean;
-  level?: number;
+  /** Override nav items (defaults to navigation.header). */
+  items?: NavItem[];
+  class?: string;
 }
 
-const { items, mobile = false, level = 0 } = Astro.props;
-const currentPath = Astro.url.pathname;
+const navigation = getNavigation();
+const {
+  mobile = false,
+  items = navigation.header,
+  class: className = '',
+} = Astro.props;
+
+const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
 
 function isActive(href: string): boolean {
-  if (href === '/') return currentPath === '/';
-  return currentPath.startsWith(href);
+  const normalized = href.replace(/\/$/, '') || '/';
+  if (normalized === '/') return currentPath === '/';
+  return currentPath === normalized || currentPath.startsWith(`${normalized}/`);
 }
 
-function desktopItemClass(item: NavItem): string {
-  const base = 'relative px-4 py-2 text-sm font-medium transition-colors duration-300 rounded-md text-inherit hover:text-accent';
-  return isActive(item.href) ? base + ' !text-accent' : base;
+function desktopLinkClass(href: string): string {
+  const base =
+    'relative px-3 py-2 text-sm font-medium transition-colors duration-300 rounded-md text-inherit hover:text-accent inline-flex items-center gap-1';
+  return isActive(href) ? `${base} !text-accent` : base;
 }
 
-function mobileItemClass(item: NavItem): string {
-  const base = 'px-4 py-3 text-base font-medium rounded-md transition-colors duration-200 text-dark hover:bg-gray-50 hover:text-accent';
-  return isActive(item.href) ? base + ' bg-accent/10 text-accent' : base;
-}
-
-function dropdownBtnClass(item: NavItem): string {
-  const base = 'flex items-center gap-1 w-full px-4 py-2 text-sm font-medium transition-colors duration-300 rounded-md text-left';
-  if (mobile) return base + ' text-dark hover:bg-gray-50 hover:text-accent' + (isActive(item.href) ? ' text-accent' : '');
-  if (level === 0) return base + ' text-inherit hover:text-accent' + (isActive(item.href) ? ' text-accent' : '');
-  return base + ' text-gray-700 hover:bg-gray-50 hover:text-accent' + (isActive(item.href) ? ' text-accent' : '');
-}
-
-function dropdownPanelClass(): string {
-  if (mobile) return level === 0 ? 'pl-4 py-1' : 'pl-3 py-1';
-  if (level === 0) return 'absolute top-full left-0 mt-1 bg-white rounded-lg shadow-xl border border-gray-100 py-2 min-w-[200px] z-50';
-  return 'absolute top-0 left-full ml-1 bg-white rounded-lg shadow-xl border border-gray-100 py-2 min-w-[200px] z-50';
-}
-
-function childLinkClass(child: NavItem): string {
-  const base = 'block px-4 py-2 text-sm transition-colors duration-200 text-gray-700 hover:bg-gray-50 hover:text-accent';
-  if (child.children.length > 0) return base + ' flex items-center justify-between' + (isActive(child.href) ? ' text-accent font-semibold' : '');
-  return base + (isActive(child.href) ? ' text-accent font-semibold' : '');
+function mobileLinkClass(href: string): string {
+  const base =
+    'block px-4 py-3 text-base font-medium rounded-md transition-colors duration-200 text-dark hover:bg-gray-50 hover:text-accent';
+  return isActive(href) ? `${base} bg-accent/10 text-accent` : base;
 }
 ---
 
-{items.map((item) => (
-  item.children.length > 0 ? (
-    <div class="relative" x-data="{ open: false }" @mouseenter="open = true" @mouseleave="open = false">
-      <button
-        @click="open = !open"
-        class={dropdownBtnClass(item)}
-      >
-        {item.label}
-        <i class="fa-solid fa-chevron-down text-[10px] transition-transform duration-300"></i>
-      </button>
-      <div
-        x-show="open"
-        x-transition:enter="transition ease-out duration-200"
-        x-transition:enter-start="opacity-0 translate-y-2"
-        x-transition:enter-end="opacity-100 translate-y-0"
-        x-transition:leave="transition ease-in duration-150"
-        x-transition:leave-start="opacity-100 translate-y-0"
-        x-transition:leave-end="opacity-0 translate-y-2"
-        @click.outside="open = false"
-        class={dropdownPanelClass()}
-      >
-        {item.children.map((child) => (
-          child.children.length > 0 ? (
-            <Astro.self items={[child]} mobile={mobile} level={level + 1} />
-          ) : (
-            <a href={child.href} class={childLinkClass(child)}>
-              {child.label}
+<nav
+  class:list={[
+    mobile ? 'grid gap-1' : 'flex items-center gap-0.5',
+    className,
+  ]}
+  data-navmenu={mobile ? 'mobile' : 'desktop'}
+  aria-label={mobile ? 'Mobile navigation' : 'Primary navigation'}
+>
+  {
+    items.map((item) => {
+      const children = item.children ?? [];
+      if (children.length === 0) {
+        return (
+          <a
+            href={item.href}
+            class={mobile ? mobileLinkClass(item.href) : desktopLinkClass(item.href)}
+            aria-current={isActive(item.href) ? 'page' : undefined}
+          >
+            {item.label}
+          </a>
+        );
+      }
+
+      if (mobile) {
+        return (
+          <div x-data="{ open: false }">
+            <button
+              type="button"
+              class:list={[
+                'flex w-full items-center justify-between px-4 py-3 text-base font-medium rounded-md text-dark hover:bg-gray-50 hover:text-accent',
+                isActive(item.href) ? 'text-accent' : '',
+              ]}
+              x-on:click="open = !open"
+              x-bind:aria-expanded="open"
+              aria-haspopup="true"
+            >
+              <span>{item.label}</span>
+              <ChevronDown
+                class="size-3.5 transition-transform duration-200"
+                x-bind:class="open ? 'rotate-180' : ''"
+                aria-hidden="true"
+              />
+            </button>
+            <div
+              x-show="open"
+              x-cloak
+              x-collapse
+              class="grid gap-0.5 pl-4 pb-2"
+              style="display: none;"
+            >
+              <a href={item.href} class={mobileLinkClass(item.href)}>
+                All {item.label}
+              </a>
+              {children.map((child) => (
+                <a href={child.href} class={mobileLinkClass(child.href)}>
+                  {child.label}
+                </a>
+              ))}
+            </div>
+          </div>
+        );
+      }
+
+      return (
+        <div
+          class="relative"
+          x-data="{ open: false }"
+          x-on:mouseenter="open = true"
+          x-on:mouseleave="open = false"
+        >
+          <button
+            type="button"
+            class={desktopLinkClass(item.href)}
+            x-on:click="open = !open"
+            x-bind:aria-expanded="open"
+            aria-haspopup="true"
+          >
+            <span>{item.label}</span>
+            <ChevronDown
+              class="size-3.5 transition-transform duration-200"
+              x-bind:class="open ? 'rotate-180' : ''"
+              aria-hidden="true"
+            />
+          </button>
+          <div
+            x-show="open"
+            x-cloak
+            x-transition:enter="transition ease-out duration-200"
+            x-transition:enter-start="opacity-0 translate-y-1"
+            x-transition:enter-end="opacity-100 translate-y-0"
+            x-transition:leave="transition ease-in duration-150"
+            x-transition:leave-start="opacity-100 translate-y-0"
+            x-transition:leave-end="opacity-0 translate-y-1"
+            x-on:click.outside="open = false"
+            class="absolute top-full left-0 z-50 mt-1 min-w-[12.5rem] rounded-lg border border-border bg-white py-2 shadow-xl"
+            style="display: none;"
+          >
+            <a
+              href={item.href}
+              class:list={[
+                'block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-accent',
+                isActive(item.href) ? 'text-accent font-semibold' : '',
+              ]}
+            >
+              All {item.label}
             </a>
-          )
-        ))}
-      </div>
-    </div>
-  ) : (
-    <a href={item.href} class={mobile ? mobileItemClass(item) : desktopItemClass(item)}>
-      {item.label}
-      {!mobile && level === 0 && (
-        <span class={'absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 bg-accent transition-all duration-300' + (isActive(item.href) ? ' w-6' : ' w-0 group-hover:w-6')}></span>
-      )}
-    </a>
-  )
-))}
+            {children.map((child) => (
+              <a
+                href={child.href}
+                class:list={[
+                  'block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-accent',
+                  isActive(child.href) ? 'text-accent font-semibold' : '',
+                ]}
+              >
+                {child.label}
+              </a>
+            ))}
+          </div>
+        </div>
+      );
+    })
+  }
+</nav>
