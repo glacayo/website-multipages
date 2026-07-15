@@ -36,10 +36,10 @@ npm-debug.log*
 __pycache__/
 __pycache__/
 
-# Client content (use .example files as template)
-CONTENT.json
-LANDINGS.json
-BLOGS.json
+# Legacy v1 root client dumps only (do not ignore src/data/*.json contract files)
+/CONTENT.json
+/LANDINGS.json
+/BLOGS.json
 
-# Client images (use placeholder images for template)
-public/images/
+# Client-only overrides may live untracked outside the template placeholders.
+# Tracked public placeholders (logo, og-default, temporary v1 path mirrors) are allowed.
