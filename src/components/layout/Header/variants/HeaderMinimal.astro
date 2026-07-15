@@ -1,0 +1,90 @@
+---
+/**
+ * Minimal header: slim bar with logo + compact nav + phone CTA.
+ */
+import { getBusiness, getSite } from '../../../../data/loaders';
+import NavMenu from '../../NavMenu.astro';
+import Menu from '@lucide/astro/icons/menu';
+import X from '@lucide/astro/icons/x';
+import Phone from '@lucide/astro/icons/phone';
+
+const site = getSite();
+const business = getBusiness();
+const primaryPhone = business.phones[0];
+const telHref = primaryPhone ? `tel:${primaryPhone.replace(/\D/g, '')}` : '/contact-us';
+---
+
+<header
+  data-header-variant="minimal"
+  class="sticky top-0 z-40 border-b border-border bg-white text-dark"
+  x-data="{ menuOpen: false }"
+  x-on:keydown.escape.window="menuOpen = false"
+>
+  <div class="container-site">
+    <div class="flex h-14 items-center justify-between gap-4">
+      <a href="/" class="shrink-0">
+        <img
+          src={site.logo.src}
+          alt={site.logo.alt || business.name}
+          width={site.logo.width || 180}
+          height={site.logo.height || 45}
+          class="h-8 w-auto object-contain"
+        />
+      </a>
+
+      <div class="hidden lg:block">
+        <NavMenu class="gap-1 text-sm" />
+      </div>
+
+      <div class="flex items-center gap-3">
+        {
+          primaryPhone && (
+            <a
+              href={telHref}
+              class="hidden items-center gap-1.5 text-sm font-semibold text-primary hover:text-accent sm:inline-flex"
+            >
+              <Phone class="size-3.5" aria-hidden="true" />
+              {primaryPhone}
+            </a>
+          )
+        }
+
+        <button
+          type="button"
+          class="inline-flex size-9 items-center justify-center rounded-md text-dark hover:bg-gray-100 lg:hidden"
+          x-on:click="menuOpen = !menuOpen"
+          :aria-expanded="menuOpen.toString()"
+          aria-controls="mobile-nav-minimal"
+          aria-label="Toggle menu"
+        >
+          <Menu class="size-5" x-show="!menuOpen" aria-hidden="true" />
+          <X class="size-5" x-show="menuOpen" x-cloak aria-hidden="true" style="display: none;" />
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div
+    id="mobile-nav-minimal"
+    class="border-t border-border bg-white shadow-lg lg:hidden"
+    x-show="menuOpen"
+    x-cloak
+    x-transition
+    style="display: none;"
+  >
+    <div class="container-site py-3" x-on:click="if ($event.target.closest('a')) menuOpen = false">
+      <NavMenu mobile />
+      {
+        primaryPhone && (
+          <a
+            href={telHref}
+            class="mt-3 flex items-center justify-center gap-2 rounded-md bg-accent px-4 py-3 text-sm font-semibold text-white"
+          >
+            <Phone class="size-4" aria-hidden="true" />
+            {primaryPhone}
+          </a>
+        )
+      }
+    </div>
+  </div>
+</header>
