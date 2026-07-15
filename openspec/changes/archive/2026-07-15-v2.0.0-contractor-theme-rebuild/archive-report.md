@@ -10,7 +10,7 @@
 
 ## Executive Summary
 
-The v2.0.0 Contractor Theme Rebuild is complete and archived. This change rebuilt the broken v1 template as a buildable Astro 7 static contractor theme with a stable, typed, Zod-validated 12-file JSON contract and JSON-selectable section variants. All 49 tasks across 8 phases are complete. The full build pipeline (`validate:data` → `astro check` → `astro build`) exits 0, producing 16 HTML pages, 25 optimized images, and correct SEO/schema output.
+The v2.0.0 Contractor Theme Rebuild is complete and archived. This change rebuilt the broken v1 template as a buildable Astro 7 static contractor theme with a stable, typed, Zod-validated 12-file JSON contract and JSON-selectable section variants. All 49 tasks across 8 phases are complete. The full build pipeline (`validate:data` → `astro check` → `astro build`) exits 0, producing 16 HTML pages, 25 optimized images, and correct SEO/schema output. The work is published as 8 draft PRs targeting branch `v2.0.0` (not `main`), linked to approved issues #1–#8, so review can happen incrementally before any merge.
 
 ---
 
@@ -20,9 +20,9 @@ The v2.0.0 Contractor Theme Rebuild is complete and archived. This change rebuil
 |-------|--------|
 | All implementation tasks checked `[x]` | ✅ PASS — 49/49 tasks complete |
 | CRITICAL issues in verify-report | ✅ None found |
-| Warnings in verify-report | ⚠️ W1: Malformed OG/Twitter image URLs (non-blocking) |
+| Warnings in verify-report | ✅ None — W1 resolved in-place before archive |
 
-**Gate verdict:** PASS — no stale unchecked tasks, no CRITICAL issues.
+**Gate verdict:** PASS — no stale unchecked tasks, no CRITICAL issues, no outstanding warnings.
 
 ---
 
@@ -69,13 +69,31 @@ No delta specs were present in `openspec/changes/v2.0.0-contractor-theme-rebuild
 
 1. **Astro 7 + Tailwind 4 integration is stable.** The `@astrojs/tailwind` integration was replaced with Tailwind 4's Vite plugin approach via `@import "tailwindcss"` in `global.css`. No fallback to Tailwind 3 was needed.
 
-2. **Image path normalization is a common gotcha.** The `absoluteUrl()` function in `seo.ts` does not strip the `./` prefix from JSON image paths before concatenating with the site base URL, producing malformed OG/Twitter image URLs (`/./images/...`). The schema layer (`schema.ts`) handles this correctly by falling back to `og-default.jpg`. This is the only warning in the entire verification.
+2. **Image path normalization is a common gotcha.** The `absoluteUrl()` function in `seo.ts` originally did not strip the `./` prefix from JSON image paths, producing malformed OG/Twitter image URLs (`/./images/...`). This was fixed before archive by normalizing the path in `absoluteUrl()`. The schema layer (`schema.ts`) already handled this correctly by falling back to `og-default.jpg`.
 
 3. **The 12-file JSON contract with `_instructions` works well in practice.** Each file owns exactly one domain, and the `_instructions` block provides inline guidance for developers customizing the template. The Zod validation layer catches structural errors at build time.
 
 4. **Section variant dispatcher pattern is clean and extensible.** The `variants[data.variant ?? default] ?? variants[default]` pattern handles unknown variants gracefully without failing the build, satisfying the spec requirement for graceful fallback.
 
 5. **Chained PRs (8 PRs) kept review under the 400-line budget.** The work was split into 8 stacked PRs, each under ~300 lines, making review manageable.
+6. **Draft PRs target `v2.0.0`, not `main`.** Because the branch is still a work-in-progress, all PRs are drafts and point to `v2.0.0` as the integration branch. They will be retargeted to `main` once the content and final review are ready.
+
+---
+
+## Published Draft PRs
+
+| Phase | Issue | Branch | PR | Label |
+|------:|------:|--------|---:|-------|
+| 1 | #1 | `v2.0.0-pr-1` | #9 | `type:chore` |
+| 2 | #2 | `v2.0.0-pr-2` | #10 | `type:feature` |
+| 3 | #3 | `v2.0.0-pr-3` | #11 | `type:feature` |
+| 4 | #4 | `v2.0.0-pr-4` | #12 | `type:feature` |
+| 5 | #5 | `v2.0.0-pr-5` | #13 | `type:feature` |
+| 6 | #6 | `v2.0.0-pr-6` | #14 | `type:feature` |
+| 7 | #7 | `v2.0.0-pr-7` | #15 | `type:feature` |
+| 8 | #8 | `v2.0.0-pr-8` | #16 | `type:docs` |
+
+All PRs are **draft** and target base `v2.0.0`. No merges performed.
 
 ---
 
@@ -91,9 +109,9 @@ No delta specs were present in `openspec/changes/v2.0.0-contractor-theme-rebuild
 
 ### Warnings Carried Forward
 
-| ID | Issue | Impact | Recommendation |
-|----|-------|--------|----------------|
-| W1 | Malformed OG/Twitter image URLs on 6 pages (service landings + blog posts) | Social media scrapers may fail to resolve OG images | Fix `absoluteUrl()` in `src/utils/seo.ts` to strip `./` prefix before concatenation. One-line fix. |
+| ID | Issue | Status | Notes |
+|----|-------|--------|-------|
+| W1 | Malformed OG/Twitter image URLs on 6 pages | ✅ Resolved | Fixed in `src/utils/seo.ts` by normalizing `./` prefix in `absoluteUrl()`. Build now passes clean. |
 
 ### Suggestions (non-blocking)
 
@@ -103,6 +121,10 @@ No delta specs were present in `openspec/changes/v2.0.0-contractor-theme-rebuild
 | S2 | Add `aria-busy`/`aria-live="polite"` if skeleton components are added in future | Low |
 | S3 | Clean up `docs_trash/` directory before tagging a release | Low |
 | S4 | Fix double separator in blog post meta titles when `meta_title` already contains a separator | Low |
+
+### Retargeting Reminder
+
+When `v2.0.0` is ready to merge to `main`, change the base of PRs #9–#16 from `v2.0.0` to `main` (or merge `v2.0.0` into `main` directly and close the draft PRs).
 
 ---
 
