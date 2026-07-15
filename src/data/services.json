@@ -1,0 +1,55 @@
+{
+  "_instructions": {
+    "services": "Each service should match a slug declared in business.json.services_offered when generating landing pages.",
+    "id": "Unique identifier. Usually matches the slug used for routing.",
+    "slug": "URL path segment: /services/{slug}. Must be unique.",
+    "highlights": "Bullet points shown on the service card and landing page.",
+    "faq": "Optional service-specific FAQ shown on the landing page.",
+    "variant": "Services visual variant key. Default: grid. Options include grid, list, cards, tabs, featured."
+  },
+  "variant": "tabs",
+  "section_title": "Our Services",
+  "section_subtitle": "From design to build, we handle every step of your outdoor project.",
+  "services": [
+    {
+      "id": "masonry",
+      "name": "Masonry",
+      "slug": "masonry",
+      "short_description": "Brick, stone and block work built to last.",
+      "full_description": "Our masonry team builds retaining walls, fireplaces, outdoor kitchens and custom stone features using durable materials and proven techniques for Virginia Beach homes and businesses.",
+      "image": "./images/services/masonry.jpg",
+      "icon": "hammer",
+      "highlights": ["Brick", "Stone", "Block", "Concrete"]
+    },
+    {
+      "id": "hardscape",
+      "name": "Hardscape",
+      "slug": "hardscape",
+      "short_description": "Complete outdoor living spaces with durable hardscaping.",
+      "full_description": "We design and install hardscape projects that combine function and curb appeal — walkways, seating walls, fire pits and full outdoor rooms tailored to your property.",
+      "image": "./images/services/hardscape.jpg",
+      "icon": "layers",
+      "highlights": ["Walkways", "Fire pits", "Seating walls", "Outdoor rooms"]
+    },
+    {
+      "id": "patios",
+      "name": "Patios",
+      "slug": "patios",
+      "short_description": "Custom paver and stone patios for entertaining outdoors.",
+      "full_description": "From classic brick patterns to modern large-format pavers, we build patios that handle coastal weather and create comfortable outdoor living space year-round.",
+      "image": "./images/services/patios.jpg",
+      "icon": "home",
+      "highlights": ["Paver patios", "Natural stone", "Drainage planning", "Custom borders"]
+    },
+    {
+      "id": "retaining-walls",
+      "name": "Retaining Walls",
+      "slug": "retaining-walls",
+      "short_description": "Structural and decorative walls that manage grade and erosion.",
+      "full_description": "We install engineered retaining walls that stabilize slopes, create usable yard space and add lasting visual structure to your landscape.",
+      "image": "./images/services/retaining-walls.jpg",
+      "icon": "mountain",
+      "highlights": ["Block walls", "Natural stone", "Drainage systems", "Terracing"]
+    }
+  ]
+}

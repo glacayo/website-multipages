@@ -1,0 +1,51 @@
+{
+  "_instructions": {
+    "url": "Production URL of the site, used for canonical and OG tags.",
+    "lang": "HTML lang attribute and SEO region hint.",
+    "seo": "Default SEO metadata when a page does not provide its own.",
+    "theme": "Primary brand colors and font stack. Maps to Tailwind tokens.",
+    "features": "Toggle entire sections on/off without deleting JSON files.",
+    "header_variant": "Optional header visual variant: default | centered | transparent | minimal (default: default).",
+    "footer_variant": "Optional footer visual variant: default | dark | compact | multi-column (default: default)."
+  },
+  "url": "https://examplecontractor.com",
+  "lang": "en-US",
+  "region": "US-VA",
+  "timezone": "America/New_York",
+  "logo": {
+    "src": "/logo.svg",
+    "alt": "Example Masonry & Hardscape",
+    "width": 240,
+    "height": 60
+  },
+  "favicon": {
+    "src": "/favicon.ico",
+    "apple_touch_icon": "/apple-touch-icon.png"
+  },
+  "seo": {
+    "title_separator": " | ",
+    "default_title": "Masonry & Hardscape Contractor in Virginia Beach",
+    "default_description": "Trusted masonry and hardscape contractor serving Virginia Beach. Patios, retaining walls, pavers, concrete and outdoor living spaces.",
+    "default_image": "/og-default.jpg",
+    "og_type": "business.business"
+  },
+  "theme": {
+    "primary": "#003060",
+    "accent": "#962e20",
+    "dark": "#012141",
+    "light": "#f8fafc",
+    "body_font": "Source Sans 3",
+    "heading_font": "Montserrat"
+  },
+  "features": {
+    "enable_blog": true,
+    "enable_landings": true,
+    "enable_gallery": true,
+    "enable_testimonials": true,
+    "enable_faq": true,
+    "enable_areas": true,
+    "enable_directories": true
+  },
+  "header_variant": "default",
+  "footer_variant": "multi-column"
+}
