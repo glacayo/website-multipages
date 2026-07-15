@@ -1,0 +1,50 @@
+---
+/**
+ * Variant `four` — minimal headline strip over a compact hero image.
+ */
+import type { HeroData } from '../../../../data/types';
+import ResponsiveImage from '../../../ui/ResponsiveImage.astro';
+import Button from '../../../ui/Button.astro';
+
+interface Props {
+  data: HeroData;
+}
+
+const { data } = Astro.props;
+const slide = data.slides[0];
+---
+
+{
+  slide && (
+    <section class="relative bg-dark" aria-label="Hero">
+      <div class="relative h-[42vh] min-h-[280px] md:min-h-[360px] overflow-hidden">
+        <ResponsiveImage
+          src={slide.image}
+          alt={slide.image_alt}
+          width={1920}
+          height={800}
+          lcp
+          class="w-full h-full object-cover opacity-60"
+          sizes="100vw"
+        />
+        <div class="absolute inset-0 bg-gradient-to-t from-dark via-dark/50 to-transparent" />
+        <div class="absolute inset-0 flex items-end">
+          <div class="container-site pb-10 md:pb-14 text-white w-full">
+            <p class="text-accent font-semibold text-xs uppercase tracking-[0.2em] mb-2" data-reveal>
+              {slide.tagline}
+            </p>
+            <h1
+              class="font-heading text-2xl sm:text-3xl md:text-4xl font-bold mb-4 max-w-3xl"
+              data-reveal
+            >
+              {slide.headline}
+            </h1>
+            <Button href={slide.cta_primary.href} variant="primary" size="md" class="mt-1">
+              {slide.cta_primary.label}
+            </Button>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}

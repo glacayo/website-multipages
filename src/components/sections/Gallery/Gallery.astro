@@ -1,0 +1,23 @@
+---
+/**
+ * Gallery dispatcher — selects a visual variant from gallery.json.variant.
+ * Unknown values fall back to `grid` without failing the build (spec §2.3).
+ */
+import { getGallery } from '../../../data/loaders';
+import {
+  galleryVariants,
+  GALLERY_DEFAULT_VARIANT,
+  type GalleryVariantKey,
+} from './variants';
+
+const data = getGallery();
+const requested = (data.variant ?? GALLERY_DEFAULT_VARIANT) as GalleryVariantKey;
+const resolved =
+  requested in galleryVariants ? requested : GALLERY_DEFAULT_VARIANT;
+const Variant =
+  galleryVariants[resolved] ?? galleryVariants[GALLERY_DEFAULT_VARIANT];
+---
+
+<div data-gallery-variant={resolved}>
+  <Variant data={data} />
+</div>
