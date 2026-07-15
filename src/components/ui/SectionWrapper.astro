@@ -1,0 +1,38 @@
+---
+interface Props {
+  background?: 'default' | 'muted' | 'dark' | 'primary';
+  class?: string;
+  id?: string;
+  as?: 'section' | 'div';
+  reveal?: boolean;
+}
+
+const {
+  background = 'default',
+  class: className = '',
+  id,
+  as: Tag = 'section',
+  reveal = false,
+} = Astro.props;
+
+const backgrounds: Record<NonNullable<Props['background']>, string> = {
+  default: 'bg-light text-dark',
+  muted: 'bg-surface text-dark',
+  dark: 'bg-dark text-light',
+  primary: 'bg-primary text-light',
+};
+
+const classes = [
+  'py-16 md:py-24',
+  backgrounds[background],
+  className,
+]
+  .filter(Boolean)
+  .join(' ');
+---
+
+<Tag id={id} class={classes} data-reveal={reveal ? '' : undefined}>
+  <div class="container-site">
+    <slot />
+  </div>
+</Tag>
