@@ -1,0 +1,21 @@
+---
+/**
+ * FAQ dispatcher — selects a visual variant from faq.json.variant.
+ * Unknown values fall back to `accordion` without failing the build (spec §2.3).
+ */
+import { getFAQ } from '../../../data/loaders';
+import {
+  faqVariants,
+  FAQ_DEFAULT_VARIANT,
+  type FAQVariantKey,
+} from './variants';
+
+const data = getFAQ();
+const requested = (data.variant ?? FAQ_DEFAULT_VARIANT) as FAQVariantKey;
+const resolved = requested in faqVariants ? requested : FAQ_DEFAULT_VARIANT;
+const Variant = faqVariants[resolved] ?? faqVariants[FAQ_DEFAULT_VARIANT];
+---
+
+<div data-faq-variant={resolved}>
+  <Variant data={data} />
+</div>

@@ -1,0 +1,21 @@
+---
+/**
+ * CoveredAreas dispatcher — selects a visual variant from areas.json.variant.
+ * Unknown values fall back to `list` without failing the build (spec §2.3).
+ */
+import { getAreas } from '../../../data/loaders';
+import {
+  areasVariants,
+  AREAS_DEFAULT_VARIANT,
+  type AreasVariantKey,
+} from './variants';
+
+const data = getAreas();
+const requested = (data.variant ?? AREAS_DEFAULT_VARIANT) as AreasVariantKey;
+const resolved = requested in areasVariants ? requested : AREAS_DEFAULT_VARIANT;
+const Variant = areasVariants[resolved] ?? areasVariants[AREAS_DEFAULT_VARIANT];
+---
+
+<div data-areas-variant={resolved}>
+  <Variant data={data} />
+</div>

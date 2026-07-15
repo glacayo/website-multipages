@@ -1,0 +1,48 @@
+---
+/**
+ * Variant `grid` — bordered badge cards in a responsive grid.
+ */
+import type { DirectoriesData } from '../../../../data/types';
+import SectionWrapper from '../../../ui/SectionWrapper.astro';
+import SectionHeader from '../../../ui/SectionHeader.astro';
+import Card from '../../../ui/Card.astro';
+import ExternalLink from '@lucide/astro/icons/external-link';
+
+interface Props {
+  data: DirectoriesData;
+}
+
+const { data } = Astro.props;
+---
+
+<SectionWrapper background="default" id="directories">
+  <SectionHeader title={data.section_title} subtitle={data.section_subtitle} />
+
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+    {
+      data.directories.map((dir, i) => (
+        <div data-reveal data-reveal-delay={String(i * 0.06)}>
+          <a
+            href={dir.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="block h-full group"
+          >
+            <Card
+              variant="hover-lift"
+              class="p-5 border border-border h-full flex flex-col items-center text-center gap-3 group-hover:border-accent/30"
+            >
+              <div class="w-14 h-14 rounded-full bg-accent/10 text-accent font-heading font-bold text-lg flex items-center justify-center">
+                {dir.initials ?? dir.name.slice(0, 2).toUpperCase()}
+              </div>
+              <span class="font-semibold text-dark text-sm group-hover:text-primary transition-colors inline-flex items-center gap-1">
+                {dir.name}
+                <ExternalLink class="w-3 h-3 opacity-50" aria-hidden="true" />
+              </span>
+            </Card>
+          </a>
+        </div>
+      ))
+    }
+  </div>
+</SectionWrapper>

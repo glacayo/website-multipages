@@ -1,0 +1,23 @@
+---
+/**
+ * DirectoryBadges dispatcher — selects a visual variant from directories.json.variant.
+ * Unknown values fall back to `logos` without failing the build (spec §2.3).
+ */
+import { getDirectories } from '../../../data/loaders';
+import {
+  directoryVariants,
+  DIRECTORY_DEFAULT_VARIANT,
+  type DirectoryVariantKey,
+} from './variants';
+
+const data = getDirectories();
+const requested = (data.variant ?? DIRECTORY_DEFAULT_VARIANT) as DirectoryVariantKey;
+const resolved =
+  requested in directoryVariants ? requested : DIRECTORY_DEFAULT_VARIANT;
+const Variant =
+  directoryVariants[resolved] ?? directoryVariants[DIRECTORY_DEFAULT_VARIANT];
+---
+
+<div data-directories-variant={resolved}>
+  <Variant data={data} />
+</div>

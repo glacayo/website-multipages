@@ -1,0 +1,24 @@
+---
+/**
+ * Testimonials dispatcher — selects a visual variant from testimonials.json.variant.
+ * Unknown values fall back to `slider` without failing the build (spec §2.3).
+ */
+import { getTestimonials } from '../../../data/loaders';
+import {
+  testimonialsVariants,
+  TESTIMONIALS_DEFAULT_VARIANT,
+  type TestimonialsVariantKey,
+} from './variants';
+
+const data = getTestimonials();
+const requested = (data.variant ?? TESTIMONIALS_DEFAULT_VARIANT) as TestimonialsVariantKey;
+const resolved =
+  requested in testimonialsVariants ? requested : TESTIMONIALS_DEFAULT_VARIANT;
+const Variant =
+  testimonialsVariants[resolved] ??
+  testimonialsVariants[TESTIMONIALS_DEFAULT_VARIANT];
+---
+
+<div data-testimonials-variant={resolved}>
+  <Variant data={data} />
+</div>
