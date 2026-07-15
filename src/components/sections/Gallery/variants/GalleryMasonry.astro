@@ -1,0 +1,48 @@
+---
+/**
+ * Variant `masonry` — CSS multi-column masonry layout.
+ */
+import type { GalleryData } from '../../../../data/types';
+import SectionWrapper from '../../../ui/SectionWrapper.astro';
+import SectionHeader from '../../../ui/SectionHeader.astro';
+import ResponsiveImage from '../../../ui/ResponsiveImage.astro';
+
+interface Props {
+  data: GalleryData;
+}
+
+const { data } = Astro.props;
+---
+
+<SectionWrapper background="default" id="gallery">
+  <SectionHeader
+    title={data.section_title}
+    subtitle={data.section_subtitle}
+  />
+
+  <div class="columns-2 md:columns-3 gap-4 space-y-4">
+    {
+      data.items.map((item, i) => (
+        <figure
+          class="break-inside-avoid group relative overflow-hidden rounded-xl"
+          data-reveal
+          data-reveal-delay={String((i % 3) * 0.08)}
+        >
+          <ResponsiveImage
+            src={item.image}
+            alt={item.image_alt}
+            width={800}
+            height={i % 2 === 0 ? 700 : 520}
+            lcp={i === 0}
+            class="w-full h-auto object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+            sizes="(max-width: 768px) 50vw, 33vw"
+          />
+          <figcaption class="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-dark/85 to-transparent text-white">
+            <p class="font-heading font-semibold text-sm">{item.title}</p>
+            <p class="text-xs text-white/70">{item.category}</p>
+          </figcaption>
+        </figure>
+      ))
+    }
+  </div>
+</SectionWrapper>

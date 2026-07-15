@@ -1,0 +1,61 @@
+---
+/**
+ * Variant `two` — side-by-side text + image (first slide).
+ */
+import type { HeroData } from '../../../../data/types';
+import ResponsiveImage from '../../../ui/ResponsiveImage.astro';
+import Button from '../../../ui/Button.astro';
+
+interface Props {
+  data: HeroData;
+}
+
+const { data } = Astro.props;
+const slide = data.slides[0];
+---
+
+{
+  slide && (
+    <section
+      class="relative bg-surface pt-8 md:pt-12 pb-12 md:pb-20"
+      aria-label="Hero"
+    >
+      <div class="container-site">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-center">
+          <div data-reveal>
+            <p class="text-accent font-semibold text-sm uppercase tracking-[0.2em] mb-3">
+              {slide.tagline}
+            </p>
+            <h1 class="font-heading text-3xl sm:text-4xl md:text-5xl font-extrabold text-dark mb-5 leading-tight">
+              {slide.headline}
+            </h1>
+            <p class="text-muted text-base md:text-lg mb-8 max-w-xl">
+              {slide.text}
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4">
+              <Button href={slide.cta_primary.href} variant="primary" size="lg">
+                {slide.cta_primary.label}
+              </Button>
+              {slide.cta_secondary && (
+                <Button href={slide.cta_secondary.href} variant="outline" size="lg">
+                  {slide.cta_secondary.label}
+                </Button>
+              )}
+            </div>
+          </div>
+          <div class="relative rounded-2xl overflow-hidden shadow-xl aspect-[4/3]" data-reveal>
+            <ResponsiveImage
+              src={slide.image}
+              alt={slide.image_alt}
+              width={1200}
+              height={900}
+              lcp
+              class="w-full h-full object-cover"
+              sizes="(max-width: 1024px) 100vw, 50vw"
+            />
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}

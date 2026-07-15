@@ -1,0 +1,22 @@
+---
+/**
+ * HeroSlider dispatcher — selects a visual variant from hero.json.variant.
+ * Unknown values fall back to `one` without failing the build (spec §2.3).
+ */
+import { getHero } from '../../../data/loaders';
+import {
+  heroVariants,
+  HERO_DEFAULT_VARIANT,
+  type HeroVariantKey,
+} from './variants';
+
+const data = getHero();
+const requested = (data.variant ?? HERO_DEFAULT_VARIANT) as HeroVariantKey;
+const resolved =
+  requested in heroVariants ? requested : HERO_DEFAULT_VARIANT;
+const Variant = heroVariants[resolved] ?? heroVariants[HERO_DEFAULT_VARIANT];
+---
+
+<div data-hero-variant={resolved}>
+  <Variant data={data} />
+</div>

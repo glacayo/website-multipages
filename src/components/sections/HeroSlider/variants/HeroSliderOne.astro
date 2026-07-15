@@ -1,0 +1,147 @@
+---
+/**
+ * Variant `one` — fullscreen Swiper fade carousel with overlay text.
+ */
+import 'swiper/css';
+import 'swiper/css/effect-fade';
+import 'swiper/css/navigation';
+import 'swiper/css/pagination';
+import type { HeroData } from '../../../../data/types';
+import ResponsiveImage from '../../../ui/ResponsiveImage.astro';
+import Button from '../../../ui/Button.astro';
+
+interface Props {
+  data: HeroData;
+}
+
+const { data } = Astro.props;
+const slides = data.slides;
+
+const overlayClass: Record<string, string> = {
+  dark: 'bg-gradient-to-br from-dark/90 via-dark/70 to-primary/50',
+  primary: 'bg-gradient-to-br from-primary/90 via-primary/60 to-accent/40',
+  accent: 'bg-gradient-to-br from-accent/80 via-dark/70 to-primary/50',
+  none: 'bg-dark/30',
+};
+---
+
+<section class="relative -mt-[5.5rem] md:-mt-[6.5rem]" aria-label="Hero">
+  <div class="hero-swiper-one swiper h-screen min-h-[560px] md:min-h-[650px]">
+    <div class="swiper-wrapper">
+      {
+        slides.map((slide, i) => (
+          <div class="swiper-slide relative overflow-hidden">
+            <div class="absolute inset-0">
+              <ResponsiveImage
+                src={slide.image}
+                alt={slide.image_alt}
+                width={1920}
+                height={1080}
+                lcp={i === 0}
+                class="w-full h-full object-cover"
+                sizes="100vw"
+              />
+            </div>
+            <div
+              class:list={[
+                'absolute inset-0',
+                overlayClass[slide.overlay ?? 'dark'] ?? overlayClass.dark,
+              ]}
+            />
+            <div class="relative z-10 container-site h-full grid place-items-center text-center text-white px-4 pt-20">
+              <div class="hero-slide-content max-w-4xl mx-auto">
+                <p class="text-accent/90 font-semibold text-sm md:text-base uppercase tracking-[0.2em] mb-4">
+                  {slide.tagline}
+                </p>
+                <h1 class="font-heading text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold mb-6 leading-[1.1]">
+                  {slide.headline}
+                </h1>
+                <p class="text-white/80 text-base md:text-lg max-w-xl mx-auto mb-8">
+                  {slide.text}
+                </p>
+                <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+                  <Button href={slide.cta_primary.href} variant="primary" size="lg">
+                    {slide.cta_primary.label}
+                  </Button>
+                  {slide.cta_secondary && (
+                    <Button
+                      href={slide.cta_secondary.href}
+                      variant="outline"
+                      size="lg"
+                      class="!border-white/40 !text-white hover:!bg-white hover:!text-primary"
+                    >
+                      {slide.cta_secondary.label}
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        ))
+      }
+    </div>
+
+    <div
+      class="swiper-button-prev !hidden lg:!flex !w-10 !h-10 after:!text-xl !text-white/60 hover:!text-accent !transition-colors"
+    >
+    </div>
+    <div
+      class="swiper-button-next !hidden lg:!flex !w-10 !h-10 after:!text-xl !text-white/60 hover:!text-accent !transition-colors"
+    >
+    </div>
+    <div class="swiper-pagination !bottom-8"></div>
+  </div>
+
+  <div
+    class="absolute bottom-0 left-0 right-0 h-28 bg-gradient-to-t from-surface to-transparent pointer-events-none"
+  >
+  </div>
+</section>
+
+<style>
+  .hero-swiper-one :global(.swiper-pagination-bullet) {
+    width: 12px;
+    height: 12px;
+    background: rgba(255, 255, 255, 0.4);
+    opacity: 1;
+    transition: all 0.3s ease;
+  }
+  .hero-swiper-one :global(.swiper-pagination-bullet-active) {
+    background: var(--color-accent, #962e20);
+    transform: scale(1.2);
+  }
+</style>
+
+<script>
+  import Swiper from 'swiper';
+  import { EffectFade, Autoplay, Navigation, Pagination } from 'swiper/modules';
+
+  function initHeroOne() {
+    const el = document.querySelector('.hero-swiper-one');
+    if (!el || (el as HTMLElement).dataset.swiperInit === '1') return;
+    (el as HTMLElement).dataset.swiperInit = '1';
+
+    new Swiper('.hero-swiper-one', {
+      modules: [EffectFade, Autoplay, Navigation, Pagination],
+      effect: 'fade',
+      fadeEffect: { crossFade: true },
+      autoplay: {
+        delay: 5000,
+        disableOnInteraction: false,
+      },
+      navigation: {
+        nextEl: '.hero-swiper-one .swiper-button-next',
+        prevEl: '.hero-swiper-one .swiper-button-prev',
+      },
+      pagination: {
+        el: '.hero-swiper-one .swiper-pagination',
+        clickable: true,
+      },
+      loop: true,
+      speed: 800,
+    });
+  }
+
+  initHeroOne();
+  document.addEventListener('astro:page-load', initHeroOne);
+</script>
