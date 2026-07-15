@@ -1,0 +1,52 @@
+---
+/**
+ * Variant `grid` — dense equal-height quote tiles.
+ */
+import type { TestimonialsData } from '../../../../data/types';
+import SectionWrapper from '../../../ui/SectionWrapper.astro';
+import SectionHeader from '../../../ui/SectionHeader.astro';
+import Star from '@lucide/astro/icons/star';
+import Quote from '@lucide/astro/icons/quote';
+
+interface Props {
+  data: TestimonialsData;
+}
+
+const { data } = Astro.props;
+---
+
+<SectionWrapper background="muted" id="testimonials">
+  <SectionHeader title={data.section_title} subtitle={data.section_subtitle} />
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 md:gap-6">
+    {
+      data.testimonials.map((t, i) => (
+        <article
+          data-reveal
+          data-reveal-delay={String(i * 0.07)}
+          class="relative bg-light border border-border rounded-xl p-6 md:p-7 hover:border-primary/30 hover:shadow-md transition-all duration-300"
+        >
+          <Quote class="w-8 h-8 text-accent/20 absolute top-5 right-5" aria-hidden="true" />
+          <div class="flex gap-0.5 text-amber-400 mb-3" aria-label={`${t.stars} out of 5 stars`}>
+            {Array.from({ length: 5 }).map((_, si) => (
+              <Star
+                class:list={[
+                  'w-3.5 h-3.5',
+                  si < t.stars ? 'fill-amber-400' : 'text-border fill-none',
+                ]}
+              />
+            ))}
+          </div>
+          <blockquote class="text-dark/80 text-sm md:text-base leading-relaxed mb-4 pr-6">
+            &ldquo;{t.quote}&rdquo;
+          </blockquote>
+          <p class="font-semibold text-dark text-sm">{t.name}</p>
+          <p class="text-muted text-xs">
+            {t.location}
+            {t.service ? ` · ${t.service}` : ''}
+          </p>
+        </article>
+      ))
+    }
+  </div>
+</SectionWrapper>
