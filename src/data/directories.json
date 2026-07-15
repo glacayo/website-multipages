@@ -1,0 +1,34 @@
+{
+  "_instructions": {
+    "directories": "Business directories and review platforms where the contractor is listed.",
+    "icon": "Optional Lucide or brand icon key used by the badge component.",
+    "initials": "Fallback initials when no icon/badge image is provided.",
+    "badge_image": "Optional image path under src/assets/images/.",
+    "variant": "DirectoryBadges visual variant key. Default: logos. Options: badges | logos | list | grid."
+  },
+  "variant": "logos",
+  "section_title": "Find Us Online",
+  "section_subtitle": "Trusted listings on the platforms homeowners already use.",
+  "directories": [
+    {
+      "name": "Google Business",
+      "url": "https://g.co/examplecontractor",
+      "initials": "G"
+    },
+    {
+      "name": "BBB",
+      "url": "https://www.bbb.org/examplecontractor",
+      "initials": "BBB"
+    },
+    {
+      "name": "Angi",
+      "url": "https://www.angi.com/examplecontractor",
+      "initials": "A"
+    },
+    {
+      "name": "Houzz",
+      "url": "https://www.houzz.com/pro/examplecontractor",
+      "initials": "H"
+    }
+  ]
+}
