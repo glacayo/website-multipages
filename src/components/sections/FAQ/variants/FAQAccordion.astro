@@ -1,0 +1,53 @@
+---
+/**
+ * Variant `accordion` — single-column Alpine.js accordion with collapse.
+ */
+import type { FAQData } from '../../../../data/types';
+import SectionWrapper from '../../../ui/SectionWrapper.astro';
+import SectionHeader from '../../../ui/SectionHeader.astro';
+import ChevronDown from '@lucide/astro/icons/chevron-down';
+
+interface Props {
+  data: FAQData;
+}
+
+const { data } = Astro.props;
+---
+
+<SectionWrapper background="default" id="faq">
+  <SectionHeader title={data.section_title} subtitle={data.section_subtitle} />
+
+  <div class="max-w-3xl mx-auto space-y-3" x-data="{ active: null }" data-faq-accordion>
+    {
+      data.faqs.map((faq, i) => (
+        <div
+          data-reveal
+          data-reveal-delay={String(i * 0.06)}
+          class="border border-border rounded-xl overflow-hidden transition-all duration-300 bg-light"
+          x-bind:class={`active === ${i} ? 'border-accent/30 shadow-sm' : ''`}
+        >
+          <button
+            type="button"
+            x-on:click={`active = active === ${i} ? null : ${i}`}
+            class="w-full flex items-center justify-between p-5 md:p-6 text-left hover:bg-surface/60 transition-colors duration-200"
+            x-bind:aria-expanded={`active === ${i}`}
+          >
+            <span class="font-semibold text-dark text-sm md:text-base pr-4">{faq.q}</span>
+            <ChevronDown
+              class="w-4 h-4 text-accent flex-shrink-0 transition-transform duration-300"
+              x-bind:class={`active === ${i} ? 'rotate-180' : ''`}
+              aria-hidden="true"
+            />
+          </button>
+          <div
+            x-show={`active === ${i}`}
+            x-collapse
+            class="px-5 md:px-6 pb-5 text-muted text-sm md:text-base leading-relaxed"
+          >
+            {faq.a}
+          </div>
+        </div>
+      ))
+    }
+  </div>
+</SectionWrapper>

@@ -1,0 +1,43 @@
+---
+/**
+ * Variant `cards` — card grid with optional zip codes.
+ */
+import type { AreasData } from '../../../../data/types';
+import SectionWrapper from '../../../ui/SectionWrapper.astro';
+import SectionHeader from '../../../ui/SectionHeader.astro';
+import Card from '../../../ui/Card.astro';
+import MapPin from '@lucide/astro/icons/map-pin';
+
+interface Props {
+  data: AreasData;
+}
+
+const { data } = Astro.props;
+---
+
+<SectionWrapper background="muted" id="areas">
+  <SectionHeader title={data.section_title} subtitle={data.section_subtitle} />
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-6">
+    {
+      data.areas.map((area, i) => (
+        <div data-reveal data-reveal-delay={String(i * 0.07)}>
+          <Card as="article" variant="hover-lift" class="p-5 border border-border h-full">
+            <div class="w-10 h-10 rounded-lg bg-accent/10 text-accent flex items-center justify-center mb-3">
+              <MapPin class="w-5 h-5" aria-hidden="true" />
+            </div>
+            <h3 class="font-heading font-bold text-lg text-dark mb-1">{area.name}</h3>
+            <p class="text-muted text-sm mb-3">
+              {[area.county, area.state].filter(Boolean).join(', ')}
+            </p>
+            {area.zip_codes && area.zip_codes.length > 0 && (
+              <p class="text-xs text-muted">
+                Zips: {area.zip_codes.join(', ')}
+              </p>
+            )}
+          </Card>
+        </div>
+      ))
+    }
+  </div>
+</SectionWrapper>
