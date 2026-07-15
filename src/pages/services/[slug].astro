@@ -1,0 +1,24 @@
+---
+/**
+ * Dynamic service landing routes.
+ * Paths come from business.json.services_offered; content merges
+ * services.json + landings.json with a generic fallback.
+ */
+import LandingLayout from '../../layouts/LandingLayout.astro';
+import { getBusiness } from '../../data/loaders';
+
+export function getStaticPaths() {
+  const business = getBusiness();
+  return business.services_offered.map((entry) => ({
+    params: { slug: entry.slug },
+  }));
+}
+
+const { slug } = Astro.params;
+
+if (!slug) {
+  return Astro.redirect('/services');
+}
+---
+
+<LandingLayout slug={slug} />

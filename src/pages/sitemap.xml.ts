@@ -1,37 +1,72 @@
-import blogsData from '../data/blogs.json';
-import landingsData from '../data/landings.json';
+/**
+ * Dynamic sitemap from the v2 data contract (static pages, services, published blog posts).
+ */
+import {
+  getBusiness,
+  getPublishedBlogPosts,
+  getSite,
+} from '../data/loaders';
 
-const BASE = 'https://example.com';
+function normalizeBase(url: string): string {
+  return url.replace(/\/+$/, '');
+}
 
-const mainPages = ['', 'about-us', 'services', 'gallery', 'blog', 'contact-us'];
+function urlEntry(loc: string, lastmod?: string): string {
+  const lastmodTag = lastmod ? `\n    <lastmod>${lastmod}</lastmod>` : '';
+  return `  <url>\n    <loc>${loc}</loc>${lastmodTag}\n  </url>`;
+}
 
 export async function GET() {
+  const site = getSite();
+  const business = getBusiness();
+  const base = normalizeBase(site.url);
   const urls: string[] = [];
 
-  for (const p of mainPages) {
-    urls.push(`  <url><loc>${BASE}/${p}</loc></url>`);
+  const staticPaths = [
+    '/',
+    '/about-us',
+    '/services',
+    '/gallery',
+    '/contact-us',
+    '/privacy-policy',
+  ];
+
+  if (site.features.enable_blog) {
+    staticPaths.push('/blog');
   }
 
-  const posts = (blogsData as any).posts || [];
-  for (const post of posts) {
-    urls.push(`  <url><loc>${BASE}/blog/${post.slug}</loc></url>`);
+  for (const path of staticPaths) {
+    const loc = path === '/' ? `${base}/` : `${base}${path}`;
+    urls.push(urlEntry(loc));
   }
 
-  const totalPages = Math.ceil(posts.length / 10);
-  for (let i = 2; i <= totalPages; i++) {
-    urls.push(`  <url><loc>${BASE}/blog/${i}</loc></url>`);
+  // Service landing routes (generated in PR 8; listed for SEO readiness)
+  for (const service of business.services_offered) {
+    urls.push(urlEntry(`${base}/services/${service.slug}`));
   }
 
-  const landings = (landingsData as any).landing_pages || [];
-  for (const lp of landings) {
-    const slug = lp.slug;
-    if (slug.includes('masonry')) urls.push(`  <url><loc>${BASE}/services/masonry/${slug}</loc></url>`);
-    else if (slug.includes('hardscaping')) urls.push(`  <url><loc>${BASE}/services/hardscape/${slug}</loc></url>`);
-    else if (slug.includes('concrete')) urls.push(`  <url><loc>${BASE}/services/concrete/${slug}</loc></url>`);
+  if (site.features.enable_blog) {
+    const posts = getPublishedBlogPosts();
+    for (const post of posts) {
+      urls.push(urlEntry(`${base}/blog/${post.slug}`, post.updated || post.date));
+    }
+
+    const postsPerPage = 10;
+    const totalPages = Math.ceil(posts.length / postsPerPage);
+    for (let page = 2; page <= totalPages; page += 1) {
+      urls.push(urlEntry(`${base}/blog/${page}`));
+    }
   }
 
-  return new Response(
-    `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join('\n')}\n</urlset>`,
-    { headers: { 'Content-Type': 'application/xml' } }
-  );
+  const body = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${urls.join('\n')}
+</urlset>
+`;
+
+  return new Response(body, {
+    headers: {
+      'Content-Type': 'application/xml; charset=utf-8',
+    },
+  });
 }

@@ -1,0 +1,19 @@
+---
+/**
+ * Twitter Card meta tags (composed by SeoHead from buildSeo()).
+ */
+export interface Props {
+  title: string;
+  description: string;
+  image: string;
+  twitterHandle?: string;
+}
+
+const { title, description, image, twitterHandle } = Astro.props;
+---
+
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content={title} />
+<meta name="twitter:description" content={description} />
+<meta name="twitter:image" content={image} />
+{twitterHandle && <meta name="twitter:site" content={twitterHandle} />}
