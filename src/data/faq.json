@@ -1,0 +1,38 @@
+{
+  "_instructions": {
+    "faqs": "Frequently asked questions. Keep answers clear and specific to the contractor niche.",
+    "a": "Answer text. Avoid marketing fluff; prefer practical details.",
+    "category": "Optional grouping label for multi-column FAQ layouts.",
+    "variant": "FAQ visual variant key. Default: accordion. Options: accordion | columns | compact."
+  },
+  "variant": "accordion",
+  "section_title": "Frequently Asked Questions",
+  "section_subtitle": "Quick answers about estimates, timelines, materials and service areas.",
+  "faqs": [
+    {
+      "q": "Do you offer free estimates?",
+      "a": "Yes. We provide free on-site estimates for most residential masonry and hardscape projects in our service area.",
+      "category": "Estimates"
+    },
+    {
+      "q": "Which areas do you serve?",
+      "a": "We serve Virginia Beach, Norfolk, Chesapeake, Suffolk and surrounding Hampton Roads communities.",
+      "category": "Service Area"
+    },
+    {
+      "q": "How long does a typical patio project take?",
+      "a": "Most residential patio installs take 3–7 working days depending on size, materials, site access and weather.",
+      "category": "Timeline"
+    },
+    {
+      "q": "Are you licensed and insured?",
+      "a": "Yes. We are licensed in Virginia and carry general liability and workers' compensation coverage.",
+      "category": "Credentials"
+    },
+    {
+      "q": "What payment methods do you accept?",
+      "a": "We accept cash, check, major credit cards and financing options on qualifying projects.",
+      "category": "Payment"
+    }
+  ]
+}
