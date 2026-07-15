@@ -1,0 +1,66 @@
+{
+  "_instructions": {
+    "landing_pages": "Optional long-form content for service landings. service_id must match a services.json id/slug.",
+    "service_id": "Links this landing to a service for routing and schema.",
+    "sections": "Content blocks under the hero. Each needs headline, paragraphs and image.",
+    "slug": "URL path segment under /services/{slug}. Must be unique."
+  },
+  "landing_pages": [
+    {
+      "name": "Masonry",
+      "slug": "masonry",
+      "service_id": "masonry",
+      "meta_title": "Masonry Contractor in Virginia Beach | Example Masonry & Hardscape",
+      "meta_description": "Professional masonry services in Virginia Beach: brick, stone, fireplaces and custom outdoor features.",
+      "hero": {
+        "headline": "Expert Masonry for Homes That Stand Out",
+        "paragraph": "From outdoor fireplaces to custom stone accents, our masonry crew delivers craftsmanship built for coastal Virginia weather.",
+        "image": "./images/services/masonry.jpg",
+        "image_alt": "Custom masonry fireplace and seating wall"
+      },
+      "sections": [
+        {
+          "headline": "Brick, Stone and Block Done Right",
+          "paragraphs": [
+            "We select materials that match your architecture and local climate, then install with proper reinforcement and drainage details.",
+            "Whether you need a fireplace, outdoor kitchen surround or decorative columns, we keep the finish clean and structural integrity first."
+          ],
+          "image": "./images/gallery/masonry-1.jpg",
+          "image_alt": "Completed masonry project detail"
+        }
+      ],
+      "cta": {
+        "headline": "Ready for a free masonry estimate?",
+        "button_label": "Contact Us"
+      }
+    },
+    {
+      "name": "Hardscape",
+      "slug": "hardscape",
+      "service_id": "hardscape",
+      "meta_title": "Hardscape Contractor in Virginia Beach | Example Masonry & Hardscape",
+      "meta_description": "Hardscape design and installation for walkways, fire pits, seating walls and outdoor rooms.",
+      "hero": {
+        "headline": "Hardscape Design Built for Everyday Living",
+        "paragraph": "We create outdoor spaces that feel intentional — walkways, seating walls, fire features and full outdoor rooms.",
+        "image": "./images/services/hardscape.jpg",
+        "image_alt": "Hardscape walkway and seating area"
+      },
+      "sections": [
+        {
+          "headline": "Function First, Then Finish",
+          "paragraphs": [
+            "Good hardscaping starts with how you use the yard: traffic flow, gathering spaces and maintenance.",
+            "We combine durable materials with clean edges and drainage so the space stays usable after every storm."
+          ],
+          "image": "./images/gallery/hardscape-1.jpg",
+          "image_alt": "Finished hardscape walkway"
+        }
+      ],
+      "cta": {
+        "headline": "Plan your outdoor living upgrade",
+        "button_label": "Get a Free Estimate"
+      }
+    }
+  ]
+}

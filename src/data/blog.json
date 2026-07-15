@@ -1,0 +1,43 @@
+{
+  "_instructions": {
+    "posts": "Blog posts. Only published:true posts appear on public routes.",
+    "content": "HTML or markdown-ready body. Keep placeholder content generic.",
+    "published": "Set false to draft a post without generating a public route.",
+    "slug": "URL path segment: /blog/{slug}. Must be unique."
+  },
+  "default_author": "Example Masonry Team",
+  "default_category": "Outdoor Living",
+  "posts": [
+    {
+      "slug": "how-to-plan-a-paver-patio",
+      "headline": "How to Plan a Paver Patio That Lasts",
+      "meta_title": "How to Plan a Paver Patio | Example Contractor",
+      "description": "A practical guide to planning a durable paver patio for Virginia Beach homes.",
+      "excerpt": "From base preparation to material choices, here is how we help homeowners plan patios that handle coastal weather and heavy use.",
+      "content": "<p>Planning a paver patio starts with drainage, base depth and traffic patterns. We walk every client through material options, layout and long-term maintenance before the first stone is set.</p><p>Coastal Virginia soils and rainfall make a compacted base and edge restraint essential. A well-planned patio stays level and attractive for years.</p>",
+      "image": "./images/blog/patio-planning.jpg",
+      "image_alt": "Paver patio layout during installation",
+      "date": "2026-03-10",
+      "author": "Example Masonry Team",
+      "category": "Outdoor Living",
+      "tags": ["patios", "pavers", "planning"],
+      "reading_time": "4 min",
+      "published": true
+    },
+    {
+      "slug": "retaining-wall-drainage-basics",
+      "headline": "Retaining Wall Drainage Basics",
+      "description": "Why drainage is the most important part of a long-lasting retaining wall.",
+      "excerpt": "Most wall failures start with water. Learn the drainage details we build into every retaining wall project.",
+      "content": "<p>Water pressure is the silent enemy of retaining walls. We design gravel backfill, perforated pipe and weep paths so hydrostatic pressure never builds behind the wall face.</p><p>If you see leaning, bulging or wet spots, schedule an inspection before the problem becomes a rebuild.</p>",
+      "image": "./images/blog/retaining-drainage.jpg",
+      "image_alt": "Retaining wall with visible drainage stone",
+      "date": "2026-04-02",
+      "author": "Example Masonry Team",
+      "category": "Hardscape Tips",
+      "tags": ["retaining-walls", "drainage"],
+      "reading_time": "3 min",
+      "published": true
+    }
+  ]
+}

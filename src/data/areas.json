@@ -1,0 +1,19 @@
+{
+  "_instructions": {
+    "primary_city": "Main city used for local SEO and hero copy.",
+    "areas": "Cities/counties served. Used by CoveredAreas section and local schema.",
+    "zip_codes": "Optional list of zip codes for denser local SEO.",
+    "variant": "CoveredAreas visual variant key. Default: list. Options: list | map | cards | columns."
+  },
+  "variant": "list",
+  "section_title": "Areas We Serve",
+  "section_subtitle": "Proudly serving homeowners and businesses across Hampton Roads.",
+  "primary_city": "Virginia Beach",
+  "service_radius": "Within ~40 miles of Virginia Beach, VA",
+  "areas": [
+    { "name": "Virginia Beach", "slug": "virginia-beach", "county": "Virginia Beach", "state": "VA", "zip_codes": ["23451", "23452", "23454"] },
+    { "name": "Norfolk", "slug": "norfolk", "county": "Norfolk", "state": "VA", "zip_codes": ["23502", "23505"] },
+    { "name": "Chesapeake", "slug": "chesapeake", "county": "Chesapeake", "state": "VA", "zip_codes": ["23320", "23322"] },
+    { "name": "Suffolk", "slug": "suffolk", "county": "Suffolk", "state": "VA", "zip_codes": ["23434", "23435"] }
+  ]
+}
