@@ -1,0 +1,53 @@
+---
+/**
+ * Variant `list` — simple wrap list of service areas with location pins.
+ */
+import type { AreasData } from '../../../../data/types';
+import SectionWrapper from '../../../ui/SectionWrapper.astro';
+import SectionHeader from '../../../ui/SectionHeader.astro';
+import MapPin from '@lucide/astro/icons/map-pin';
+
+interface Props {
+  data: AreasData;
+}
+
+const { data } = Astro.props;
+---
+
+<SectionWrapper background="default" id="areas">
+  <SectionHeader title={data.section_title} subtitle={data.section_subtitle} />
+
+  {
+    data.service_radius && (
+      <p class="text-center text-muted text-sm mb-8 -mt-4" data-reveal>
+        {data.service_radius}
+      </p>
+    )
+  }
+
+  <ul class="flex flex-wrap justify-center gap-3 md:gap-4 max-w-4xl mx-auto">
+    {
+      data.areas.map((area, i) => (
+        <li
+          data-reveal
+          data-reveal-delay={String(i * 0.05)}
+          class="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-surface border border-border text-dark text-sm font-medium hover:border-accent/40 hover:shadow-sm transition-all"
+        >
+          <MapPin class="w-4 h-4 text-accent flex-shrink-0" aria-hidden="true" />
+          <span>
+            {area.name}
+            {area.state ? `, ${area.state}` : ''}
+          </span>
+        </li>
+      ))
+    }
+  </ul>
+
+  {
+    data.primary_city && (
+      <p class="text-center text-muted text-xs mt-8" data-reveal>
+        Primary market: <span class="font-semibold text-dark">{data.primary_city}</span>
+      </p>
+    )
+  }
+</SectionWrapper>

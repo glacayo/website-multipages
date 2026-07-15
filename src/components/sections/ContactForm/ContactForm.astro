@@ -1,0 +1,149 @@
+---
+/**
+ * Netlify Forms contact form.
+ * Markup-only capture: data-netlify + named inputs; no backend JS required.
+ */
+import Input from '../../ui/Input.astro';
+import Textarea from '../../ui/Textarea.astro';
+import Button from '../../ui/Button.astro';
+import SectionHeader from '../../ui/SectionHeader.astro';
+import { getBusiness, getServices } from '../../../data/loaders';
+
+interface Props {
+  /** Optional heading override for embedded usage. */
+  title?: string;
+  subtitle?: string;
+  /** Compact mode hides the section header (e.g. contact page sidebar). */
+  compact?: boolean;
+  class?: string;
+}
+
+const {
+  title = 'Request a Free Estimate',
+  subtitle = 'Tell us about your project and we will respond within one business day.',
+  compact = false,
+  class: className = '',
+} = Astro.props;
+
+const business = getBusiness();
+const services = getServices().services;
+const primaryPhone = business.phones[0] ?? '';
+---
+
+<section class:list={[!compact && 'bg-surface py-16 md:py-24', className]}>
+  <div class:list={[!compact && 'container-site']}>
+    {
+      !compact && (
+        <SectionHeader
+          badge="Contact"
+          title={title}
+          subtitle={subtitle}
+          align="center"
+          class="mb-10 md:mb-12"
+        />
+      )
+    }
+
+    <div
+      class:list={[
+        compact
+          ? 'rounded-2xl border border-border bg-white p-6 md:p-8'
+          : 'mx-auto max-w-3xl rounded-2xl border border-border bg-white p-6 shadow-sm md:p-10',
+      ]}
+    >
+      {
+        compact && (
+          <h2 class="font-heading mb-6 text-xl font-bold text-dark">{title}</h2>
+        )
+      }
+
+      <form
+        name="contact"
+        method="POST"
+        action="/thank-you"
+        data-netlify="true"
+        netlify-honeypot="bot-field"
+        class="space-y-4"
+      >
+        <input type="hidden" name="form-name" value="contact" />
+
+        <!-- Honeypot for spam; hidden from users -->
+        <p class="hidden" aria-hidden="true">
+          <label>
+            Do not fill this out if you are human:
+            <input name="bot-field" tabindex="-1" autocomplete="off" />
+          </label>
+        </p>
+
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Input
+            name="name"
+            label="Full name"
+            type="text"
+            placeholder="Jane Smith"
+            required
+            autocomplete="name"
+          />
+          <Input
+            name="email"
+            label="Email"
+            type="email"
+            placeholder="you@example.com"
+            required
+            autocomplete="email"
+          />
+        </div>
+
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Input
+            name="phone"
+            label="Phone"
+            type="tel"
+            placeholder={primaryPhone || '(555) 555-0100'}
+            autocomplete="tel"
+          />
+
+          <label class="block space-y-1.5" for="service">
+            <span class="text-sm font-medium text-dark">Service</span>
+            <select
+              id="service"
+              name="service"
+              class="w-full rounded-md border border-border bg-light px-4 py-2.5 text-dark focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-colors duration-200"
+            >
+              <option value="">Select a service</option>
+              {
+                services.map((service) => (
+                  <option value={service.slug}>{service.name}</option>
+                ))
+              }
+              <option value="other">Other</option>
+            </select>
+          </label>
+        </div>
+
+        <Textarea
+          name="message"
+          label="Project details"
+          placeholder="Describe your project, timeline, and location..."
+          required
+          rows={5}
+        />
+
+        <Button type="submit" variant="primary" size="lg" class="w-full">
+          Send message
+        </Button>
+
+        <p class="text-center text-xs text-muted">
+          Or call us at{' '}
+          <a
+            href={`tel:${primaryPhone.replace(/\D/g, '')}`}
+            class="font-medium text-primary hover:text-accent"
+          >
+            {primaryPhone}
+          </a>
+          . {business.free_estimate}.
+        </p>
+      </form>
+    </div>
+  </div>
+</section>
