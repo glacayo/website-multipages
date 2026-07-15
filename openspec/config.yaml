@@ -1,0 +1,69 @@
+schema: spec-driven
+
+context: |
+  Stack: Astro 6.3 (static output), Tailwind CSS 3.4 via @astrojs/tailwind, Alpine.js 3.
+  Extras: Swiper 12, GSAP, Sharp. Package manager: pnpm only (npm/npx forbidden, enforced
+  by scripts/enforce-package-manager.cjs + .npmrc + devEngines).
+  Architecture: multipage Astro site (src/pages/*.astro), layout components in
+  src/components/layout/, section components in src/components/sections/.
+  Data contract: src/pages/* and components import src/data/content.json, blogs.json,
+  landings.json (JSON schema must stay stable per AGENTS.md; see risks).
+  Testing: no test runner configured; strict_tdd disabled.
+
+strict_tdd: false
+
+testing:
+  strict_tdd: false
+  detected: 2026-07-15
+  test_runner:
+    command: ""
+    framework: none
+  layers:
+    unit: false
+    integration: false
+    e2e: false
+  coverage:
+    available: false
+    command: ""
+  quality:
+    linter:
+      available: false
+      command: ""
+    type_checker:
+      available: true
+      command: "pnpm exec astro check"
+    formatter:
+      available: false
+      command: ""
+  notes: >
+    No unit/integration/e2e runner is installed (no vitest, jest, playwright,
+    or cypress in package.json; no test files under src/). `astro check`
+    provides type/template diagnostics via the Astro + TS toolchain
+    (astro.config.mjs, tsconfig.json) but is not a test suite.
+
+rules:
+  proposal:
+    - Use pnpm-only commands in any proposed workflow; npm/npx is forbidden (AGENTS.md).
+    - Preserve the template's neutral/placeholder-only content unless the task explicitly targets a client build.
+    - Include rollback plan for risky changes.
+  specs:
+    - Use Given/When/Then for scenarios.
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY).
+    - Treat src/data/content.json, blogs.json, landings.json shape as a stable contract: preserve top-level keys, nested object shape, and required arrays.
+  design:
+    - Document impact on the JSON data contract explicitly (additive vs shape-breaking).
+    - Note any change to pnpm/.npmrc/pnpm-workspace.yaml enforcement files as high-risk.
+  tasks:
+    - Group by phase, use hierarchical numbering.
+    - Keep tasks completable in one session.
+  apply:
+    rules:
+      - Follow existing Astro component patterns (layout/ vs sections/ split).
+    tdd: false
+    test_command: ""
+  verify:
+    test_command: ""
+    build_command: "pnpm run build"
+    coverage_threshold: 0
+  archive:
+    - Warn before merging destructive deltas to the JSON data contract.
