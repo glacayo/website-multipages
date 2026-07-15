@@ -1,0 +1,48 @@
+---
+/**
+ * Variant `grid` — equal-aspect image grid with category labels.
+ */
+import type { GalleryData } from '../../../../data/types';
+import SectionWrapper from '../../../ui/SectionWrapper.astro';
+import SectionHeader from '../../../ui/SectionHeader.astro';
+import ResponsiveImage from '../../../ui/ResponsiveImage.astro';
+
+interface Props {
+  data: GalleryData;
+}
+
+const { data } = Astro.props;
+---
+
+<SectionWrapper background="muted" id="gallery">
+  <SectionHeader
+    title={data.section_title}
+    subtitle={data.section_subtitle}
+  />
+
+  <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-5">
+    {
+      data.items.map((item, i) => (
+        <figure
+          class="group relative overflow-hidden rounded-xl aspect-[4/3] bg-border"
+          data-reveal
+          data-reveal-delay={String((i % 4) * 0.06)}
+        >
+          <ResponsiveImage
+            src={item.image}
+            alt={item.image_alt}
+            width={800}
+            height={600}
+            lcp={i === 0}
+            class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+          />
+          <figcaption class="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-dark/90 to-transparent text-white opacity-0 group-hover:opacity-100 transition-opacity">
+            <p class="font-heading font-semibold text-sm">{item.title}</p>
+            <p class="text-xs text-white/70">{item.category}{item.location ? ` · ${item.location}` : ''}</p>
+          </figcaption>
+        </figure>
+      ))
+    }
+  </div>
+</SectionWrapper>

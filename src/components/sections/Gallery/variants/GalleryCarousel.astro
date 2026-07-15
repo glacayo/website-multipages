@@ -1,0 +1,91 @@
+---
+/**
+ * Variant `carousel` — Swiper gallery carousel.
+ */
+import 'swiper/css';
+import 'swiper/css/navigation';
+import 'swiper/css/pagination';
+import type { GalleryData } from '../../../../data/types';
+import SectionWrapper from '../../../ui/SectionWrapper.astro';
+import SectionHeader from '../../../ui/SectionHeader.astro';
+import ResponsiveImage from '../../../ui/ResponsiveImage.astro';
+
+interface Props {
+  data: GalleryData;
+}
+
+const { data } = Astro.props;
+---
+
+<SectionWrapper background="muted" id="gallery">
+  <SectionHeader
+    title={data.section_title}
+    subtitle={data.section_subtitle}
+  />
+
+  <div class="gallery-swiper swiper" data-reveal>
+    <div class="swiper-wrapper">
+      {
+        data.items.map((item, i) => (
+          <div class="swiper-slide">
+            <figure class="relative aspect-[16/10] rounded-xl overflow-hidden">
+              <ResponsiveImage
+                src={item.image}
+                alt={item.image_alt}
+                width={1200}
+                height={750}
+                lcp={i === 0}
+                class="w-full h-full object-cover"
+                sizes="(max-width: 1024px) 100vw, 80vw"
+              />
+              <figcaption class="absolute inset-x-0 bottom-0 p-4 md:p-6 bg-gradient-to-t from-dark/90 to-transparent text-white">
+                <p class="font-heading font-bold text-lg">{item.title}</p>
+                <p class="text-sm text-white/75">
+                  {item.category}
+                  {item.location ? ` · ${item.location}` : ''}
+                </p>
+              </figcaption>
+            </figure>
+          </div>
+        ))
+      }
+    </div>
+    <div class="swiper-button-prev !text-primary after:!text-xl"></div>
+    <div class="swiper-button-next !text-primary after:!text-xl"></div>
+    <div class="swiper-pagination !relative !mt-6"></div>
+  </div>
+</SectionWrapper>
+
+<script>
+  import Swiper from 'swiper';
+  import { Navigation, Pagination, Autoplay } from 'swiper/modules';
+
+  function initGalleryCarousel() {
+    const el = document.querySelector('.gallery-swiper');
+    if (!el || (el as HTMLElement).dataset.swiperInit === '1') return;
+    (el as HTMLElement).dataset.swiperInit = '1';
+
+    new Swiper('.gallery-swiper', {
+      modules: [Navigation, Pagination, Autoplay],
+      slidesPerView: 1,
+      spaceBetween: 16,
+      loop: true,
+      autoplay: { delay: 4500, disableOnInteraction: false },
+      navigation: {
+        nextEl: '.gallery-swiper .swiper-button-next',
+        prevEl: '.gallery-swiper .swiper-button-prev',
+      },
+      pagination: {
+        el: '.gallery-swiper .swiper-pagination',
+        clickable: true,
+      },
+      breakpoints: {
+        768: { slidesPerView: 1.2, centeredSlides: true },
+        1024: { slidesPerView: 1.4, centeredSlides: true },
+      },
+    });
+  }
+
+  initGalleryCarousel();
+  document.addEventListener('astro:page-load', initGalleryCarousel);
+</script>

@@ -1,0 +1,102 @@
+---
+/**
+ * Variant `featured` — first service large, remaining as compact cards.
+ */
+import type { ServicesData } from '../../../../data/types';
+import { getSite } from '../../../../data/loaders';
+import SectionWrapper from '../../../ui/SectionWrapper.astro';
+import SectionHeader from '../../../ui/SectionHeader.astro';
+import ResponsiveImage from '../../../ui/ResponsiveImage.astro';
+import Button from '../../../ui/Button.astro';
+import ArrowRight from '@lucide/astro/icons/arrow-right';
+
+interface Props {
+  data: ServicesData;
+}
+
+const { data } = Astro.props;
+const site = getSite();
+const enableLandings = site.features?.enable_landings !== false;
+const [featured, ...rest] = data.services;
+---
+
+<SectionWrapper background="default" id="services">
+  <SectionHeader title={data.section_title} subtitle={data.section_subtitle} />
+
+  {
+    featured && (
+      <article
+        class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center mb-10 bg-surface rounded-2xl overflow-hidden border border-border"
+        data-reveal
+      >
+        <div class="relative aspect-[16/11] lg:aspect-auto lg:min-h-[360px]">
+          <ResponsiveImage
+            src={featured.image}
+            alt={featured.name}
+            width={1000}
+            height={700}
+            class="w-full h-full object-cover"
+            sizes="(max-width: 1024px) 100vw, 50vw"
+          />
+        </div>
+        <div class="p-6 md:p-10">
+          <p class="text-accent text-xs font-semibold uppercase tracking-[0.2em] mb-2">
+            Featured service
+          </p>
+          <h3 class="font-heading text-2xl md:text-3xl font-bold text-dark mb-4">
+            {featured.name}
+          </h3>
+          <p class="text-muted leading-relaxed mb-6">
+            {featured.full_description}
+          </p>
+          {enableLandings && (
+            <Button href={`/services/${featured.slug}`} variant="primary" size="lg">
+              Explore {featured.name}
+              <ArrowRight class="w-4 h-4" />
+            </Button>
+          )}
+        </div>
+      </article>
+    )
+  }
+
+  {
+    rest.length > 0 && (
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {rest.map((service, i) => (
+          <article
+            class="group rounded-xl border border-border bg-light overflow-hidden hover:shadow-lg transition-shadow"
+            data-reveal
+            data-reveal-delay={String((i + 1) * 0.08)}
+          >
+            <div class="relative h-40 overflow-hidden">
+              <ResponsiveImage
+                src={service.image}
+                alt={service.name}
+                width={640}
+                height={400}
+                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                sizes="(max-width: 640px) 100vw, 33vw"
+              />
+            </div>
+            <div class="p-5">
+              <h3 class="font-heading font-bold text-lg text-dark mb-2">
+                {service.name}
+              </h3>
+              <p class="text-muted text-sm mb-3">{service.short_description}</p>
+              {enableLandings && (
+                <a
+                  href={`/services/${service.slug}`}
+                  class="inline-flex items-center gap-1 text-accent font-semibold text-sm"
+                >
+                  Learn more
+                  <ArrowRight class="w-4 h-4" />
+                </a>
+              )}
+            </div>
+          </article>
+        ))}
+      </div>
+    )
+  }
+</SectionWrapper>

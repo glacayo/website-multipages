@@ -1,0 +1,23 @@
+---
+/**
+ * Services dispatcher — selects a visual variant from services.json.variant.
+ * Unknown values fall back to `grid` without failing the build (spec §2.3).
+ */
+import { getServices } from '../../../data/loaders';
+import {
+  servicesVariants,
+  SERVICES_DEFAULT_VARIANT,
+  type ServicesVariantKey,
+} from './variants';
+
+const data = getServices();
+const requested = (data.variant ?? SERVICES_DEFAULT_VARIANT) as ServicesVariantKey;
+const resolved =
+  requested in servicesVariants ? requested : SERVICES_DEFAULT_VARIANT;
+const Variant =
+  servicesVariants[resolved] ?? servicesVariants[SERVICES_DEFAULT_VARIANT];
+---
+
+<div data-services-variant={resolved}>
+  <Variant data={data} />
+</div>
