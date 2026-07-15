@@ -1,0 +1,28 @@
+---
+interface Props {
+  variant?: 'default' | 'hover-lift' | 'bordered';
+  class?: string;
+  as?: 'div' | 'article' | 'section' | 'li';
+}
+
+const {
+  variant = 'default',
+  class: className = '',
+  as: Tag = 'div',
+} = Astro.props;
+
+const variants: Record<NonNullable<Props['variant']>, string> = {
+  default: 'bg-light rounded-xl shadow-sm',
+  'hover-lift':
+    'bg-light rounded-xl shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg',
+  bordered: 'bg-light rounded-xl border border-border',
+};
+
+const classes = [variants[variant], 'overflow-hidden', className]
+  .filter(Boolean)
+  .join(' ');
+---
+
+<Tag class={classes}>
+  <slot />
+</Tag>

@@ -1,0 +1,56 @@
+---
+interface Props {
+  href?: string;
+  type?: 'button' | 'submit' | 'reset';
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
+  size?: 'sm' | 'md' | 'lg';
+  class?: string;
+  disabled?: boolean;
+  ariaLabel?: string;
+}
+
+const {
+  href,
+  type = 'button',
+  variant = 'primary',
+  size = 'md',
+  class: className = '',
+  disabled = false,
+  ariaLabel,
+} = Astro.props;
+
+const base =
+  'inline-flex items-center justify-center gap-2 font-semibold rounded-md transition-all duration-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50 disabled:pointer-events-none';
+
+const variants: Record<NonNullable<Props['variant']>, string> = {
+  primary:
+    'bg-accent text-white hover:bg-accent/90 hover:shadow-lg hover:shadow-accent/25 hover:-translate-y-0.5',
+  secondary:
+    'bg-primary text-white hover:bg-primary-dark hover:shadow-lg hover:shadow-primary/25 hover:-translate-y-0.5',
+  outline:
+    'border-2 border-primary text-primary bg-transparent hover:bg-primary hover:text-white',
+  ghost: 'text-primary bg-transparent hover:bg-primary/10',
+};
+
+const sizes: Record<NonNullable<Props['size']>, string> = {
+  sm: 'px-4 py-2 text-sm',
+  md: 'px-6 py-3 text-base',
+  lg: 'px-8 py-3.5 text-lg',
+};
+
+const classes = [base, variants[variant], sizes[size], className]
+  .filter(Boolean)
+  .join(' ');
+---
+
+{
+  href ? (
+    <a href={href} class={classes} aria-label={ariaLabel} aria-disabled={disabled || undefined}>
+      <slot />
+    </a>
+  ) : (
+    <button type={type} class={classes} disabled={disabled} aria-label={ariaLabel}>
+      <slot />
+    </button>
+  )
+}
