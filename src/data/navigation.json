@@ -1,0 +1,53 @@
+{
+  "_instructions": {
+    "header": "Main navigation links. Children generate dropdown menus.",
+    "footer": "Footer link columns. Titles and links must match existing pages.",
+    "mobile": "Sticky CTA on mobile. Use tel: or /contact-us.",
+    "legal": "Links shown in the legal bar (privacy, terms, accessibility)."
+  },
+  "header": [
+    { "label": "Home", "href": "/" },
+    { "label": "About", "href": "/about-us" },
+    {
+      "label": "Services",
+      "href": "/services",
+      "children": [
+        { "label": "Masonry", "href": "/services/masonry" },
+        { "label": "Hardscape", "href": "/services/hardscape" },
+        { "label": "Patios", "href": "/services/patios" },
+        { "label": "Retaining Walls", "href": "/services/retaining-walls" }
+      ]
+    },
+    { "label": "Gallery", "href": "/gallery" },
+    { "label": "Blog", "href": "/blog" },
+    { "label": "Contact", "href": "/contact-us" }
+  ],
+  "footer": [
+    {
+      "title": "Services",
+      "links": [
+        { "label": "Masonry", "href": "/services/masonry" },
+        { "label": "Hardscape", "href": "/services/hardscape" },
+        { "label": "Patios", "href": "/services/patios" },
+        { "label": "Retaining Walls", "href": "/services/retaining-walls" }
+      ]
+    },
+    {
+      "title": "Company",
+      "links": [
+        { "label": "About Us", "href": "/about-us" },
+        { "label": "Our Work", "href": "/gallery" },
+        { "label": "Blog", "href": "/blog" },
+        { "label": "Contact", "href": "/contact-us" }
+      ]
+    }
+  ],
+  "mobile": {
+    "cta_label": "Call Now",
+    "cta_href": "tel:+17575550100"
+  },
+  "legal": [
+    { "label": "Privacy Policy", "href": "/privacy-policy" },
+    { "label": "Terms of Service", "href": "/terms-of-service" }
+  ]
+}
