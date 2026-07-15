@@ -1,61 +1,130 @@
 ---
+/**
+ * Site-wide layout shell:
+ * SeoHead + SchemaOrg + TopBar + Header + main slot + Footer + MobileStickyBar + motion.
+ */
+import type { Thing, WithContext } from 'schema-dts';
 import '../styles/global.css';
+import SeoHead from '../components/seo/SeoHead.astro';
+import SchemaOrg from '../components/seo/SchemaOrg.astro';
+import TopBar from '../components/layout/TopBar.astro';
+import Header from '../components/layout/Header.astro';
 import Footer from '../components/layout/Footer.astro';
 import MobileStickyBar from '../components/layout/MobileStickyBar.astro';
-import content from '../data/content.json';
-
-const { company_name, seo } = content;
+import type { BlogPost, Service } from '../data/types';
+import { getSite } from '../data/loaders';
+import { buildSeo } from '../utils/seo';
+import {
+  buildSchemas,
+  type BreadcrumbItem,
+  type PageType,
+} from '../utils/schema';
 
 export interface Props {
   title?: string;
   description?: string;
+  path?: string;
+  image?: string;
+  type?: string;
+  noindex?: boolean;
+  /** Schema page kind for buildSchemas(). Default: other. */
+  pageType?: PageType;
+  /** Service entity for landing pages (pageType: service). */
+  service?: Service;
+  /** Blog post entity for article pages (pageType: post). */
+  post?: BlogPost;
+  /** Optional breadcrumb trail override. */
+  breadcrumbs?: BreadcrumbItem[];
+  /** Force FAQPage JSON-LD (home with FAQ section). */
+  includeFaq?: boolean;
+  /** Full schema override; when omitted, buildSchemas() runs. */
+  schema?: WithContext<Thing>[] | Record<string, unknown>[];
+  /** Hide TopBar (e.g. rare full-bleed pages). */
+  hideTopBar?: boolean;
+  /** Hide MobileStickyBar. */
+  hideMobileStickyBar?: boolean;
 }
 
-const { 
-  title = company_name, 
-  description = seo.default_description 
+const site = getSite();
+
+const {
+  title,
+  description,
+  path = Astro.url.pathname,
+  image,
+  type,
+  noindex = false,
+  pageType = 'other',
+  service,
+  post,
+  breadcrumbs,
+  includeFaq,
+  schema,
+  hideTopBar = false,
+  hideMobileStickyBar = false,
 } = Astro.props;
+
+const seo = buildSeo({
+  title,
+  description,
+  path,
+  image,
+  type,
+  noindex,
+});
+
+const schemas =
+  schema ??
+  buildSchemas({
+    pageType,
+    path,
+    pageTitle: seo.title,
+    pageDescription: seo.description,
+    service,
+    post,
+    breadcrumbs,
+    includeFaq,
+  });
 ---
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content={description} />
-  <title>{title}</title>
-  <link rel="icon" type="image/png" href="/logo.png" />
-  
-  <!-- Font Awesome 6 -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-  
-  <!-- Alpine.js -->
-  <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.14.3/dist/cdn.min.js"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.3/dist/cdn.min.js"></script>
-</head>
-<body class="bg-gray-50">
-  <slot />
-  <Footer />
-  <MobileStickyBar />
-  
-  <script is:inline>
-    (function() {
-      var observer = new IntersectionObserver(function(entries) {
-        entries.forEach(function(entry) {
-          if (entry.isIntersecting) {
-            var el = entry.target;
-            var delay = parseFloat(el.getAttribute('data-reveal-delay') || '0');
-            el.style.transitionDelay = delay + 's';
-            el.classList.add('revealed');
-            observer.unobserve(el);
-          }
-        });
-      }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+<!doctype html>
+<html lang={seo.lang || site.lang || 'en'}>
+  <head>
+    <SeoHead seo={seo} />
+    <SchemaOrg schemas={schemas} />
 
-      document.querySelectorAll('[data-reveal]').forEach(function(el) {
-        observer.observe(el);
-      });
-    })();
-  </script>
-</body>
+    <!-- Alpine.js (collapse plugin first, then core) -->
+    <script is:inline defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.14.3/dist/cdn.min.js"
+    ></script>
+    <script is:inline defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.3/dist/cdn.min.js"></script>
+
+    <style is:global>
+      [x-cloak] {
+        display: none !important;
+      }
+    </style>
+  </head>
+  <body class="min-h-screen bg-surface text-dark antialiased">
+    <a
+      href="#main-content"
+      class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100] focus:rounded-md focus:bg-white focus:px-4 focus:py-2 focus:shadow-lg"
+    >
+      Skip to content
+    </a>
+
+    {!hideTopBar && <TopBar />}
+    <Header />
+
+    <main id="main-content">
+      <slot />
+    </main>
+
+    <Footer />
+    {!hideMobileStickyBar && <MobileStickyBar />}
+
+    <!-- Scroll reveal (data-reveal → .revealed); prefers-reduced-motion aware -->
+    <script>
+      import '../utils/motion';
+    </script>
+  </body>
 </html>

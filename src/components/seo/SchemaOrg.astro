@@ -1,0 +1,18 @@
+---
+/**
+ * Emit JSON-LD for Schema.org entities produced by buildSchemas().
+ */
+import type { Thing, WithContext } from 'schema-dts';
+
+export interface Props {
+  schemas?: WithContext<Thing>[] | Record<string, unknown>[];
+}
+
+const { schemas = [] } = Astro.props;
+---
+
+{
+  schemas.length > 0 && (
+    <script is:inline type="application/ld+json" set:html={JSON.stringify(schemas)} />
+  )
+}
