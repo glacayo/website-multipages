@@ -1,0 +1,82 @@
+---
+/**
+ * Variant `before-after` — pairs consecutive items as before/after comparisons.
+ * When an odd item remains, it renders as a single full-width panel.
+ */
+import type { GalleryData, GalleryItem } from '../../../../data/types';
+import SectionWrapper from '../../../ui/SectionWrapper.astro';
+import SectionHeader from '../../../ui/SectionHeader.astro';
+import ResponsiveImage from '../../../ui/ResponsiveImage.astro';
+
+interface Props {
+  data: GalleryData;
+}
+
+const { data } = Astro.props;
+
+const pairs: Array<{ before: GalleryItem; after?: GalleryItem }> = [];
+for (let i = 0; i < data.items.length; i += 2) {
+  pairs.push({
+    before: data.items[i],
+    after: data.items[i + 1],
+  });
+}
+---
+
+<SectionWrapper background="default" id="gallery">
+  <SectionHeader
+    title={data.section_title}
+    subtitle={data.section_subtitle}
+  />
+
+  <div class="space-y-8 max-w-5xl mx-auto">
+    {
+      pairs.map((pair, i) => (
+        <div
+          class="grid grid-cols-1 md:grid-cols-2 gap-4"
+          data-reveal
+          data-reveal-delay={String(i * 0.08)}
+        >
+          <figure class="relative rounded-xl overflow-hidden aspect-[4/3]">
+            <ResponsiveImage
+              src={pair.before.image}
+              alt={pair.before.image_alt}
+              width={900}
+              height={675}
+              lcp={i === 0}
+              class="w-full h-full object-cover"
+              sizes="(max-width: 768px) 100vw, 50vw"
+            />
+            <span class="absolute top-3 left-3 px-2.5 py-1 rounded-md bg-dark/80 text-white text-xs font-semibold uppercase tracking-wider">
+              Before
+            </span>
+            <figcaption class="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-dark/85 to-transparent text-white text-sm">
+              {pair.before.title}
+            </figcaption>
+          </figure>
+
+          {pair.after ? (
+            <figure class="relative rounded-xl overflow-hidden aspect-[4/3]">
+              <ResponsiveImage
+                src={pair.after.image}
+                alt={pair.after.image_alt}
+                width={900}
+                height={675}
+                class="w-full h-full object-cover"
+                sizes="(max-width: 768px) 100vw, 50vw"
+              />
+              <span class="absolute top-3 left-3 px-2.5 py-1 rounded-md bg-accent text-white text-xs font-semibold uppercase tracking-wider">
+                After
+              </span>
+              <figcaption class="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-dark/85 to-transparent text-white text-sm">
+                {pair.after.title}
+              </figcaption>
+            </figure>
+          ) : (
+            <div class="hidden md:block" />
+          )}
+        </div>
+      ))
+    }
+  </div>
+</SectionWrapper>

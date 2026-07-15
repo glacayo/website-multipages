@@ -1,0 +1,81 @@
+---
+/**
+ * Variant `five` — multi-slide card strip (static layout; no Swiper required).
+ */
+import type { HeroData } from '../../../../data/types';
+import ResponsiveImage from '../../../ui/ResponsiveImage.astro';
+import Button from '../../../ui/Button.astro';
+
+interface Props {
+  data: HeroData;
+}
+
+const { data } = Astro.props;
+const [primary, ...rest] = data.slides;
+---
+
+<section class="relative bg-surface py-12 md:py-16" aria-label="Hero">
+  <div class="container-site">
+    {
+      primary && (
+        <div
+          class="relative rounded-2xl overflow-hidden min-h-[360px] md:min-h-[420px] mb-6"
+          data-reveal
+        >
+          <ResponsiveImage
+            src={primary.image}
+            alt={primary.image_alt}
+            width={1600}
+            height={900}
+            lcp
+            class="absolute inset-0 w-full h-full object-cover"
+            sizes="100vw"
+          />
+          <div class="absolute inset-0 bg-gradient-to-r from-dark/90 via-dark/60 to-transparent" />
+          <div class="relative z-10 p-8 md:p-12 max-w-xl text-white">
+            <p class="text-accent/90 font-semibold text-sm uppercase tracking-[0.2em] mb-3">
+              {primary.tagline}
+            </p>
+            <h1 class="font-heading text-3xl md:text-4xl font-extrabold mb-4">
+              {primary.headline}
+            </h1>
+            <p class="text-white/80 mb-6">{primary.text}</p>
+            <Button href={primary.cta_primary.href} variant="primary" size="lg">
+              {primary.cta_primary.label}
+            </Button>
+          </div>
+        </div>
+      )
+    }
+
+    {
+      rest.length > 0 && (
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
+          {rest.map((slide, i) => (
+            <article
+              class="relative rounded-xl overflow-hidden min-h-[200px] group"
+              data-reveal
+              data-reveal-delay={String((i + 1) * 0.08)}
+            >
+              <ResponsiveImage
+                src={slide.image}
+                alt={slide.image_alt}
+                width={800}
+                height={500}
+                class="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                sizes="(max-width: 640px) 100vw, 50vw"
+              />
+              <div class="absolute inset-0 bg-dark/55 group-hover:bg-dark/65 transition-colors" />
+              <div class="relative z-10 p-6 text-white h-full flex flex-col justify-end">
+                <h2 class="font-heading text-xl font-bold mb-2">{slide.headline}</h2>
+                <Button href={slide.cta_primary.href} variant="outline" size="sm" class="!border-white/40 !text-white w-fit">
+                  {slide.cta_primary.label}
+                </Button>
+              </div>
+            </article>
+          ))}
+        </div>
+      )
+    }
+  </div>
+</section>
