@@ -1,136 +1,19 @@
 ---
-import content from '../../data/content.json';
+/**
+ * Footer dispatcher — selects a visual variant from site.json.footer_variant.
+ * Unknown values fall back to `default` without failing the build (spec §2.3).
+ */
+import { getSite } from '../../data/loaders';
+import {
+  footerVariants,
+  FOOTER_DEFAULT_VARIANT,
+  type FooterVariantKey,
+} from './Footer/variants';
 
-const {
-  company_name, about_content, social_media,
-  company_phone, company_email, company_address,
-  company_schedule, company_payment_method,
-  company_license, company_estimate,
-  footer, footer_services, social_media_labels,
-} = content;
-
-const aboutExcerpt = about_content[0].split(' ').slice(0, 25).join(' ') + '...';
-
-const socialLinks = [
-  { name: social_media_labels.facebook, icon: 'fa-brands fa-facebook-f', url: social_media.facebook },
-  { name: social_media_labels.google, icon: 'fa-brands fa-google', url: social_media.google },
-  { name: social_media_labels.instagram, icon: 'fa-brands fa-instagram', url: social_media.instagram },
-  { name: social_media_labels.youtube, icon: 'fa-brands fa-youtube', url: social_media.youtube },
-].filter(s => s.url && s.url !== '#');
+const site = getSite();
+const requested = (site.footer_variant ?? FOOTER_DEFAULT_VARIANT) as FooterVariantKey;
+const Variant =
+  footerVariants[requested] ?? footerVariants[FOOTER_DEFAULT_VARIANT];
 ---
 
-<footer class="bg-gradient-to-b from-dark via-[#011a35] to-[#00162e] text-white">
-  <!-- Main Footer -->
-  <div class="container-site py-16 md:py-20">
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-12">
-      
-      <!-- Column 1: Logo + About + Social -->
-      <div class="sm:col-span-2 lg:col-span-1">
-        <a href="/" class="inline-block mb-5">
-          <img src="/logo.png" alt={company_name} class="h-16 md:h-20 w-auto object-contain brightness-200 contrast-125" />
-        </a>
-        <p class="text-gray-400 text-sm leading-relaxed mb-6">
-          {aboutExcerpt}
-        </p>
-        <div class="flex items-center gap-3">
-          {socialLinks.map((s) => (
-            <a
-              href={s.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              class="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center hover:bg-accent transition-colors duration-300 text-sm"
-              aria-label={s.name}
-            >
-              <i class={s.icon}></i>
-            </a>
-          ))}
-        </div>
-      </div>
-
-      <!-- Column 2: Services -->
-      <div>
-        <h4 class="font-heading font-bold text-lg text-white mb-5">{footer.services_heading}</h4>
-        <ul class="space-y-2.5">
-          {footer_services.map((s) => (
-            <li>
-              <a href="/services" class="text-gray-400 text-sm hover:text-accent transition-colors duration-200 flex items-center gap-2">
-                <i class="fa-solid fa-chevron-right text-[10px] text-accent"></i>
-                {s}
-              </a>
-            </li>
-          ))}
-          <li>
-            <a href="/services" class="text-accent text-sm font-semibold hover:text-white transition-colors duration-200 flex items-center gap-2 mt-3 pt-3 border-t border-white/10">
-              <i class="fa-solid fa-arrow-right text-xs"></i>
-              {footer.see_more}
-            </a>
-          </li>
-        </ul>
-      </div>
-
-      <!-- Column 3: Contact Info -->
-      <div>
-        <h4 class="font-heading font-bold text-lg text-white mb-5">{footer.contact_heading}</h4>
-        <ul class="space-y-4">
-          <li class="flex items-start gap-3">
-            <i class="fa-solid fa-location-dot text-accent mt-1 text-sm"></i>
-            <span class="text-gray-400 text-sm">{company_address}</span>
-          </li>
-          <li>
-            <a href={`tel:${company_phone[0].replace(/\D/g, '')}`} class="flex items-center gap-3 text-gray-400 text-sm hover:text-accent transition-colors">
-              <i class="fa-solid fa-phone text-accent text-sm"></i>
-              {company_phone[0]}
-            </a>
-          </li>
-          <li>
-            <a href={`mailto:${company_email[0]}`} class="flex items-center gap-3 text-gray-400 text-sm hover:text-accent transition-colors">
-              <i class="fa-solid fa-envelope text-accent text-sm"></i>
-              {company_email[0]}
-            </a>
-          </li>
-          <li class="flex items-start gap-3">
-            <i class="fa-solid fa-clock text-accent mt-1 text-sm"></i>
-            <span class="text-gray-400 text-sm">{company_schedule[0]}</span>
-          </li>
-        </ul>
-      </div>
-
-      <!-- Column 4: Company Info & Payments -->
-      <div>
-        <h4 class="font-heading font-bold text-lg text-white mb-5">{footer.company_heading}</h4>
-        <ul class="space-y-3 text-gray-400 text-sm">
-          <li class="flex items-center gap-2">
-            <i class="fa-solid fa-check-circle text-accent text-xs"></i>
-            {company_estimate}
-          </li>
-          <li class="flex items-center gap-2">
-            <i class="fa-solid fa-id-card text-accent text-xs"></i>
-            {company_license}
-          </li>
-        </ul>
-
-        <!-- Payment Methods -->
-        <h4 class="font-heading font-bold text-lg text-white mt-6 mb-3">{footer.we_accept}</h4>
-        <div class="flex items-center gap-4">
-          <div class="flex items-center gap-2 bg-white/10 rounded-lg px-3 py-2">
-            <i class="fa-solid fa-money-bill-wave text-green-400 text-lg"></i>
-            <span class="text-white/80 text-sm font-medium">{footer.cash_label}</span>
-          </div>
-          <div class="flex items-center gap-2 bg-white/10 rounded-lg px-3 py-2">
-            <i class="fa-solid fa-money-check text-blue-400 text-lg"></i>
-            <span class="text-white/80 text-sm font-medium">{footer.check_label}</span>
-          </div>
-        </div>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- Bottom Bar -->
-  <div class="border-t border-white/10">
-    <div class="container-site py-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-gray-500">
-      <p>&copy; {new Date().getFullYear()} {company_name}. {footer.rights}</p>
-      <a href="/privacy-policy" class="hover:text-accent transition-colors">{footer.privacy_policy}</a>
-    </div>
-  </div>
-</footer>
+<Variant />
