@@ -1,0 +1,42 @@
+{
+  "_instructions": {
+    "categories": "Filter labels for the gallery. Every item.category should match one of these.",
+    "items": "Portfolio images. Paths resolve under src/assets/images/.",
+    "image_alt": "Descriptive alt text for accessibility and SEO.",
+    "variant": "Gallery visual variant key. Default: grid."
+  },
+  "variant": "grid",
+  "section_title": "Our Work",
+  "section_subtitle": "Recent masonry and hardscape projects across Virginia Beach and Hampton Roads.",
+  "categories": ["Patios", "Masonry", "Retaining Walls", "Hardscape"],
+  "items": [
+    {
+      "image": "./images/gallery/patio-1.jpg",
+      "image_alt": "Paver patio with outdoor seating area",
+      "title": "Coastal Paver Patio",
+      "category": "Patios",
+      "location": "Virginia Beach, VA"
+    },
+    {
+      "image": "./images/gallery/masonry-1.jpg",
+      "image_alt": "Custom brick outdoor fireplace",
+      "title": "Brick Outdoor Fireplace",
+      "category": "Masonry",
+      "location": "Norfolk, VA"
+    },
+    {
+      "image": "./images/gallery/wall-1.jpg",
+      "image_alt": "Tiered retaining wall with landscaping",
+      "title": "Tiered Retaining Wall",
+      "category": "Retaining Walls",
+      "location": "Chesapeake, VA"
+    },
+    {
+      "image": "./images/gallery/hardscape-1.jpg",
+      "image_alt": "Walkway and seating wall hardscape project",
+      "title": "Walkway & Seating Wall",
+      "category": "Hardscape",
+      "location": "Suffolk, VA"
+    }
+  ]
+}
