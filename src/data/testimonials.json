@@ -1,0 +1,37 @@
+{
+  "_instructions": {
+    "testimonials": "Customer reviews. stars is 1–5. Keep quotes authentic and concise.",
+    "quote": "Customer quote shown in the card.",
+    "stars": "Integer rating from 1 to 5.",
+    "variant": "Testimonials visual variant key. Default: slider. Options: slider | cards | list | grid."
+  },
+  "variant": "slider",
+  "section_title": "What Our Clients Say",
+  "section_subtitle": "Homeowners across Hampton Roads trust us with their outdoor projects.",
+  "testimonials": [
+    {
+      "name": "Jordan M.",
+      "location": "Virginia Beach, VA",
+      "service": "Patios",
+      "stars": 5,
+      "quote": "Our new paver patio completely transformed the backyard. The crew was professional, on time, and left the site spotless.",
+      "date": "2025-09-12"
+    },
+    {
+      "name": "Alex R.",
+      "location": "Norfolk, VA",
+      "service": "Retaining Walls",
+      "stars": 5,
+      "quote": "They rebuilt a failing wall and fixed the drainage issues we had for years. Solid work and clear communication.",
+      "date": "2025-11-03"
+    },
+    {
+      "name": "Sam T.",
+      "location": "Chesapeake, VA",
+      "service": "Masonry",
+      "stars": 5,
+      "quote": "Beautiful stone fireplace and seating wall. Exactly what we wanted for outdoor entertaining.",
+      "date": "2026-01-18"
+    }
+  ]
+}

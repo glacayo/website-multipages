@@ -1,0 +1,59 @@
+{
+  "_instructions": {
+    "name": "Business name used in logo, footer and schema markup.",
+    "legal_name": "Full legal business name for privacy policy and contracts.",
+    "tagline": "Short value proposition, 1 sentence.",
+    "phones": "Array of phone numbers. First one is the primary CTA.",
+    "emails": "Array of contact emails. First one is the primary.",
+    "address": "US business address. 'full' is used in schema and footer.",
+    "hours": "Weekly schedule. Add as many entries as needed.",
+    "license": "License text shown in footer and about.",
+    "insurance": "Insurance statement shown in trust sections.",
+    "payment_methods": "List of accepted payment methods.",
+    "free_estimate": "CTA phrase, e.g. 'Free On-Site Estimate'.",
+    "years_experience": "Years in business as string, e.g. '15+'.",
+    "service_area": "Human-readable service area description.",
+    "type_of_services": "Comma-separated summary for SEO/meta.",
+    "founded_year": "Year the company was founded. Optional.",
+    "social": "Only include networks the business actively uses.",
+    "services_offered": "Core service names and slugs. Used to validate services.json and build service landing pages."
+  },
+  "name": "Example Masonry & Hardscape",
+  "legal_name": "Example Masonry & Hardscape LLC",
+  "tagline": "Building outdoor spaces that last across Virginia Beach.",
+  "phones": ["(757) 555-0100"],
+  "emails": ["hello@examplecontractor.com"],
+  "address": {
+    "street": "123 Builders Way",
+    "city": "Virginia Beach",
+    "state": "VA",
+    "zip": "23451",
+    "country": "US",
+    "full": "123 Builders Way, Virginia Beach, VA 23451"
+  },
+  "hours": [
+    { "days": "Monday - Friday", "time": "7:00 AM - 6:00 PM" },
+    { "days": "Saturday", "time": "8:00 AM - 2:00 PM" },
+    { "days": "Sunday", "time": "Closed" }
+  ],
+  "license": "Licensed & Insured in Virginia",
+  "insurance": "Fully insured with general liability and workers' compensation.",
+  "payment_methods": ["Cash", "Check", "Credit Card", "Financing Available"],
+  "free_estimate": "Free On-Site Estimate",
+  "years_experience": "15+",
+  "service_area": "Virginia Beach, Norfolk, Chesapeake, Suffolk & surrounding areas",
+  "type_of_services": "Masonry, hardscaping, patios, retaining walls, concrete, pavers and outdoor living.",
+  "founded_year": "2009",
+  "social": {
+    "facebook": "https://facebook.com/examplecontractor",
+    "instagram": "https://instagram.com/examplecontractor",
+    "youtube": "https://youtube.com/@examplecontractor",
+    "google_business": "https://g.co/examplecontractor"
+  },
+  "services_offered": [
+    { "name": "Masonry", "slug": "masonry" },
+    { "name": "Hardscape", "slug": "hardscape" },
+    { "name": "Patios", "slug": "patios" },
+    { "name": "Retaining Walls", "slug": "retaining-walls" }
+  ]
+}
