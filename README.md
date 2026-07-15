@@ -1,230 +1,153 @@
-# Contractor Multipages Template
+# Contractor Multipages Template (v2.0.0)
 
-Reusable Astro template for contractor and local service-business websites.
-This repository is intentionally a template, not a client project.
+Reusable **Astro 7** static template for contractor and local service-business websites.
+This repository is a template base — placeholder content only, not a client project.
 
-Current state:
-- placeholder lorem copy only
-- no real client branding
-- no real client contact data
-- safe base for cloning into new contractor projects
+## Quick path
 
-## Why this template exists
-
-It keeps a reusable page structure for:
-- home
-- about
-- services
-- gallery
-- blog
-- contact
-- paginated blog
-- service landing pages
-
-Use it when you want to spin up a new contractor site without rebuilding the same page architecture again and again.
+1. Install with **pnpm only**: `pnpm install --frozen-lockfile`
+2. Customize the **12 JSON files** under `src/data/`
+3. Build: `pnpm run build`
+4. Deploy the `dist/` folder (Netlify is preconfigured)
 
 ## Stack
 
-- Astro 6
-- Tailwind CSS 3
-- Alpine.js
-- Swiper
-- GSAP
-- sharp (dev dependency for asset processing)
+| Tool | Role |
+|------|------|
+| Astro 7 | Static site generation |
+| Tailwind CSS 4 | Styling (`@theme` tokens in `src/styles/global.css`) |
+| Alpine.js | Light interactivity (nav, FAQ, tabs) |
+| Swiper | Hero/gallery carousels |
+| Sharp | Image optimization via `astro:assets` |
+| Zod | Build-time JSON contract validation |
+| schema-dts | Typed JSON-LD |
+| @lucide/astro | Icons |
 
-Output mode is static.
+Output mode is **static**. Package manager is **pnpm only** — npm/npx are forbidden.
 
-## Repository rules
+## Requirements
 
-This repo is **pnpm-only**.
+- Node.js **v22+**
+- pnpm **>= 11**
 
-Required:
-- `pnpm install`
-- `pnpm run dev`
-- `pnpm run build`
-- `pnpm run preview`
-- `pnpm add <package>`
-- `pnpm remove <package>`
-- `pnpm outdated`
-
-Forbidden:
-- `npm install`
-- `npm run`
-- `npx`
-- committing `package-lock.json`
-
-Canonical lockfile:
-- `pnpm-lock.yaml`
-
-## Quick start
-
-```bash
-pnpm install
-pnpm run dev
-pnpm run build
-```
-
-## How this repository enforces pnpm
-
-This repo does not rely only on documentation.
-
-It enforces pnpm in three layers:
-
-1. **Repository policy docs**
-   - `README.md`
-   - `AGENTS.md`
-
-2. **Runtime guard**
-   - `scripts/enforce-package-manager.cjs`
-   - `package.json` scripts run the guard before Astro commands
-
-3. **Package-manager metadata**
-   - `.npmrc`
-   - `devEngines.packageManager`
-   - `package-lock=false`
-   - `engine-strict=true`
-
-That means:
-- npm build commands are blocked at runtime
-- npm installs are blocked by `devEngines`
-- `package-lock.json` generation is intentionally discouraged
-
-Do not remove or weaken these safeguards.
-
-## Security model
-
-The security posture is intentionally conservative.
-
-### 1. pnpm-only policy
-npm is not allowed here.
-That reduces the surface for npm-specific workflow drift, accidental `package-lock.json` conflicts, and npm script behavior differences.
-
-### 2. Deterministic installs
-Reproducible environments should use:
+## Install and build
 
 ```bash
 pnpm install --frozen-lockfile
+pnpm run dev
+pnpm run validate:data
+pnpm run build
+pnpm run preview
 ```
 
-CI already uses that command.
-
-### 3. Blind upgrades are not allowed
-Do not do:
-- `pnpm update` without review
-- mass upgrades without inspecting `pnpm-lock.yaml`
-- unverified dependency bumps on production branches
-
-Instead:
-- review why the upgrade matters
-- inspect the lockfile diff
-- run `pnpm run build`
-- verify no unexpected install scripts are introduced
-
-See `DEPENDENCY_POLICY.md`.
-
-### 4. Restricted build scripts
-`pnpm-workspace.yaml` currently limits install-time build scripts to:
-- `esbuild`
-- `sharp`
-- `fsevents`
-
-If a new package needs install-time build scripts, update that allowlist intentionally.
-Do not loosen the policy just to silence a warning.
-
-### 5. No secrets in template content
-This template is intentionally lorem-only.
-Before adding real client data, make sure you are working in a real client repo, not the shared template base.
-
-## Template structure
-
-### JSON data contract
-The canonical data layer is:
-
-- `src/data/content.json`
-- `src/data/blogs.json`
-- `src/data/landings.json`
-
-These JSON files must stay schema-compatible with the components that consume them.
-If a component expects a field, the JSON must provide it.
-
-### Why structure matters more than wording
-The UI consumes structured keys, not magic paragraphs.
-If you change the JSON shape carelessly, the build may break even if the text looks fine.
-
-Follow these rules:
-- preserve existing keys
-- preserve expected nested shapes
-- preserve array/object contracts
-- do not rename keys without updating the frontend
-
-### Files that define reusable page logic
-Useful starting points:
-
-- `src/pages/index.astro`
-- `src/pages/about-us.astro`
-- `src/pages/services.astro`
-- `src/pages/gallery.astro`
-- `src/pages/contact-us.astro`
-- `src/pages/blog/index.astro`
-- `src/pages/blog/[page].astro`
-- `src/pages/privacy-policy.astro`
-- `src/layouts/LandingLayout.astro`
-
-### Reuse workflow
-When creating a new contractor project from this template:
-
-1. Clone or copy the template into a new client repository.
-2. Keep the pnpm enforcement files intact:
-   - `AGENTS.md`
-   - `README.md`
-   - `scripts/enforce-package-manager.cjs`
-   - `.npmrc`
-   - `package.json`
-   - `pnpm-workspace.yaml`
-3. Replace only business data:
-   - company name
-   - phone
-   - email
-   - address
-   - service area
-   - SEO copy
-   - navigation labels
-   - social links
-   - testimonials
-   - FAQ
-   - directories
-   - hero slides
-   - blog content
-   - landing pages
-4. Keep the JSON contract stable.
-5. Run:
-   ```bash
-   pnpm install
-   pnpm run build
-   ```
-6. Commit:
-   - `pnpm-lock.yaml`
-   - business data changes
-   - new assets if required
-
-### Do not template-destroy by accident
-When reusing this repo, do not:
-- introduce npm
-- remove the package-manager guard
-- copy-paste from a client repo without diffing JSON keys
-- add real contact data back into the shared template base
-- rename or flatten structured JSON keys without updating components
-
-## Updating dependencies safely
-
-Preferred sequence:
+Forbidden:
 
 ```bash
-pnpm outdated
-# inspect what changed
+npm install
+npm run
+npx
+```
+
+## JSON data contract (12 files)
+
+Client customization happens only through these files under `src/data/`:
+
+| File | Purpose |
+|------|---------|
+| `business.json` | Name, phones, address, hours, services_offered |
+| `site.json` | URL, SEO defaults, theme, feature flags, header/footer variants |
+| `navigation.json` | Header, footer, mobile, legal links |
+| `hero.json` | Hero slides + `variant` |
+| `services.json` | Service catalog + `variant` |
+| `gallery.json` | Gallery items + `variant` |
+| `testimonials.json` | Reviews + `variant` |
+| `faq.json` | FAQ items + `variant` |
+| `areas.json` | Service areas + `variant` |
+| `directories.json` | Directory badges + `variant` |
+| `blog.json` | Blog posts (`published` flag) |
+| `landings.json` | Optional long-form service landings |
+
+Rules:
+
+- Preserve top-level keys and nested shapes
+- Do not rename fields without updating components + Zod schemas
+- Run `pnpm run validate:data` after edits
+- Keep template content placeholder-safe (no real client PII in the shared base)
+
+Types live in `src/data/types.ts`. Loaders live in `src/data/loaders.ts`.
+
+## Variant system
+
+Major sections are **dispatchers**. Pick a visual style with an optional `variant` field in that section’s JSON (or `site.json` for header/footer).
+
+| Section | Config location | Example variants |
+|---------|-----------------|------------------|
+| Header | `site.json.header_variant` | default, centered, transparent, minimal |
+| Footer | `site.json.footer_variant` | default, dark, compact, multi-column |
+| Hero | `hero.json.variant` | one … five |
+| Services | `services.json.variant` | grid, list, cards, tabs, featured |
+| Gallery | `gallery.json.variant` | grid, masonry, carousel, before-after |
+| Testimonials | `testimonials.json.variant` | slider, cards, list, grid |
+| FAQ | `faq.json.variant` | accordion, columns, compact |
+| Areas | `areas.json.variant` | list, map, cards, columns |
+| Directories | `directories.json.variant` | logos, badges, list, grid |
+
+Unknown variants fall back to the documented default without failing the build.
+
+## Routes
+
+| Route | Source |
+|-------|--------|
+| `/`, `/about-us`, `/services`, `/gallery`, `/contact-us` | Static pages |
+| `/privacy-policy`, `/terms-of-service`, `/thank-you`, `/404` | Static pages |
+| `/services/{slug}` | `business.json.services_offered` + `services.json` + optional `landings.json` |
+| `/blog`, `/blog/{page}`, `/blog/{slug}` | `blog.json` when `site.features.enable_blog` |
+| `/sitemap.xml`, `/robots.txt`, `/llm.txt` | Generated endpoints |
+
+## Contact form (Netlify Forms)
+
+`ContactForm` uses markup-only Netlify Forms:
+
+- `name="contact"`
+- `data-netlify="true"`
+- named inputs: `name`, `email`, `phone`, `service`, `message`
+- success redirect: `/thank-you`
+
+No custom backend is required on Netlify.
+
+## Deploy (Netlify)
+
+`netlify.toml` is configured for:
+
+```toml
+command = "pnpm install --frozen-lockfile && pnpm run build"
+publish = "dist"
+```
+
+Node 22 and pnpm frozen lockfile are set in build environment.
+
+## pnpm enforcement
+
+Enforced by:
+
+- `AGENTS.md` / `README.md` / `SKILL.md`
+- `scripts/enforce-package-manager.cjs`
+- `package.json` script prefixes + `preinstall`
+- `.npmrc` (`package-lock=false`, `engine-strict=true`)
+- `devEngines.packageManager`
+- `pnpm-workspace.yaml` install-script allowlist
+
+Do not remove or weaken these safeguards.
+
+## Agent / AI workflow
+
+See `AGENTS.md` (non-negotiable rules) and `SKILL.md` (template skill for agents).
+
+Before finishing nontrivial work:
+
+```bash
+pnpm run validate:data
 pnpm run build
-# verify build
-# commit pnpm-lock.yaml only if the change is intentional
 ```
 
 ## License

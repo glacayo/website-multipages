@@ -1,18 +1,19 @@
 # AGENTS.md
 
-This repository is a reusable contractor template.
-Its two non-negotiable rules are:
+This repository is a reusable contractor website template (v2.0.0).
+Non-negotiable rules for every AI coding agent, automation script, or contributor:
 
 1. **pnpm is the only allowed package manager**
-2. **the JSON data contract must stay schema-stable**
-
-Every AI coding agent, automation script, or contributor working in this repo must follow those rules.
+2. **the 12-file JSON data contract must stay schema-stable**
+3. **do not hardcode client business data into components**
+4. **`pnpm run build` must pass before finishing nontrivial work**
 
 ## 1. Package manager rules
 
 Use pnpm for everything.
 
 Allowed:
+
 - `pnpm install`
 - `pnpm install --frozen-lockfile`
 - `pnpm add <package>`
@@ -21,6 +22,7 @@ Allowed:
 - `pnpm run <script>`
 
 Forbidden:
+
 - `npm install`
 - `npm add`
 - `npm update`
@@ -29,31 +31,36 @@ Forbidden:
 - committing `package-lock.json`
 
 ### Why this exists
-This repo is meant to be cloned into many future contractor sites.
-If any agent or contributor introduces npm, the template loses consistency across projects.
 
-### Enforcement details
-This repo is enforced at multiple levels:
+This repo is cloned into many future contractor sites. Introducing npm breaks template consistency.
+
+### Enforcement
 
 - `AGENTS.md`
 - `README.md`
+- `SKILL.md`
 - `scripts/enforce-package-manager.cjs`
-- `package.json` script guards
+- `package.json` script guards + `preinstall`
 - `.npmrc`
 - `devEngines.packageManager`
 - `package-lock=false`
 - `engine-strict=true`
+- `pnpm-workspace.yaml` build-script allowlist
 
 Do not remove, weaken, or bypass these safeguards.
 
-### Required checks before finishing dependency work
-If you change dependencies or lockfile behavior, verify:
+### Dependency change checklist
 
-- `pnpm run build`
-- `pnpm-lock.yaml` is updated when dependencies actually changed
-- no new unnecessary install/build scripts were introduced
+```bash
+pnpm run build
+```
 
-For reproducible environments, use:
+Also verify:
+
+- `pnpm-lock.yaml` updated only when deps actually changed
+- no unexpected install/build scripts introduced
+
+For reproducible environments:
 
 ```bash
 pnpm install --frozen-lockfile
@@ -61,138 +68,152 @@ pnpm install --frozen-lockfile
 
 ## 2. Template reuse rules
 
-This repo is not a client project.
-It is a reusable template for future contractor websites.
+This repo is not a client project. It is a reusable template.
 
 ### Do
+
 - clone it into a new client repository
-- keep the repo guard files intact
+- keep guard files intact
 - keep the JSON contract stable
-- replace only business-specific content
+- replace only business-specific values in `src/data/*.json` and assets
 
 ### Do not
-- add real client data back into the template base
+
+- add real client PII back into the shared template base
 - copy schema-breaking changes from a client repo into the shared template
-- rename keys without updating every consumer
+- rename keys without updating every consumer + Zod schemas
 - flatten structured JSON without code changes
 
-## 3. JSON data contract rules
+## 3. JSON data contract (v2 — 12 files)
 
-The canonical data layer is:
+Canonical data layer under `src/data/`:
 
-- `src/data/content.json`
-- `src/data/blogs.json`
-- `src/data/landings.json`
+1. `business.json`
+2. `site.json`
+3. `navigation.json`
+4. `hero.json`
+5. `services.json`
+6. `gallery.json`
+7. `testimonials.json`
+8. `faq.json`
+9. `areas.json`
+10. `directories.json`
+11. `blog.json`
+12. `landings.json`
 
-Those files must remain compatible with the frontend components that consume them.
+Supporting code:
+
+- `src/data/types.ts` — interfaces
+- `src/data/loaders.ts` — typed getters
+- `src/data/validation.ts` — Zod schemas (mirrored in `scripts/validate-data.cjs`)
 
 ### Content rules
+
 - preserve top-level keys
 - preserve nested object shape
-- preserve required arrays
-- preserve expected item shapes inside arrays
-- do not remove a key just because the current copy looks optional
+- preserve required arrays and item shapes
+- keep each file’s `_instructions` block
+- do not remove a key just because current copy looks optional
+
+### Variant fields
+
+Sections select visuals via optional `variant` keys (section JSON) or `header_variant` / `footer_variant` in `site.json`. Unknown variants must fall back to defaults without failing the build.
+
+### Images
+
+Content images live in `src/assets/images/` and are referenced from JSON as `./images/...`.
+Untransformed public assets (logo, favicon, OG default) live in `public/`.
 
 ### Why this matters
-The UI expects contract-defined keys, not flexible freeform text.
-Changing wording is easy.
-Changing shape is risky.
 
-Before editing JSON, verify the component contract:
-- headings
-- navigation
-- sections
-- testimonials
-- faq
-- hero slides
-- directories
-- social links
-- SEO
-- landing pages
-- blog metadata
+UI expects contract-defined keys. Changing wording is easy; changing shape is risky.
 
-## 4. Required workflow for AI agents modifying this repo
+Before editing JSON, verify consumers (pages/components) and run:
+
+```bash
+pnpm run validate:data
+```
+
+## 4. Required workflow for AI agents
 
 ### Before changes
-Inspect the current structure first.
-Do not assume the schema.
+
 Read:
+
 - `package.json`
 - `.npmrc`
 - `pnpm-workspace.yaml`
 - the relevant page/component
 - the relevant `src/data/*.json` file
+- `src/data/types.ts` when touching data shape
 
 ### During changes
+
 - keep pnpm enforcement files untouched
-- keep the template neutral unless the task explicitly asks to convert it into a client build
-- prefer additive changes over shape-breaking changes
-- avoid destructive refactors unless both frontend and data contract are updated together
+- keep template neutral unless the task explicitly converts this into a client build
+- prefer additive contract changes over shape-breaking ones
+- update Zod/validation when shapes change
+- do not hardcode phones, emails, addresses, or service copy in components — read loaders
 
 ### Before finishing
-Every nontrivial change should end with:
 
 ```bash
+pnpm run validate:data
 pnpm run build
 ```
 
-If the change touches dependency policy, also check:
-- `pnpm outdated`
-- lockfile changes
-- new install-script packages
+`pnpm run build` already runs the package-manager guard, data validation, `astro check`, and `astro build`.
 
 ## 5. Security obligations
 
 ### 5.1 No npm fallback
-Even if the runtime environment has npm installed, this repo must not fall back to npm.
-pnpm is mandatory.
+
+Even if the environment has npm installed, this repo must not fall back to npm.
 
 ### 5.2 No blind dependency upgrades
-Do not run mass upgrades without review.
 
 Preferred sequence:
-- inspect why the upgrade matters
-- review lockfile diff
-- run `pnpm run build`
-- verify no unexpected scripts or subdependencies were introduced
 
-### 5.3 Preserve lockfile hygiene
+1. inspect why the upgrade matters
+2. review lockfile diff
+3. run `pnpm run build`
+4. verify no unexpected scripts/subdeps
+
+### 5.3 Lockfile hygiene
+
 - commit `pnpm-lock.yaml` when dependencies change
 - do not regenerate it unnecessarily
-- use `--frozen-lockfile` in CI or deterministic environments
+- use `--frozen-lockfile` in CI / Netlify
 
-### 5.4 Preserve restricted build scripts
-`pnpm-workspace.yaml` currently allows install-time build scripts only for:
-- `esbuild`
-- `sharp`
-- `fsevents`
+### 5.4 Restricted install build scripts
 
-Do not loosen that allowlist without intentional review.
+`pnpm-workspace.yaml` allowlist is intentional. Do not loosen it without review.
 
-### 5.5 Keep template content safe
-This template must remain lorem/placeholder only.
-If you are preparing a new client project, create that work in a client repo, not here.
+### 5.5 Template content safety
+
+Template content must remain placeholder/lorem-style. Real client data belongs in a client repo.
 
 ## 6. High-risk anti-patterns
 
-Do not do any of the following:
+Do not:
 
-- add `npm install` instructions
-- replace pnpm docs with npm docs
-- delete the package-manager guard script
-- restore legacy `package-lock.json`
-- copy client JSON schemas from a production repo without diffing
-- rename or remove structured JSON fields because “they look unused”
-- add real phone numbers, addresses, or client names into the shared template base
+- add `npm install` / `npx` instructions
+- delete the package-manager guard
+- restore `package-lock.json`
+- reintroduce v1 monolith files (`content.json`, `blogs.json`) as the contract
+- rename/remove structured JSON fields because they “look unused”
+- hardcode client business data into `.astro` components
 
-## 7. Short checklist for AI coding agents
+## 7. Short checklist
 
 Before submitting changes, confirm:
 
-- pnpm is still the only allowed package manager
-- `package-lock.json` is not reintroduced
-- `AGENTS.md`, `README.md`, and guard scripts remain intact
-- `src/data/*.json` still follows the same contract
-- `pnpm run build` passes
+- [ ] pnpm is still the only allowed package manager
+- [ ] `package-lock.json` is not reintroduced
+- [ ] guard docs/scripts remain intact
+- [ ] only the 12 contract JSON files are the data source
+- [ ] variants still fall back safely
+- [ ] `pnpm run validate:data` passes
+- [ ] `pnpm run build` passes
 
-If any of those fail, fix it before finishing.
+If any fail, fix them before finishing.
