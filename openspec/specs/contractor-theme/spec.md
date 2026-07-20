@@ -1,8 +1,8 @@
-# Spec: v2.0.0 Contractor Theme Rebuild
+# Spec: Contractor Theme Template
 
 ## 1. Purpose and Scope
 
-Rebuild the broken v1 template as a buildable Astro 7 static contractor theme. Client customization happens exclusively through a stable, typed, Zod-validated JSON contract and JSON-selectable section variants — never through component edits.
+The system is a buildable Astro 7 static contractor theme. Client customization happens exclusively through a stable, typed, Zod-validated JSON contract and JSON-selectable section variants — never through component edits.
 
 **In scope**: Astro 7.x + Tailwind CSS 4 + pnpm + Alpine.js + Swiper + Sharp + `@lucide/astro`; a 12-file JSON contract with `_instructions`, TS types, and Zod build validation; 4–8 variants per major section; `astro:assets` image pipeline (WebP default, AVIF opt-in); generated SEO/schema, Netlify Forms, and refreshed README/AGENTS.md/SKILL.md/`netlify.toml`.
 
@@ -113,7 +113,7 @@ Rebuild the broken v1 template as a buildable Astro 7 static contractor theme. C
 
 ### 2.6 Capability: `agent-developer-docs`
 
-**Requirement: Accurate Reuse Documentation.** `README.md`, `AGENTS.md`, and `SKILL.md` MUST document the pnpm-only rule, the 12-file JSON contract, the variant system, and `pnpm run build` as the pre-finish check, with no npm/npx instructions (correcting the v1 `SKILL.md` contradiction).
+**Requirement: Accurate Reuse Documentation.** `README.md`, `AGENTS.md`, and `SKILL.md` MUST document the pnpm-only rule, the 12-file JSON contract, the variant system, and `pnpm run build` as the pre-finish check, with no npm/npx instructions.
 
 #### Scenario: Agent follows SKILL.md without violating contract
 - GIVEN an AI agent reads `SKILL.md` to add a new service

@@ -48,4 +48,4 @@ __pycache__/
 docs_trash/
 
 # Client-only overrides may live untracked outside the template placeholders.
-# Tracked public placeholders (logo, og-default, temporary v1 path mirrors) are allowed.
+# Tracked public placeholders (logo, favicon, og-default) are allowed.
