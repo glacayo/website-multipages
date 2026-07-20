@@ -1,6 +1,6 @@
 # AGENTS.md
 
-This repository is a reusable contractor website template (v2.1.1).
+This repository is a reusable contractor website template (v2.1.2).
 Non-negotiable rules for every AI coding agent, automation script, or contributor:
 
 1. **pnpm is the only allowed package manager**
