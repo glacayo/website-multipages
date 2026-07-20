@@ -1,0 +1,31 @@
+{
+  "_instructions": {
+    "slides": "Each slide becomes a hero panel. Minimum 1 slide recommended.",
+    "overlay": "Optional color overlay to ensure text contrast: dark | primary | accent | none.",
+    "image_alt": "Descriptive alt text for accessibility and SEO.",
+    "variant": "Hero visual variant key. Default: one."
+  },
+  "variant": "one",
+  "slides": [
+    {
+      "image": "./images/hero/patio.jpg",
+      "image_alt": "Backyard patio with pavers and outdoor seating",
+      "overlay": "dark",
+      "tagline": "Outdoor Living Done Right",
+      "headline": "Masonry & Hardscape Contractors You Can Trust",
+      "text": "Serving Virginia Beach with patios, retaining walls, pavers, fireplaces and custom stone work since 2009.",
+      "cta_primary": { "label": "Get a Free Estimate", "href": "/contact-us" },
+      "cta_secondary": { "label": "View Our Work", "href": "/gallery" }
+    },
+    {
+      "image": "./images/hero/retaining-wall.jpg",
+      "image_alt": "Stone retaining wall along a landscaped hillside",
+      "overlay": "primary",
+      "tagline": "Built to Last",
+      "headline": "Custom Retaining Walls & Stone Features",
+      "text": "Engineered for durability and designed to complement your property's grade and style.",
+      "cta_primary": { "label": "Request an Estimate", "href": "/contact-us" },
+      "cta_secondary": { "label": "Our Services", "href": "/services" }
+    }
+  ]
+}

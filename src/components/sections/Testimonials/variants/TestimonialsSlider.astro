@@ -1,0 +1,142 @@
+---
+/**
+ * Variant `slider` — Swiper carousel of testimonial cards.
+ */
+import 'swiper/css';
+import 'swiper/css/autoplay';
+import type { TestimonialsData } from '../../../../data/types';
+import SectionWrapper from '../../../ui/SectionWrapper.astro';
+import SectionHeader from '../../../ui/SectionHeader.astro';
+import Star from '@lucide/astro/icons/star';
+
+interface Props {
+  data: TestimonialsData;
+}
+
+const { data } = Astro.props;
+
+function initials(name: string): string {
+  return name
+    .split(/\s+/)
+    .map((part) => part[0] ?? '')
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+}
+---
+
+<SectionWrapper background="default" id="testimonials">
+  <SectionHeader title={data.section_title} subtitle={data.section_subtitle} />
+
+  <div data-reveal data-reveal-delay="0.1">
+    <div
+      class="testimonials-swiper swiper w-full max-w-full overflow-hidden px-1"
+      data-testimonials-slider
+    >
+      <div class="swiper-wrapper">
+        {
+          data.testimonials.map((t) => (
+            <div class="swiper-slide flex h-auto py-2">
+              <article class="testimonial-slide-card bg-surface border border-border rounded-2xl p-6 md:p-7 shadow-sm flex flex-col flex-1 mx-1">
+                <div class="flex gap-0.5 text-amber-400 mb-4" aria-label={`${t.stars} out of 5 stars`}>
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Star
+                      class:list={[
+                        'w-4 h-4',
+                        i < t.stars ? 'fill-amber-400' : 'text-border fill-none',
+                      ]}
+                    />
+                  ))}
+                </div>
+                <blockquote class="text-dark/80 text-sm md:text-base leading-relaxed mb-5 flex-1">
+                  &ldquo;{t.quote}&rdquo;
+                </blockquote>
+                <div class="flex items-center gap-3 pt-4 border-t border-border">
+                  <div class="w-9 h-9 rounded-full bg-accent flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
+                    {t.avatar ?? initials(t.name)}
+                  </div>
+                  <div class="min-w-0">
+                    <p class="font-semibold text-dark text-sm truncate">{t.name}</p>
+                    <p class="text-muted text-xs truncate">{t.location}</p>
+                  </div>
+                  <span class="ml-auto text-[10px] text-muted bg-light border border-border px-2 py-1 rounded-full whitespace-nowrap">
+                    {t.service}
+                  </span>
+                </div>
+              </article>
+            </div>
+          ))
+        }
+      </div>
+
+      <div class="flex items-center justify-center gap-2 mt-8">
+        {
+          data.testimonials.map((_, i) => (
+            <button
+              type="button"
+              class="testimonial-dot w-2.5 h-2.5 rounded-full bg-border transition-all duration-300"
+              data-index={i}
+              aria-label={`Go to testimonial ${i + 1}`}
+            />
+          ))
+        }
+      </div>
+    </div>
+  </div>
+</SectionWrapper>
+
+<style>
+  .testimonials-swiper :global(.swiper-wrapper) {
+    align-items: stretch;
+  }
+  .testimonials-swiper :global(.swiper-slide) {
+    height: auto !important;
+  }
+</style>
+
+<script>
+  import Swiper from 'swiper';
+  import { Autoplay } from 'swiper/modules';
+
+  const root = document.querySelector('[data-testimonials-slider]');
+  if (root) {
+    const dots = root.querySelectorAll<HTMLElement>('.testimonial-dot');
+
+    function setActiveDot(index: number) {
+      dots.forEach((d, i) => {
+        d.classList.toggle('!bg-accent', i === index);
+        d.classList.toggle('!w-8', i === index);
+      });
+    }
+
+    const swiper = new Swiper(root as HTMLElement, {
+      modules: [Autoplay],
+      slidesPerView: 1,
+      spaceBetween: 20,
+      loop: true,
+      speed: 600,
+      autoplay: {
+        delay: 4000,
+        disableOnInteraction: false,
+        pauseOnMouseEnter: true,
+      },
+      breakpoints: {
+        768: { slidesPerView: 2, spaceBetween: 24 },
+      },
+      on: {
+        slideChange(s) {
+          setActiveDot(s.realIndex);
+        },
+      },
+    });
+
+    dots.forEach((dot) => {
+      dot.addEventListener('click', () => {
+        const idx = parseInt(dot.getAttribute('data-index') || '0', 10);
+        swiper.slideToLoop(idx);
+      });
+    });
+
+    setActiveDot(0);
+  }
+</script>

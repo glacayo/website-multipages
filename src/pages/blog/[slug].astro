@@ -1,96 +1,104 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import TopBar from '../../components/layout/TopBar.astro';
-import Header from '../../components/layout/Header.astro';
+import Breadcrumb from '../../components/ui/Breadcrumb.astro';
+import ResponsiveImage from '../../components/ui/ResponsiveImage.astro';
 import CTABar from '../../components/sections/CTABar.astro';
-import blogsData from '../../data/blogs.json';
-import content from '../../data/content.json';
+import {
+  getBlogPost,
+  getPublishedBlogPosts,
+  getSite,
+} from '../../data/loaders';
 
 export function getStaticPaths() {
-  const posts = blogsData.posts || [];
-  return posts.map((p: any) => ({ params: { slug: p.slug } }));
+  const site = getSite();
+  if (!site.features.enable_blog) {
+    return [];
+  }
+
+  return getPublishedBlogPosts().map((post) => ({
+    params: { slug: post.slug },
+  }));
+}
+
+const site = getSite();
+
+if (!site.features.enable_blog) {
+  return Astro.redirect('/');
 }
 
 const { slug } = Astro.params;
-const posts = blogsData.posts || [];
-const post = posts.find((p: any) => p.slug === slug);
+const post = slug ? getBlogPost(slug) : undefined;
 
-if (!post) return Astro.redirect('/blog');
-
-const { company_name } = content;
+if (!post || !post.published) {
+  return Astro.redirect('/blog');
+}
 
 function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  return new Date(dateStr).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
 }
+
+// Pass meta_title or headline only — buildSeo()/composeTitle appends site name
+// when no separator is already present (S4.1–S4.3).
+const pageTitle = post.meta_title || post.headline;
 ---
 
 <BaseLayout
-  title={`${post.headline} | ${company_name}`}
-  description={post.description || post.excerpt?.slice(0, 160)}
+  title={pageTitle}
+  description={post.description || post.excerpt.slice(0, 160)}
+  path={`/blog/${post.slug}`}
+  pageType="post"
+  post={post}
+  type="article"
+  image={post.image}
 >
-  <TopBar />
-  <Header />
-
-  <!-- ===== Header ===== -->
-  <section class="relative -mt-[5.5rem] md:-mt-[6.5rem]">
-    <div class="relative h-[45vh] min-h-[350px] md:min-h-[450px] overflow-hidden bg-dark">
-      <div class="absolute inset-0 bg-gradient-to-br from-dark/90 via-primary/40 to-accent/60"></div>
-      <div class="relative z-10 container-site h-full flex flex-col items-center justify-center text-center text-white">
-        <h1 class="font-heading text-2xl md:text-4xl lg:text-5xl font-bold mb-4">{post.headline}</h1>
-        <nav class="flex items-center justify-center gap-2 text-sm text-white/70" aria-label="Breadcrumb">
-          <a href="/" class="hover:text-accent transition-colors">Home</a>
-          <i class="fa-solid fa-chevron-right text-[10px]"></i>
-          <a href="/blog" class="hover:text-accent transition-colors">Blog</a>
-          <i class="fa-solid fa-chevron-right text-[10px]"></i>
-          <span class="text-accent">Article</span>
-        </nav>
-      </div>
+  <section class="relative overflow-hidden bg-dark">
+    <div class="absolute inset-0 bg-gradient-to-br from-dark via-primary to-accent/60"></div>
+    <div class="container-site relative z-10 flex min-h-[320px] flex-col items-center justify-center py-16 text-center text-white md:min-h-[400px]">
+      <h1 class="font-heading mb-4 max-w-3xl text-2xl font-bold md:text-4xl lg:text-5xl">
+        {post.headline}
+      </h1>
+      <Breadcrumb
+        items={[
+          { label: 'Home', href: '/' },
+          { label: 'Blog', href: '/blog' },
+          { label: 'Article' },
+        ]}
+        class="[&_a]:text-white/70 [&_a:hover]:text-accent [&_span]:text-accent [&_.text-muted]:text-white/50 [&_.text-dark]:text-accent"
+      />
     </div>
   </section>
 
-  <!-- ===== Article Body ===== -->
-  <article class="py-10 md:py-16 bg-white">
+  <article class="bg-white py-10 md:py-16">
     <div class="container-site">
-      <div class="max-w-3xl mx-auto">
-
-        <!-- Feature Image -->
-        <div class="rounded-2xl overflow-hidden shadow-lg mb-8 shimmer-bg">
-          <img
-            src={"/images/blog/" + (post.image_filename || "5.jpg")}
-            alt={post.headline}
-            class="w-full h-auto object-cover"
-            loading="eager"
+      <div class="mx-auto max-w-3xl">
+        <div class="mb-8 overflow-hidden rounded-2xl shadow-lg">
+          <ResponsiveImage
+            src={post.image}
+            alt={post.image_alt || post.headline}
+            width={1200}
+            height={675}
+            lcp
+            class="h-auto w-full object-cover"
           />
         </div>
 
-        <!-- Meta Bar -->
-        <div class="flex flex-wrap items-center gap-4 text-sm text-gray-500 mb-10 pb-8 border-b border-gray-100">
-          <span class="flex items-center gap-1.5">
-            <i class="fa-solid fa-calendar text-accent"></i>
-            {formatDate(post.date)}
-          </span>
-          <span class="text-gray-300">|</span>
-          <span class="flex items-center gap-1.5">
-            <i class="fa-solid fa-user text-accent"></i>
-            {post.author}
-          </span>
-          <span class="text-gray-300">|</span>
-          <span class="flex items-center gap-1.5">
-            <i class="fa-solid fa-tag text-accent"></i>
-            {post.category}
-          </span>
-          <span class="text-gray-300">|</span>
-          <span class="flex items-center gap-1.5">
-            <i class="fa-solid fa-clock text-accent"></i>
-            {post.reading_time}
-          </span>
+        <div class="mb-10 flex flex-wrap items-center gap-4 border-b border-border pb-8 text-sm text-muted">
+          <span>{formatDate(post.date)}</span>
+          <span class="text-border">|</span>
+          <span>{post.author}</span>
+          <span class="text-border">|</span>
+          <span>{post.category}</span>
+          <span class="text-border">|</span>
+          <span>{post.reading_time}</span>
         </div>
 
-        <!-- Content -->
         <div class="blog-content">
           <Fragment set:html={post.content} />
         </div>
-
       </div>
     </div>
   </article>
@@ -107,7 +115,7 @@ function formatDate(dateStr: string): string {
   }
 
   .blog-content h2 {
-    font-family: 'Poppins', system-ui, sans-serif;
+    font-family: var(--font-heading, system-ui, sans-serif);
     font-weight: 700;
     font-size: 1.75rem;
     color: #1f2937;
@@ -117,7 +125,7 @@ function formatDate(dateStr: string): string {
   }
 
   .blog-content h3 {
-    font-family: 'Poppins', system-ui, sans-serif;
+    font-family: var(--font-heading, system-ui, sans-serif);
     font-weight: 600;
     font-size: 1.35rem;
     color: #1f2937;

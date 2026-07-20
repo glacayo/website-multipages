@@ -1,51 +1,63 @@
 ---
-import content from '../../data/content.json';
+/**
+ * Home about teaser. Content derived from business.json.
+ */
+import Button from '../ui/Button.astro';
+import ResponsiveImage from '../ui/ResponsiveImage.astro';
+import { getBusiness } from '../../data/loaders';
 
-const { company_name, about_content, company_years_experience, section_headings, buttons } = content;
-const { about: aHeadings } = section_headings;
+const business = getBusiness();
 ---
 
-<section class="relative py-20 md:py-32 overflow-hidden">
-  <!-- Background Image -->
-  <div class="absolute inset-0 shimmer-bg">
-    <img
-      src="https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=1920&q=80&fit=crop"
-      alt=""
-      class="w-full h-full object-cover shimmer-img"
-      loading="lazy"
-      onload="this.classList.add('loaded')"
+<section class="relative overflow-hidden py-20 md:py-28">
+  <div class="absolute inset-0">
+    <ResponsiveImage
+      src="./images/about/workshop.jpg"
+      alt={`${business.name} workshop and team`}
+      width={1920}
+      height={1080}
+      class="h-full w-full object-cover"
     />
   </div>
+  <div class="absolute inset-0 bg-gradient-to-r from-dark/95 via-dark/80 to-dark/40"></div>
 
-  <!-- Dark Overlay -->
-  <div class="absolute inset-0 bg-dark/80 bg-gradient-to-r from-dark/95 via-dark/80 to-dark/30"></div>
-
-  <!-- Content -->
   <div class="container-site relative z-10">
     <div class="max-w-2xl">
-      <span class="inline-flex items-center gap-2 text-accent/90 font-semibold text-sm uppercase tracking-[0.2em] mb-3" data-reveal>
-        <span class="w-8 h-[2px] bg-accent/90"></span>
-        {aHeadings.badge}
+      <span
+        class="mb-3 inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.2em] text-accent"
+        data-reveal
+      >
+        <span class="h-[2px] w-8 bg-accent"></span>
+        About us
       </span>
 
-      <h2 class="font-heading text-3xl md:text-4xl lg:text-5xl font-bold text-white leading-[1.15] mb-6" data-reveal data-reveal-delay="0.1">
-        {company_years_experience}<br/>
-        <span class="text-accent">{aHeadings.headline_suffix}</span>
+      <h2
+        class="font-heading mb-6 text-3xl font-bold leading-tight text-white md:text-4xl lg:text-5xl"
+        data-reveal
+        data-reveal-delay="0.1"
+      >
+        {business.years_experience} years of
+        <span class="text-accent"> building excellence</span>
       </h2>
 
-      <div class="space-y-4 text-white/80 text-base md:text-lg leading-relaxed mb-8" data-reveal data-reveal-delay="0.2">
-        <p>{about_content[0]}</p>
-        <p>{about_content[1]}</p>
+      <div
+        class="mb-8 space-y-4 text-base leading-relaxed text-white/80 md:text-lg"
+        data-reveal
+        data-reveal-delay="0.2"
+      >
+        <p>
+          {business.name} is a trusted {business.type_of_services.toLowerCase()} contractor
+          serving {business.service_area}.
+        </p>
+        <p>
+          {business.tagline} {business.license}. {business.insurance}
+        </p>
       </div>
 
       <div data-reveal data-reveal-delay="0.35">
-        <a
-          href="/about-us"
-          class="inline-flex items-center gap-2 px-8 py-3.5 bg-accent text-white font-semibold rounded-md hover:bg-accent/85 hover:shadow-lg hover:shadow-accent/30 hover:-translate-y-0.5 transition-all duration-300 shine-effect"
-        >
-          {buttons.learn_more_about_us}
-          <i class="fa-solid fa-arrow-right text-sm"></i>
-        </a>
+        <Button href="/about-us" variant="primary" size="md">
+          Learn more about us
+        </Button>
       </div>
     </div>
   </div>

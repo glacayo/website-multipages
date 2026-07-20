@@ -1,0 +1,70 @@
+---
+/**
+ * Variant `list` — stacked horizontal review rows.
+ */
+import type { TestimonialsData } from '../../../../data/types';
+import SectionWrapper from '../../../ui/SectionWrapper.astro';
+import SectionHeader from '../../../ui/SectionHeader.astro';
+import Star from '@lucide/astro/icons/star';
+
+interface Props {
+  data: TestimonialsData;
+}
+
+const { data } = Astro.props;
+
+function initials(name: string): string {
+  return name
+    .split(/\s+/)
+    .map((part) => part[0] ?? '')
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+}
+---
+
+<SectionWrapper background="default" id="testimonials">
+  <SectionHeader title={data.section_title} subtitle={data.section_subtitle} />
+
+  <div class="max-w-3xl mx-auto space-y-5">
+    {
+      data.testimonials.map((t, i) => (
+        <article
+          data-reveal
+          data-reveal-delay={String(i * 0.06)}
+          class="flex flex-col sm:flex-row gap-4 sm:gap-6 p-5 md:p-6 rounded-2xl border border-border bg-light shadow-sm"
+        >
+          <div class="flex sm:flex-col items-center sm:items-start gap-3 sm:w-36 shrink-0">
+            <div class="w-12 h-12 rounded-full bg-accent text-white flex items-center justify-center text-sm font-bold">
+              {t.avatar ?? initials(t.name)}
+            </div>
+            <div>
+              <p class="font-semibold text-dark text-sm">{t.name}</p>
+              <p class="text-muted text-xs">{t.location}</p>
+            </div>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex flex-wrap items-center gap-2 mb-2">
+              <div class="flex gap-0.5 text-amber-400" aria-label={`${t.stars} out of 5 stars`}>
+                {Array.from({ length: 5 }).map((_, si) => (
+                  <Star
+                    class:list={[
+                      'w-3.5 h-3.5',
+                      si < t.stars ? 'fill-amber-400' : 'text-border fill-none',
+                    ]}
+                  />
+                ))}
+              </div>
+              <span class="text-[10px] uppercase tracking-wide text-muted bg-surface border border-border px-2 py-0.5 rounded-full">
+                {t.service}
+              </span>
+            </div>
+            <blockquote class="text-dark/80 text-sm md:text-base leading-relaxed">
+              &ldquo;{t.quote}&rdquo;
+            </blockquote>
+          </div>
+        </article>
+      ))
+    }
+  </div>
+</SectionWrapper>

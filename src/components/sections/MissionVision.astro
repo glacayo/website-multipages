@@ -1,62 +1,56 @@
 ---
-import content from '../../data/content.json';
+/**
+ * Mission / vision / why-choose strip for About and Home.
+ * Placeholder template copy derived from business.json facts.
+ */
+import { getBusiness } from '../../data/loaders';
 
-const { company_mission, company_vision, company_why_choose_us, mission_vision_labels } = content;
+const business = getBusiness();
 
 const columns = [
   {
-    icon: 'fa-solid fa-bullseye',
-    title: mission_vision_labels.our_mission,
-    text: company_mission,
+    title: 'Our mission',
+    text: `Deliver durable outdoor craftsmanship for homeowners and businesses across ${business.service_area}, with clear communication and honest timelines.`,
   },
   {
-    icon: 'fa-solid fa-eye',
-    title: mission_vision_labels.our_vision,
-    text: company_vision,
+    title: 'Our vision',
+    text: `Be the most trusted local partner for ${business.type_of_services.toLowerCase()} — known for quality details, clean job sites, and long-lasting results.`,
   },
   {
-    icon: 'fa-solid fa-star',
-    title: mission_vision_labels.why_choose_us,
-    text: company_why_choose_us,
+    title: 'Why choose us',
+    text: `${business.years_experience} years of experience. ${business.license}. ${business.free_estimate}. Payment options: ${business.payment_methods.join(', ')}.`,
   },
 ];
 ---
 
-<section class="py-16 md:py-24 bg-accent relative overflow-hidden">
-  <!-- Subtle pattern -->
-  <div class="absolute inset-0 opacity-10 pointer-events-none">
-    <div class="absolute inset-0" style="background-image: radial-gradient(circle at 30% 40%, rgba(255,255,255,0.4) 1px, transparent 1px); background-size: 32px 32px;"></div>
+<section class="relative overflow-hidden bg-accent py-16 md:py-24">
+  <div
+    class="pointer-events-none absolute inset-0 opacity-10"
+    aria-hidden="true"
+    style="background-image: radial-gradient(circle at 30% 40%, rgba(255,255,255,0.4) 1px, transparent 1px); background-size: 32px 32px;"
+  >
   </div>
 
   <div class="container-site relative z-10">
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-      {columns.map((col, i) => (
-        <div
-          data-reveal
-          data-reveal-delay={String(i * 0.15)}
-          class="glass-card shine-effect group relative overflow-hidden rounded-2xl p-8 md:p-10 transition-all duration-300 hover:-translate-y-1"
-        >
-          {/* Glass base */}
-          <div class="absolute inset-0 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl"></div>
-          
-          {/* Reflection shine */}
-          <div class="absolute -top-20 -right-20 w-40 h-40 bg-gradient-to-bl from-white/20 to-transparent rounded-full pointer-events-none"></div>
-          <div class="absolute -bottom-10 -left-10 w-32 h-32 bg-gradient-to-tr from-white/10 to-transparent rounded-full pointer-events-none"></div>
-
-          {/* Content */}
-          <div class="relative z-10">
-            <div class="w-14 h-14 bg-white/15 text-white rounded-xl flex items-center justify-center mb-6 group-hover:bg-white group-hover:text-accent transition-colors duration-300">
-              <i class={`${col.icon} text-xl`}></i>
+    <div class="grid grid-cols-1 gap-8 md:grid-cols-3">
+      {
+        columns.map((col, i) => (
+          <div
+            data-reveal
+            data-reveal-delay={String(i * 0.15)}
+            class="group relative overflow-hidden rounded-2xl p-8 md:p-10 transition-all duration-300 hover:-translate-y-1"
+          >
+            <div class="absolute inset-0 rounded-2xl border border-white/20 bg-white/10 backdrop-blur-md"></div>
+            <div class="relative z-10">
+              <div class="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-sm font-bold text-white">
+                {i + 1}
+              </div>
+              <h3 class="font-heading mb-4 text-xl font-bold text-white">{col.title}</h3>
+              <p class="text-sm leading-relaxed text-white/80 md:text-base">{col.text}</p>
             </div>
-            <h3 class="font-heading font-bold text-xl text-white mb-4">
-              {col.title}
-            </h3>
-            <p class="text-white/75 text-sm md:text-base leading-relaxed">
-              {col.text}
-            </p>
           </div>
-        </div>
-      ))}
+        ))
+      }
     </div>
   </div>
 </section>

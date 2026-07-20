@@ -1,0 +1,81 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Breadcrumb from '../components/ui/Breadcrumb.astro';
+import { getBusiness, getSite } from '../data/loaders';
+
+const business = getBusiness();
+const site = getSite();
+const primaryPhone = business.phones[0] ?? '';
+const primaryEmail = business.emails[0] ?? '';
+---
+
+<BaseLayout
+  title={`Terms of Service${site.seo.title_separator}${business.name}`}
+  description={`Terms of service for ${business.name}.`}
+  path="/terms-of-service"
+  pageType="legal"
+>
+  <section class="relative overflow-hidden bg-dark">
+    <div class="absolute inset-0 bg-gradient-to-br from-dark via-primary to-accent/60"></div>
+    <div class="container-site relative z-10 flex min-h-[280px] flex-col items-center justify-center py-16 text-center text-white">
+      <h1 class="font-heading mb-4 text-3xl font-bold md:text-5xl">Terms of Service</h1>
+      <Breadcrumb
+        items={[{ label: 'Home', href: '/' }, { label: 'Terms of Service' }]}
+        class="[&_a]:text-white/70 [&_a:hover]:text-accent [&_span]:text-accent [&_.text-muted]:text-white/50 [&_.text-dark]:text-accent"
+      />
+    </div>
+  </section>
+
+  <article class="bg-white py-16 md:py-24">
+    <div class="container-site">
+      <div class="mx-auto max-w-3xl space-y-6 text-sm leading-relaxed text-muted md:text-base">
+        <p><strong class="text-dark">Last updated:</strong> July 15, 2026</p>
+        <p>
+          These Terms of Service govern use of the website operated by {business.name}
+          {business.legal_name ? ` (${business.legal_name})` : ''}. By accessing this site you
+          agree to these terms.
+        </p>
+
+        <h2 class="font-heading mt-8 mb-3 text-xl font-bold text-dark">1. Services described</h2>
+        <p>
+          Content on this website describes contractor services for informational and lead-generation
+          purposes. Estimates, timelines, and project details are confirmed only after direct
+          consultation.
+        </p>
+
+        <h2 class="font-heading mt-8 mb-3 text-xl font-bold text-dark">2. Website use</h2>
+        <p>
+          You may not misuse this site, attempt unauthorized access, submit malicious content, or
+          use contact forms for spam.
+        </p>
+
+        <h2 class="font-heading mt-8 mb-3 text-xl font-bold text-dark">3. Intellectual property</h2>
+        <p>
+          Site design, copy, and branding belong to {business.name} or its licensors unless otherwise
+          noted. Do not copy materials without permission.
+        </p>
+
+        <h2 class="font-heading mt-8 mb-3 text-xl font-bold text-dark">4. Limitation of liability</h2>
+        <p>
+          Information is provided as-is. To the fullest extent permitted by law, {business.name}
+          is not liable for damages arising from use of this website alone.
+        </p>
+
+        <h2 class="font-heading mt-8 mb-3 text-xl font-bold text-dark">5. Contact</h2>
+        <p>
+          {business.name}<br />
+          {business.address.full}<br />
+          Phone:{' '}
+          <a href={`tel:${primaryPhone.replace(/\D/g, '')}`} class="text-accent hover:underline">
+            {primaryPhone}
+          </a>
+          <br />
+          Email:{' '}
+          <a href={`mailto:${primaryEmail}`} class="text-accent hover:underline">
+            {primaryEmail}
+          </a>
+        </p>
+      </div>
+    </div>
+  </article>
+</BaseLayout>

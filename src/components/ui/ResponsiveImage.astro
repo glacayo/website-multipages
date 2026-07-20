@@ -1,0 +1,57 @@
+---
+import { Image } from 'astro:assets';
+import { getImageByPath } from '../../utils/images';
+
+interface Props {
+  /** JSON path, e.g. "./images/services/masonry.jpg" */
+  src: string;
+  alt: string;
+  width: number;
+  height: number;
+  /** Default webp. Overridden by `lcp` when true. */
+  format?: 'webp' | 'avif';
+  loading?: 'lazy' | 'eager';
+  fetchpriority?: 'high' | 'low' | 'auto';
+  /**
+   * LCP mode: format=avif, loading=eager, fetchpriority=high.
+   * Use for hero slides and the first above-the-fold gallery image.
+   */
+  lcp?: boolean;
+  class?: string;
+  sizes?: string;
+  decoding?: 'async' | 'auto' | 'sync';
+}
+
+const {
+  src,
+  alt,
+  width,
+  height,
+  format: formatProp,
+  loading: loadingProp,
+  fetchpriority: fetchpriorityProp,
+  lcp = false,
+  class: className,
+  sizes,
+  decoding = 'async',
+} = Astro.props;
+
+const format = lcp ? 'avif' : (formatProp ?? 'webp');
+const loading = lcp ? 'eager' : (loadingProp ?? 'lazy');
+const fetchpriority = lcp ? 'high' : (fetchpriorityProp ?? 'auto');
+
+const imageSrc = getImageByPath(src);
+---
+
+<Image
+  src={imageSrc}
+  alt={alt}
+  width={width}
+  height={height}
+  format={format}
+  loading={loading}
+  fetchpriority={fetchpriority}
+  decoding={decoding}
+  class={className}
+  sizes={sizes}
+/>

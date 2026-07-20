@@ -1,0 +1,52 @@
+---
+/**
+ * Variant `columns` — FAQ items grouped by category into multi-column layout.
+ */
+import type { FAQData, FAQItem } from '../../../../data/types';
+import SectionWrapper from '../../../ui/SectionWrapper.astro';
+import SectionHeader from '../../../ui/SectionHeader.astro';
+
+interface Props {
+  data: FAQData;
+}
+
+const { data } = Astro.props;
+
+const groups = data.faqs.reduce<Record<string, FAQItem[]>>((acc, item) => {
+  const key = item.category?.trim() || 'General';
+  if (!acc[key]) acc[key] = [];
+  acc[key].push(item);
+  return acc;
+}, {});
+
+const categories = Object.keys(groups);
+---
+
+<SectionWrapper background="muted" id="faq">
+  <SectionHeader title={data.section_title} subtitle={data.section_subtitle} />
+
+  <div
+    class:list={[
+      'grid gap-8',
+      categories.length > 1 ? 'md:grid-cols-2' : 'max-w-3xl mx-auto',
+    ]}
+  >
+    {
+      categories.map((category, ci) => (
+        <div data-reveal data-reveal-delay={String(ci * 0.08)}>
+          <h3 class="font-heading font-bold text-lg text-primary mb-4 pb-2 border-b border-border">
+            {category}
+          </h3>
+          <ul class="space-y-5">
+            {groups[category].map((faq) => (
+              <li>
+                <p class="font-semibold text-dark text-sm md:text-base mb-1.5">{faq.q}</p>
+                <p class="text-muted text-sm leading-relaxed">{faq.a}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))
+    }
+  </div>
+</SectionWrapper>
