@@ -10,7 +10,7 @@ This repository is a template base — placeholder content only, not a client pr
 From this monorepo (or after the workspace package is linked):
 
 ```bash
-pnpm --filter create-contractor-site exec create-contractor-site ../acme-contractor
+pnpm --filter create-contractor-site exec node ./bin/create-contractor-site.mjs ../acme-contractor
 # or, once published: pnpm create contractor-site ../acme-contractor
 ```
 
@@ -45,11 +45,11 @@ Example:
 
 ```bash
 # Sample answers
-pnpm --filter create-contractor-site exec create-contractor-site --yes ../demo-site
+pnpm --filter create-contractor-site exec node ./bin/create-contractor-site.mjs --yes ../demo-site
 
 # Scripted answers
 CREATE_CONTRACTOR_SITE_ANSWERS_JSON='{"businessName":"Acme","primaryServices":["Masonry","Patios"]}' \
-  pnpm --filter create-contractor-site exec create-contractor-site ../acme-site
+  pnpm --filter create-contractor-site exec node ./bin/create-contractor-site.mjs ../acme-site
 ```
 
 #### Template source (local vs published)
