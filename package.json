@@ -13,7 +13,8 @@
     "astro": "node ./scripts/enforce-package-manager.cjs && astro",
     "ci:install": "pnpm install --frozen-lockfile",
     "deps:outdated": "pnpm outdated",
-    "validate:data": "node ./scripts/enforce-package-manager.cjs && node ./scripts/validate-data.cjs"
+    "validate:data": "node ./scripts/enforce-package-manager.cjs && node ./scripts/validate-data.cjs",
+    "test:cli": "node ./packages/create-contractor-site/scripts/smoke-test.mjs"
   },
   "keywords": [
     "astro",

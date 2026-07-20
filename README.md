@@ -5,6 +5,79 @@ This repository is a template base — placeholder content only, not a client pr
 
 ## Quick path
 
+### Option A — Scaffold a client site (recommended)
+
+From this monorepo (or after the workspace package is linked):
+
+```bash
+pnpm --filter create-contractor-site exec create-contractor-site ../acme-contractor
+# or, once published: pnpm create contractor-site ../acme-contractor
+```
+
+The CLI:
+
+1. Checks **pnpm** and **git** are available (before any writes)
+2. Resolves the template source (see below), refusing targets equal to or inside the template root
+3. Copies the template (denylist excludes `node_modules`, `dist`, `.astro`, `.git`, `.codegraph`, `docs_trash`, `openspec`, logs, `.env*`, `package-lock.json`, and the CLI `packages/` tree)
+4. Prompts for client business fields (or uses non-interactive answers)
+5. Replaces **values only** in the target `src/data/*.json` (keys, shapes, and `_instructions` stay intact; service names/slugs stay unique and aligned across `business.json` + `services.json`)
+6. Runs **`pnpm install`**, **`pnpm run validate:data`**, and **`pnpm run build`** in the target
+7. Runs `git init` + initial commit: `chore: initial client scaffold from contractor template`
+
+**Required tools:** Node.js 22+, pnpm >= 11.1.2, git.
+
+Package-runner compatibility (`pnpm create`, etc.) may invoke the binary, but **the CLI itself always uses pnpm internally**. Do not use `npm install` or `npx` as the project workflow.
+
+#### Non-interactive answers
+
+| Mechanism | Purpose |
+|-----------|---------|
+| `--yes` / `-y` | Use built-in sample answers (Acme Masonry) — useful for smoke tests |
+| `CREATE_CONTRACTOR_SITE_ANSWERS_JSON` | JSON with at least `businessName` and `primaryServices[]` |
+
+**Answer precedence (highest first):**
+
+1. `CREATE_CONTRACTOR_SITE_ANSWERS_JSON`
+2. `--yes` / `-y` sample answers
+3. Interactive prompts (default)
+
+Example:
+
+```bash
+# Sample answers
+pnpm --filter create-contractor-site exec create-contractor-site --yes ../demo-site
+
+# Scripted answers
+CREATE_CONTRACTOR_SITE_ANSWERS_JSON='{"businessName":"Acme","primaryServices":["Masonry","Patios"]}' \
+  pnpm --filter create-contractor-site exec create-contractor-site ../acme-site
+```
+
+#### Template source (local vs published)
+
+The published npm package ships only the CLI (`bin`/`src`/`scripts`). Template files come from:
+
+| Priority | Source |
+|----------|--------|
+| 1 | `CREATE_CONTRACTOR_TEMPLATE_ROOT` — local checkout path (best for monorepo/dev) |
+| 2 | Local monorepo root discovered by walking parents from the package |
+| 3 | Temporary `git clone` of `CREATE_CONTRACTOR_TEMPLATE_REPO` @ `CREATE_CONTRACTOR_TEMPLATE_REF` (defaults: this GitHub repo @ `v2.0.0`), cleaned up afterward |
+
+```bash
+# Force a local template root
+CREATE_CONTRACTOR_TEMPLATE_ROOT=/path/to/website-multipages \
+  create-contractor-site ../client-site
+```
+
+#### CLI smoke tests
+
+```bash
+pnpm run test:cli
+# or: pnpm --filter create-contractor-site run test:smoke
+# Skip the full scaffold E2E (install/build): SKIP_CLI_E2E=1 pnpm run test:cli
+```
+
+### Option B — Work on this template directly
+
 1. Install with **pnpm only**: `pnpm install --frozen-lockfile`
 2. Customize the **12 JSON files** under `src/data/`
 3. Build: `pnpm run build`

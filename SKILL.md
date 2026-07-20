@@ -35,6 +35,50 @@ Spin up a multi-page contractor marketing site that is:
 
 ## Quick start
 
+### Scaffold a new client project
+
+Prefer the workspace CLI so guards, pnpm enforcement, and the 12-file JSON contract stay intact:
+
+```bash
+pnpm --filter create-contractor-site exec create-contractor-site ../client-site
+# once published: pnpm create contractor-site ../client-site
+```
+
+What the CLI does:
+
+1. Asserts **pnpm** + **git** are on PATH **before any writes**
+2. Resolves template source, then validates `<target-dir>` (refuses missing arg, non-empty targets, and targets equal to/inside the template root)
+3. Copies template files via denylist (no `node_modules`, `dist`, `.git`, `openspec`, `.env*`, `package-lock.json`, CLI `packages/`, etc.)
+4. Collects business/site/service/area fields (interactive, `--yes`, or env JSON)
+5. Value-only JSON replacement in target `src/data/*.json` — never edits this template repo; service names **and** slugs are deduped and kept aligned between `business.services_offered` and `services.json`
+6. `pnpm install` → `pnpm run validate:data` → `pnpm run build` (pnpm only; never npm/npx)
+7. `git init` + commit `chore: initial client scaffold from contractor template`
+8. On failure after copy/replace/install/build, prints recovery guidance (partial target may remain; temp clones are cleaned up)
+
+Package runners may start the binary; **install/build inside the scaffold always use pnpm**.
+
+#### Non-interactive mode and env vars
+
+| Input | Behavior |
+|-------|----------|
+| `--yes` / `-y` | Built-in sample answers (Acme Masonry) |
+| `CREATE_CONTRACTOR_SITE_ANSWERS_JSON` | Scripted answers; must include `businessName` + `primaryServices[]` |
+
+**Answer precedence:** env JSON → `--yes` → interactive prompts.
+
+| Template env | Behavior |
+|--------------|----------|
+| `CREATE_CONTRACTOR_TEMPLATE_ROOT` | Use this local template path (preferred for monorepo/dev) |
+| `CREATE_CONTRACTOR_TEMPLATE_REPO` / `CREATE_CONTRACTOR_TEMPLATE_REF` | Remote clone fallback when published (default repo + `v2.0.0`) |
+
+Published package contents are CLI-only; template files are resolved via env, local monorepo discovery, or a temporary git clone (cleaned up).
+
+```bash
+pnpm run test:cli
+```
+
+### Work on the template itself
+
 ```bash
 pnpm install --frozen-lockfile
 pnpm run dev
@@ -151,11 +195,14 @@ scripts/               # enforce-package-manager, validate-data
 ## What NOT to do
 
 - Do **not** use npm or npx
+- Do **not** recommend `npm install` / `npx` for scaffolding or day-to-day workflow
 - Do **not** reintroduce `content.json` / `blogs.json` as the contract
 - Do **not** break JSON shapes without updating types + Zod + consumers
 - Do **not** hardcode client phone/email/address/services in components
+- Do **not** put real client PII into this shared template base (scaffold writes target only)
 - Do **not** put content images only in `public/` (use `src/assets/images/`)
 - Do **not** skip `pnpm run build` after nontrivial edits
+- Do **not** strip guard files (`AGENTS.md`, `.npmrc`, `scripts/enforce-package-manager.cjs`, `pnpm-workspace.yaml`)
 
 ## Deploy
 
