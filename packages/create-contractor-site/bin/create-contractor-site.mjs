@@ -45,7 +45,7 @@ Environment:
       Default: https://github.com/glacayo/website-multipages.git
 
   CREATE_CONTRACTOR_TEMPLATE_REF
-      Git branch/tag/ref to clone for the published fallback. Default: v2.1.0
+      Git branch/tag/ref to clone for the published fallback. Default: v2.1.1
 
 Answer precedence (highest first):
   1. CREATE_CONTRACTOR_SITE_ANSWERS_JSON
@@ -67,7 +67,10 @@ packages/, etc.), applies client values only in src/data/*.json, then runs:
   pnpm install
   pnpm run validate:data
   pnpm run build
-  git init && git commit
+  git init && git add -A && git commit   (only after validate + build succeed)
+
+If install, validate:data, or build fails, git init/add/commit are intentionally
+skipped so a broken scaffold is never committed.
 
 Package-runner note: you may invoke this binary via pnpm create / compatible runners,
 but the CLI itself always uses pnpm internally — never npm install or npx for project setup.
@@ -160,6 +163,9 @@ Recovery guidance:
   Notes:
   - The source template is never modified (writes are target-only).
   - Install/build always use pnpm — never npm install / npx.
+  - git init / git add / git commit run ONLY after validate:data and build succeed.
+    If this failure was during install, validate:data, or build, those git steps
+    were intentionally skipped (a broken scaffold is never committed).
   - If a temp template clone was used, it is cleaned up automatically when possible.
 `);
 }

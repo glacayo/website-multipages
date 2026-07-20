@@ -101,6 +101,121 @@ export function uniqueServiceSlug(value, used) {
 }
 
 /**
+ * Parse a free-text service area string into city/area display names.
+ * Splits on commas and " and " connectors (e.g. "A, B, C and D").
+ *
+ * @param {string} serviceArea
+ * @returns {string[]}
+ */
+export function parseServiceAreaNames(serviceArea) {
+  return String(serviceArea || '')
+    .split(/[,;\/\n&]+/)
+    .flatMap((part) => part.split(/\s+and\s+/i))
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
+/**
+ * Build a unique ordered list of service-area names.
+ * - `city` is always first when provided
+ * - remaining names come from parsing `serviceArea`
+ * - deduped by display name and slug (first wins)
+ *
+ * @param {string} city
+ * @param {string} serviceArea
+ * @returns {string[]}
+ */
+export function normalizeServiceAreaNames(city, serviceArea) {
+  /** @type {string[]} */
+  const raw = [];
+  const primary = String(city || '').trim();
+  if (primary) raw.push(primary);
+  raw.push(...parseServiceAreaNames(serviceArea));
+  return normalizePrimaryServices(raw);
+}
+
+/**
+ * Rebuild areas.areas rows from normalized city/area names.
+ * - Reuses existing row shapes when name/slug matches
+ * - Guarantees unique slugs
+ * - Primary city (index 0) gets answers.zip when provided
+ *
+ * @param {{ name?: string, slug?: string, county?: string, state?: string, zip_codes?: string[], [key: string]: unknown }[]} existingAreas
+ * @param {string[]} areaNames
+ * @param {{ city: string, state: string, zip?: string }} ctx
+ * @returns {Record<string, unknown>[]}
+ */
+export function buildAlignedAreas(existingAreas, areaNames, ctx) {
+  const normalized =
+    areaNames.length > 0
+      ? normalizePrimaryServices(areaNames)
+      : normalizePrimaryServices([ctx.city].filter(Boolean));
+
+  const existing = Array.isArray(existingAreas) ? [...existingAreas] : [];
+  /** @type {Map<string, Record<string, unknown>>} */
+  const byName = new Map();
+  /** @type {Map<string, Record<string, unknown>>} */
+  const bySlug = new Map();
+
+  for (const row of existing) {
+    if (!row || typeof row !== 'object') continue;
+    const nameKey = String(row.name || '')
+      .trim()
+      .toLowerCase();
+    const slugKey = String(row.slug || slugify(String(row.name || ''))).toLowerCase();
+    if (nameKey && !byName.has(nameKey)) byName.set(nameKey, row);
+    if (slugKey && !bySlug.has(slugKey)) bySlug.set(slugKey, row);
+  }
+
+  const templateRow = existing[existing.length - 1] ?? {
+    county: '',
+    state: ctx.state,
+    zip_codes: [],
+  };
+
+  const sourceNames =
+    normalized.length > 0
+      ? normalized
+      : existing.map((row) => String(row.name || 'Area')).filter(Boolean);
+
+  const fallbackName = String(ctx.city || 'Service Area').trim() || 'Service Area';
+  const names = sourceNames.length > 0 ? sourceNames : [fallbackName];
+
+  /** @type {Set<string>} */
+  const usedSlugs = new Set();
+
+  return names.map((rawName, index) => {
+    const name = String(rawName || fallbackName).trim() || fallbackName;
+    const nameKey = name.toLowerCase();
+    const preferredSlug = slugify(name);
+    const matchedSource = byName.get(nameKey) || bySlug.get(preferredSlug);
+    const source = matchedSource || templateRow;
+
+    const slug = uniqueServiceSlug(name, usedSlugs);
+    const isPrimary = index === 0;
+
+    /** @type {Record<string, unknown>} */
+    const row = {
+      ...source,
+      name,
+      slug,
+      state: ctx.state || source.state || '',
+      county: matchedSource?.county || name,
+    };
+
+    if (isPrimary && ctx.zip) {
+      row.zip_codes = [ctx.zip];
+    } else if (matchedSource && Array.isArray(matchedSource.zip_codes)) {
+      row.zip_codes = matchedSource.zip_codes;
+    } else {
+      row.zip_codes = [];
+    }
+
+    return row;
+  });
+}
+
+/**
  * Build aligned service rows for business.services_offered and services.json.
  * - Generates exactly the normalized client service list
  * - Dedupes input by name + slug before applying
@@ -282,20 +397,18 @@ export function replaceTargetData(targetDir, answers) {
   });
 
   updateJsonFile(path.join(dataDir, 'areas.json'), (areas) => {
+    // Preserve _instructions, variant, section_title, and any other top-level keys.
     areas.primary_city = answers.city;
     areas.service_radius = `Within the ${answers.serviceArea} area`;
     areas.section_subtitle = `Proudly serving homeowners and businesses in ${answers.serviceArea}.`;
 
-    if (Array.isArray(areas.areas) && areas.areas.length > 0) {
-      const primarySlug = slugify(answers.city);
-      areas.areas[0] = {
-        ...areas.areas[0],
-        name: answers.city,
-        slug: primarySlug,
-        state: answers.state,
-        zip_codes: [answers.zip],
-      };
-    }
+    const areaNames = normalizeServiceAreaNames(answers.city, answers.serviceArea);
+    const existing = Array.isArray(areas.areas) ? areas.areas : [];
+    areas.areas = buildAlignedAreas(existing, areaNames, {
+      city: answers.city,
+      state: answers.state,
+      zip: answers.zip,
+    });
   });
 
   if (aligned) {

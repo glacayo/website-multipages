@@ -1,5 +1,5 @@
 /**
- * TypeScript interfaces for the v2.1.0 JSON data contract.
+ * TypeScript interfaces for the v2.1.1 JSON data contract.
  * One interface per file under src/data/. Shape is stable across clients — only values change.
  */
 

@@ -1,4 +1,4 @@
-# Contractor Multipages Template (v2.1.0)
+# Contractor Multipages Template (v2.1.1)
 
 Reusable **Astro 7** static template for contractor and local service-business websites.
 This repository is a template base — placeholder content only, not a client project.
@@ -26,9 +26,9 @@ The CLI:
 2. Resolves the template source (see below), refusing targets equal to or inside the template root
 3. Copies the template (denylist excludes `node_modules`, `dist`, `.astro`, `.git`, `.codegraph`, `docs_trash`, `openspec`, logs, `.env*`, `package-lock.json`, and the CLI `packages/` tree)
 4. Prompts for client business fields (or uses non-interactive answers)
-5. Replaces **values only** in the target `src/data/*.json` (keys, shapes, and `_instructions` stay intact; service names/slugs stay unique and aligned across `business.json` + `services.json`)
+5. Replaces **values only** in the target `src/data/*.json` (keys, shapes, and `_instructions` stay intact; service names/slugs stay unique and aligned across `business.json` + `services.json`; service-area city lists are parsed/deduped so `areas.json` slugs stay unique)
 6. Runs **`pnpm install`**, **`pnpm run validate:data`**, and **`pnpm run build`** in the target
-7. Runs `git init` + initial commit: `chore: initial client scaffold from contractor template`
+7. Runs `git init` + initial commit: `chore: initial client scaffold from contractor template` — **only after** validate + build succeed. If install/validate/build fails, git steps are intentionally skipped.
 
 **Required tools:** Node.js 22+, pnpm >= 11.1.2, git.
 
@@ -66,7 +66,7 @@ The published npm package ships only the CLI (`bin`/`src`/`scripts`). Template f
 |----------|--------|
 | 1 | `CREATE_CONTRACTOR_TEMPLATE_ROOT` — local checkout path (best for monorepo/dev) |
 | 2 | Local monorepo root discovered by walking parents from the package |
-| 3 | Temporary `git clone` of `CREATE_CONTRACTOR_TEMPLATE_REPO` @ `CREATE_CONTRACTOR_TEMPLATE_REF` (defaults: this GitHub repo @ `v2.1.0`), cleaned up afterward |
+| 3 | Temporary `git clone` of `CREATE_CONTRACTOR_TEMPLATE_REPO` @ `CREATE_CONTRACTOR_TEMPLATE_REF` (defaults: this GitHub repo @ `v2.1.1`), cleaned up afterward |
 
 ```bash
 # Force a local template root

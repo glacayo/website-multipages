@@ -1,6 +1,6 @@
 {
   "name": "create-contractor-site",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "Scaffold a client contractor website from the placeholder multipage template",
   "type": "module",
   "bin": {
