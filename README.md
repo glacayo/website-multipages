@@ -7,11 +7,17 @@ This repository is a template base — placeholder content only, not a client pr
 
 ### Option A — Scaffold a client site (recommended)
 
-From this monorepo (or after the workspace package is linked):
+From this monorepo, use the direct Node entrypoint so the target path is resolved from the repository root:
 
 ```bash
-pnpm --filter create-contractor-site exec node ./bin/create-contractor-site.mjs ../acme-contractor
+node ./packages/create-contractor-site/bin/create-contractor-site.mjs ../acme-contractor
 # or, once published: pnpm create contractor-site ../acme-contractor
+```
+
+If you use `pnpm --filter create-contractor-site exec`, remember pnpm runs from the package directory (`packages/create-contractor-site`), so relative target paths must be written from there:
+
+```bash
+pnpm --filter create-contractor-site exec node ./bin/create-contractor-site.mjs ../../../acme-contractor
 ```
 
 The CLI:
@@ -45,11 +51,11 @@ Example:
 
 ```bash
 # Sample answers
-pnpm --filter create-contractor-site exec node ./bin/create-contractor-site.mjs --yes ../demo-site
+node ./packages/create-contractor-site/bin/create-contractor-site.mjs --yes ../demo-site
 
 # Scripted answers
 CREATE_CONTRACTOR_SITE_ANSWERS_JSON='{"businessName":"Acme","primaryServices":["Masonry","Patios"]}' \
-  pnpm --filter create-contractor-site exec node ./bin/create-contractor-site.mjs ../acme-site
+  node ./packages/create-contractor-site/bin/create-contractor-site.mjs ../acme-site
 ```
 
 #### Template source (local vs published)

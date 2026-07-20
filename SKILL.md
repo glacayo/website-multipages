@@ -40,8 +40,14 @@ Spin up a multi-page contractor marketing site that is:
 Prefer the workspace CLI so guards, pnpm enforcement, and the 12-file JSON contract stay intact:
 
 ```bash
-pnpm --filter create-contractor-site exec node ./bin/create-contractor-site.mjs ../client-site
+node ./packages/create-contractor-site/bin/create-contractor-site.mjs ../client-site
 # once published: pnpm create contractor-site ../client-site
+```
+
+If using `pnpm --filter create-contractor-site exec`, target paths are resolved from `packages/create-contractor-site`, not the repo root:
+
+```bash
+pnpm --filter create-contractor-site exec node ./bin/create-contractor-site.mjs ../../../client-site
 ```
 
 What the CLI does:
