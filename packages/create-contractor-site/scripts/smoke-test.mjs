@@ -7,7 +7,9 @@
  * 2. Existing non-empty target
  * 3. Target equal to / inside template root
  * 4. Duplicate service input normalization + slug uniqueness + business/services alignment
- * 5. Temp-target --yes scaffold (install/validate/build) unless SKIP_CLI_E2E=1
+ * 5. Service-area name parse/dedupe (Chesapeake duplicate-slug case) + areas rebuild
+ *    without leaking stale template county/ZIP metadata into new areas
+ * 6. Temp-target --yes scaffold (install/validate/build) unless SKIP_CLI_E2E=1
  */
 
 import { spawnSync } from 'node:child_process';
@@ -16,8 +18,11 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
+  buildAlignedAreas,
   buildAlignedServices,
   normalizePrimaryServices,
+  normalizeServiceAreaNames,
+  parseServiceAreaNames,
   replaceTargetData,
   slugify,
 } from '../src/replace-data.mjs';
@@ -199,6 +204,88 @@ async function main() {
     assert(services[1].slug === 'hardscape' || services[1].name === 'Patios', 'slot mapping still shape-stable');
   });
 
+  await test('parse/normalize service areas keep city first and drop slug dups', () => {
+    const parsed = parseServiceAreaNames(
+      'Chesapeake, Virginia Beach; Norfolk / Newport News & Hampton\nPortsmouth, Suffolk, Williamsburg and Poquoson',
+    );
+    assert(parsed.includes('Williamsburg'), 'expected Williamsburg from "and" split');
+    assert(parsed.includes('Poquoson'), 'expected Poquoson from "and" split');
+    assert(parsed.includes('Virginia Beach'), 'expected Virginia Beach');
+    assert(parsed.includes('Newport News'), 'expected Newport News from slash split');
+    assert(parsed.includes('Hampton'), 'expected Hampton from ampersand split');
+    assert(parsed.includes('Portsmouth'), 'expected Portsmouth from newline split');
+
+    const normalized = normalizeServiceAreaNames(
+      'Chesapeake',
+      'Chesapeake, Virginia Beach, Norfolk, Newport News, Hampton, Portsmouth, Suffolk, Williamsburg and Poquoson',
+    );
+    assert(normalized[0] === 'Chesapeake', `city must be first: ${normalized[0]}`);
+    assert(
+      normalized.filter((n) => n.toLowerCase() === 'chesapeake').length === 1,
+      'Chesapeake must appear once',
+    );
+    const slugs = normalized.map(slugify);
+    assert(new Set(slugs).size === slugs.length, `duplicate area slugs: ${slugs}`);
+  });
+
+  await test('buildAlignedAreas reuses rows and never emits duplicate slugs', () => {
+    const existing = [
+      {
+        name: 'Virginia Beach',
+        slug: 'virginia-beach',
+        county: 'Virginia Beach',
+        state: 'VA',
+        zip_codes: ['23451'],
+      },
+      { name: 'Norfolk', slug: 'norfolk', county: 'Norfolk', state: 'VA', zip_codes: ['23502'] },
+      {
+        name: 'Chesapeake',
+        slug: 'chesapeake',
+        county: 'Chesapeake',
+        state: 'VA',
+        zip_codes: ['23320'],
+      },
+      { name: 'Suffolk', slug: 'suffolk', county: 'Suffolk', state: 'VA', zip_codes: ['23434'] },
+    ];
+
+    const names = normalizeServiceAreaNames(
+      'Chesapeake',
+      'Chesapeake, Virginia Beach, Norfolk, Newport News, Hampton, Portsmouth, Suffolk, Williamsburg and Poquoson',
+    );
+    const areas = buildAlignedAreas(existing, names, {
+      city: 'Chesapeake',
+      state: 'VA',
+      zip: '23320',
+    });
+
+    assert(areas[0].name === 'Chesapeake', 'primary area name');
+    assert(areas[0].slug === 'chesapeake', 'primary area slug');
+    assert(
+      JSON.stringify(areas[0].zip_codes) === JSON.stringify(['23320']),
+      'primary zip from answers',
+    );
+
+    const slugs = areas.map((a) => String(a.slug));
+    assert(new Set(slugs).size === slugs.length, `duplicate slugs in aligned areas: ${slugs}`);
+
+    const norfolk = areas.find((a) => a.slug === 'norfolk');
+    assert(norfolk, 'expected reused Norfolk row');
+    assert(
+      JSON.stringify(norfolk.zip_codes) === JSON.stringify(['23502']),
+      'matched rows keep prior zip_codes',
+    );
+
+    for (const slug of ['newport-news', 'hampton', 'portsmouth', 'williamsburg', 'poquoson']) {
+      const area = areas.find((a) => a.slug === slug);
+      assert(area, `expected generated ${slug} area`);
+      assert(area.county === area.name, `${slug} must not inherit stale county: ${area.county}`);
+      assert(
+        JSON.stringify(area.zip_codes) === JSON.stringify([]),
+        `${slug} must not inherit stale zip_codes: ${JSON.stringify(area.zip_codes)}`,
+      );
+    }
+  });
+
   await test('replaceTargetData writes aligned services into temp data files', () => {
     assert(REPO_ROOT, 'expected local template root');
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'ccs-replace-'));
@@ -286,6 +373,59 @@ async function main() {
     );
 
     assert(business.name === 'Acme Masonry', 'business name replaced');
+    fs.rmSync(tmp, { recursive: true, force: true });
+  });
+
+  await test('replaceTargetData Chesapeake case keeps unique area slugs', () => {
+    assert(REPO_ROOT, 'expected local template root');
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'ccs-areas-'));
+    const dataSrc = path.join(REPO_ROOT, 'src', 'data');
+    const dataDst = path.join(tmp, 'src', 'data');
+    fs.mkdirSync(dataDst, { recursive: true });
+    for (const file of [
+      'business.json',
+      'site.json',
+      'services.json',
+      'areas.json',
+      'navigation.json',
+      'landings.json',
+    ]) {
+      fs.copyFileSync(path.join(dataSrc, file), path.join(dataDst, file));
+    }
+
+    const originalAreas = JSON.parse(
+      fs.readFileSync(path.join(dataDst, 'areas.json'), 'utf8'),
+    );
+
+    const answers = buildAnswers({
+      businessName: 'Chesapeake Stoneworks',
+      city: 'Chesapeake',
+      state: 'VA',
+      zip: '23320',
+      serviceArea:
+        'Chesapeake, Virginia Beach, Norfolk, Newport News, Hampton, Portsmouth, Suffolk, Williamsburg and Poquoson',
+      primaryServices: ['Masonry', 'Patios'],
+    });
+
+    replaceTargetData(tmp, answers);
+
+    const areas = JSON.parse(fs.readFileSync(path.join(dataDst, 'areas.json'), 'utf8'));
+    assert(areas.primary_city === 'Chesapeake', 'primary_city must be Chesapeake');
+    assert(areas.variant === originalAreas.variant, 'variant preserved');
+    assert(areas.section_title === originalAreas.section_title, 'section_title preserved');
+    assert(areas._instructions, '_instructions preserved');
+
+    assert(Array.isArray(areas.areas) && areas.areas.length > 0, 'areas array required');
+    assert(areas.areas[0].name === 'Chesapeake', `first area name: ${areas.areas[0].name}`);
+    assert(areas.areas[0].slug === 'chesapeake', `first area slug: ${areas.areas[0].slug}`);
+
+    const slugs = areas.areas.map((a) => a.slug);
+    assert(new Set(slugs).size === slugs.length, `duplicate area slugs after replace: ${slugs}`);
+    assert(
+      slugs.filter((s) => s === 'chesapeake').length === 1,
+      'chesapeake slug must appear exactly once',
+    );
+
     fs.rmSync(tmp, { recursive: true, force: true });
   });
 
