@@ -45,7 +45,7 @@ Environment:
       Default: https://github.com/glacayo/website-multipages.git
 
   CREATE_CONTRACTOR_TEMPLATE_REF
-      Git branch/tag/ref to clone for the published fallback. Default: v2.0.0
+      Git branch/tag/ref to clone for the published fallback. Default: v2.1.0
 
 Answer precedence (highest first):
   1. CREATE_CONTRACTOR_SITE_ANSWERS_JSON

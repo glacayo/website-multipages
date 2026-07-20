@@ -1,4 +1,4 @@
-# Contractor Multipages Template (v2.0.0)
+# Contractor Multipages Template (v2.1.0)
 
 Reusable **Astro 7** static template for contractor and local service-business websites.
 This repository is a template base — placeholder content only, not a client project.
@@ -60,7 +60,7 @@ The published npm package ships only the CLI (`bin`/`src`/`scripts`). Template f
 |----------|--------|
 | 1 | `CREATE_CONTRACTOR_TEMPLATE_ROOT` — local checkout path (best for monorepo/dev) |
 | 2 | Local monorepo root discovered by walking parents from the package |
-| 3 | Temporary `git clone` of `CREATE_CONTRACTOR_TEMPLATE_REPO` @ `CREATE_CONTRACTOR_TEMPLATE_REF` (defaults: this GitHub repo @ `v2.0.0`), cleaned up afterward |
+| 3 | Temporary `git clone` of `CREATE_CONTRACTOR_TEMPLATE_REPO` @ `CREATE_CONTRACTOR_TEMPLATE_REF` (defaults: this GitHub repo @ `v2.1.0`), cleaned up afterward |
 
 ```bash
 # Force a local template root

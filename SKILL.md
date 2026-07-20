@@ -1,4 +1,4 @@
-# Contractor Multipages — Template Skill (v2.0.0)
+# Contractor Multipages — Template Skill (v2.1.0)
 
 > Reusable static website template for contractors (masonry, hardscape, roofing, landscaping, tree services, etc.).
 > Customize via JSON only. Never use npm.
@@ -69,7 +69,7 @@ Package runners may start the binary; **install/build inside the scaffold always
 | Template env | Behavior |
 |--------------|----------|
 | `CREATE_CONTRACTOR_TEMPLATE_ROOT` | Use this local template path (preferred for monorepo/dev) |
-| `CREATE_CONTRACTOR_TEMPLATE_REPO` / `CREATE_CONTRACTOR_TEMPLATE_REF` | Remote clone fallback when published (default repo + `v2.0.0`) |
+| `CREATE_CONTRACTOR_TEMPLATE_REPO` / `CREATE_CONTRACTOR_TEMPLATE_REF` | Remote clone fallback when published (default repo + `v2.1.0`) |
 
 Published package contents are CLI-only; template files are resolved via env, local monorepo discovery, or a temporary git clone (cleaned up).
 
