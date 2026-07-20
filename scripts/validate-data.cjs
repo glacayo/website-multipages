@@ -57,6 +57,12 @@ const schemas = {
       country: z.string().min(1),
       full: z.string().min(1),
     }),
+    coordinates: z
+      .object({
+        latitude: z.string().min(1),
+        longitude: z.string().min(1),
+      })
+      .optional(),
     hours: z.array(z.object({ days: z.string().min(1), time: z.string().min(1) })).min(1),
     license: z.string().min(1),
     insurance: z.string().min(1),

@@ -22,6 +22,7 @@ import {
   getSite,
   getTestimonials,
 } from '../data/loaders';
+import { imageToAbsolute } from './images';
 import { absoluteUrl } from './seo';
 
 export type PageType =
@@ -166,6 +167,20 @@ function postalAddress(): PostalAddress {
   };
 }
 
+function isValidCoordinatePair(
+  coordinates: { latitude?: string; longitude?: string } | undefined,
+): coordinates is { latitude: string; longitude: string } {
+  if (!coordinates) return false;
+  const lat = coordinates.latitude?.trim();
+  const lng = coordinates.longitude?.trim();
+  if (!lat || !lng) return false;
+  const latNum = Number(lat);
+  const lngNum = Number(lng);
+  if (!Number.isFinite(latNum) || !Number.isFinite(lngNum)) return false;
+  if (latNum < -90 || latNum > 90 || lngNum < -180 || lngNum > 180) return false;
+  return true;
+}
+
 function buildLocalBusiness(): WithContext<HomeAndConstructionBusiness> {
   const business = getBusiness();
   const site = getSite();
@@ -191,18 +206,24 @@ function buildLocalBusiness(): WithContext<HomeAndConstructionBusiness> {
     ...(sameAs.length ? { sameAs } : {}),
   };
 
-  if (testimonials.length > 0) {
-    const ratings = testimonials.map((t) => t.stars).filter((n) => typeof n === 'number' && n > 0);
-    if (ratings.length > 0) {
-      const avg = ratings.reduce((sum, n) => sum + n, 0) / ratings.length;
-      node.aggregateRating = {
-        '@type': 'AggregateRating',
-        ratingValue: Number(avg.toFixed(1)),
-        reviewCount: ratings.length,
-        bestRating: 5,
-        worstRating: 1,
-      };
-    }
+  const ratings = testimonials
+    .map((t) => t.stars)
+    .filter((n): n is number => typeof n === 'number' && n >= 1 && n <= 5);
+  if (ratings.length > 0) {
+    const avg = ratings.reduce((sum, n) => sum + n, 0) / ratings.length;
+    node.aggregateRating = {
+      '@type': 'AggregateRating',
+      ratingValue: avg.toFixed(2),
+      reviewCount: ratings.length,
+    };
+  }
+
+  if (isValidCoordinatePair(business.coordinates)) {
+    node.geo = {
+      '@type': 'GeoCoordinates',
+      latitude: business.coordinates.latitude,
+      longitude: business.coordinates.longitude,
+    };
   }
 
   return node;
@@ -304,6 +325,10 @@ function defaultBreadcrumbs(pageType: PageType, path: string, options: BuildSche
 
 function buildServiceSchema(service: Service): WithContext<SchemaService> {
   const business = getBusiness();
+  const image =
+    typeof service.image === 'string' && service.image.trim()
+      ? imageToAbsolute(service.image.trim())
+      : undefined;
 
   return {
     '@context': 'https://schema.org',
@@ -312,6 +337,7 @@ function buildServiceSchema(service: Service): WithContext<SchemaService> {
     serviceType: service.name,
     description: service.short_description || service.full_description,
     url: absoluteUrl(`/services/${service.slug}`),
+    ...(image ? { image } : {}),
     provider: {
       '@type': 'HomeAndConstructionBusiness',
       name: business.name,

@@ -15,6 +15,7 @@
     "service_area": "Human-readable service area description.",
     "type_of_services": "Comma-separated summary for SEO/meta.",
     "founded_year": "Year the company was founded. Optional.",
+    "coordinates": "OPTIONAL placeholder GeoCoordinates (latitude/longitude strings). FAKE/EXAMPLE only — never a real client location. Used for schema.org geo markup when present.",
     "social": "Only include networks the business actively uses.",
     "services_offered": "Core service names and slugs. Used to validate services.json and build service landing pages."
   },
@@ -30,6 +31,10 @@
     "zip": "23451",
     "country": "US",
     "full": "123 Builders Way, Virginia Beach, VA 23451"
+  },
+  "coordinates": {
+    "latitude": "36.8529",
+    "longitude": "-75.9780"
   },
   "hours": [
     { "days": "Monday - Friday", "time": "7:00 AM - 6:00 PM" },

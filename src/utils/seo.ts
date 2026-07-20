@@ -59,12 +59,25 @@ function truncateDescription(text: string): string {
   return `${normalized.slice(0, DESCRIPTION_MAX - 1).trimEnd()}…`;
 }
 
+/**
+ * Detect common SEO title separators already present in a candidate title.
+ * Separators: | - — – : › »
+ * Hyphen `-` only counts when surrounded by whitespace (avoids "on-site" false positives).
+ */
+export function titleHasSeparator(title: string): boolean {
+  if (/[|—–:›»]/.test(title)) return true;
+  if (/\s-\s/.test(title)) return true;
+  return false;
+}
+
 function composeTitle(pageTitle: string | undefined, defaultTitle: string, separator: string, businessName: string): string {
   const raw = (pageTitle ?? defaultTitle).trim();
   if (!raw) return defaultTitle;
   if (raw.includes(businessName) || raw === defaultTitle) return raw;
-  // Already composed with separator (e.g. "About Us | …")
-  if (pageTitle && pageTitle.includes(separator.trim())) return raw;
+  // Already composed with a separator (e.g. meta_title "How to Plan… | Site Name")
+  if (pageTitle && (titleHasSeparator(pageTitle) || pageTitle.includes(separator.trim()))) {
+    return raw;
+  }
   return `${raw}${separator}${businessName}`;
 }
 

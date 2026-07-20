@@ -27,6 +27,12 @@ export const businessSchema = z.object({
     country: z.string().min(1),
     full: z.string().min(1),
   }),
+  coordinates: z
+    .object({
+      latitude: z.string().min(1),
+      longitude: z.string().min(1),
+    })
+    .optional(),
   hours: z
     .array(
       z.object({

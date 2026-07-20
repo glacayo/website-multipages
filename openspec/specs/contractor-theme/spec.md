@@ -38,6 +38,8 @@ Rebuild the broken v1 template as a buildable Astro 7 static contractor theme. C
 
 **Requirement: Typed, Validated Contract Files.** The system MUST ship exactly these 12 files under `src/data/`: `business.json`, `site.json`, `navigation.json`, `hero.json`, `services.json`, `gallery.json`, `testimonials.json`, `faq.json`, `areas.json`, `directories.json`, `blog.json`, `landings.json`. Each file MUST include an `_instructions` object and a matching interface in `src/data/types.ts`. The build SHOULD run Zod validation before compiling pages.
 
+**Requirement: Optional Coordinates Field.** `business.json` MAY expose an optional `coordinates` object with `latitude` and `longitude` strings. When present, `src/data/types.ts` MUST define a `Coordinates` interface, `src/data/validation.ts` MUST validate it via Zod, and `scripts/validate-data.cjs` MUST mirror the validation. The coordinates MUST be clearly fake/example placeholder values in the template base, never a real client location.
+
 #### Scenario: Invalid JSON fails the build
 - GIVEN `services.json` has a service entry missing the required `slug` field
 - WHEN `pnpm run build` runs
@@ -87,6 +89,12 @@ Rebuild the broken v1 template as a buildable Astro 7 static contractor theme. C
 - AND it MUST include `Service` and `BreadcrumbList` JSON-LD
 
 **Requirement: Generated SEO and Schema Output.** The system MUST generate `sitemap.xml`, `robots.txt`, and per-page JSON-LD (`LocalBusiness`/`HomeAndConstructionBusiness`, `WebSite`, `BreadcrumbList`, plus `Service`/`BlogPosting`/`FAQPage` where applicable) from `business.json` and `site.json` — no per-page manual duplication.
+
+**Requirement: Service JSON-LD with Image.** Each service landing page at `/services/[slug]/` MUST emit Schema.org `Service` JSON-LD that includes an `image` property when the service has an image. The image URL MUST be absolute (processed via `imageToAbsolute()`). When the service has no image, the `image` property MUST be omitted.
+
+**Requirement: AggregateRating from Testimonials.** The business schema markup MUST include an `aggregateRating` object derived from `testimonials.json` when testimonials with valid `stars` (1–5) exist. `ratingValue` MUST be the average rounded to two decimals, `reviewCount` MUST be the count of valid testimonials. When no valid testimonials exist, the `aggregateRating` property MUST be omitted.
+
+**Requirement: GeoCoordinates from Coordinates.** The business schema MUST emit `GeoCoordinates` when `business.json.coordinates` contains valid `latitude` and `longitude` strings. When coordinates are absent or invalid, the `geo` property MUST be omitted.
 
 #### Scenario: SEO/schema files reflect JSON data
 - GIVEN `site.json.url` is `https://examplecontractor.com`

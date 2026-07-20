@@ -5,7 +5,6 @@ import ResponsiveImage from '../../components/ui/ResponsiveImage.astro';
 import CTABar from '../../components/sections/CTABar.astro';
 import {
   getBlogPost,
-  getBusiness,
   getPublishedBlogPosts,
   getSite,
 } from '../../data/loaders';
@@ -21,7 +20,6 @@ export function getStaticPaths() {
   }));
 }
 
-const business = getBusiness();
 const site = getSite();
 
 if (!site.features.enable_blog) {
@@ -42,10 +40,14 @@ function formatDate(dateStr: string): string {
     day: 'numeric',
   });
 }
+
+// Pass meta_title or headline only — buildSeo()/composeTitle appends site name
+// when no separator is already present (S4.1–S4.3).
+const pageTitle = post.meta_title || post.headline;
 ---
 
 <BaseLayout
-  title={`${post.meta_title || post.headline}${site.seo.title_separator}${business.name}`}
+  title={pageTitle}
   description={post.description || post.excerpt.slice(0, 160)}
   path={`/blog/${post.slug}`}
   pageType="post"

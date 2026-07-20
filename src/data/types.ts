@@ -36,6 +36,12 @@ export interface ServiceOffered {
   slug: string;
 }
 
+/** Optional placeholder geo coordinates for schema.org GeoCoordinates (fake/example only). */
+export interface Coordinates {
+  latitude: string;
+  longitude: string;
+}
+
 export interface Business {
   _instructions: InstructionsBlock;
   name: string;
@@ -44,6 +50,8 @@ export interface Business {
   phones: string[];
   emails: string[];
   address: BusinessAddress;
+  /** Optional; omit or leave invalid to skip geo in JSON-LD. */
+  coordinates?: Coordinates;
   hours: BusinessHours[];
   license: string;
   insurance: string;
