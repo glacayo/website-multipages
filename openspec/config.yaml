@@ -1,13 +1,15 @@
 schema: spec-driven
 
 context: |
-  Stack: Astro 6.3 (static output), Tailwind CSS 3.4 via @astrojs/tailwind, Alpine.js 3.
-  Extras: Swiper 12, GSAP, Sharp. Package manager: pnpm only (npm/npx forbidden, enforced
-  by scripts/enforce-package-manager.cjs + .npmrc + devEngines).
+  Stack: Astro 7.0.9 (static output), Tailwind CSS 4 via @tailwindcss/vite, Alpine.js 3.
+  Extras: Swiper 12, @lucide/astro, Sharp, Zod, schema-dts. Package manager: pnpm only
+  (npm/npx forbidden, enforced by scripts/enforce-package-manager.cjs + .npmrc + devEngines).
   Architecture: multipage Astro site (src/pages/*.astro), layout components in
-  src/components/layout/, section components in src/components/sections/.
-  Data contract: src/pages/* and components import src/data/content.json, blogs.json,
-  landings.json (JSON schema must stay stable per AGENTS.md; see risks).
+  src/components/layout/, section components in src/components/sections/, SEO components in
+  src/components/seo/, UI primitives in src/components/ui/.
+  Data contract: 12 typed JSON files under src/data/*.json with Zod validation
+  (business, site, navigation, hero, services, gallery, testimonials, faq, areas,
+  directories, blog, landings). Preserve schema per AGENTS.md.
   Testing: no test runner configured; strict_tdd disabled.
 
 strict_tdd: false
@@ -49,7 +51,7 @@ rules:
   specs:
     - Use Given/When/Then for scenarios.
     - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY).
-    - Treat src/data/content.json, blogs.json, landings.json shape as a stable contract: preserve top-level keys, nested object shape, and required arrays.
+    - Treat the 12 src/data/*.json files as a stable contract: preserve top-level keys, nested object shape, required arrays, and _instructions blocks.
   design:
     - Document impact on the JSON data contract explicitly (additive vs shape-breaking).
     - Note any change to pnpm/.npmrc/pnpm-workspace.yaml enforcement files as high-risk.
