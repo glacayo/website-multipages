@@ -59,6 +59,17 @@ CREATE_CONTRACTOR_TEMPLATE_ROOT=/path/to/website-multipages \
 
 If install, validate, or build fails, git init is skipped so a broken scaffold is never committed.
 
+### After scaffold
+
+In the generated client repo:
+
+- Treat `src/data/business.json` and `src/data/site.json` as **authoritative client identity**
+- Leftover masonry/hardscape services, blog posts, section copy, and demo assets are **expected seed content** — rewrite them for the real trade; do not treat them as a conflict
+- Keep replacing **values/copy/assets only**; preserve JSON shape and `_instructions`
+- Keep real client PII out of the shared template base (this repo)
+
+See the template root `AGENTS.md`, `SKILL.md`, and `README.md` for the full agent/developer workflow. Finish client customization with `pnpm run validate:data` and `pnpm run build`.
+
 ## Environment variables
 
 | Variable | Purpose |
