@@ -8,10 +8,11 @@ import {
   getPublishedBlogPosts,
   getSite,
 } from '../../data/loaders';
+import { publishesBlog } from '../../utils/routes';
 
 export function getStaticPaths() {
   const site = getSite();
-  if (!site.features.enable_blog) {
+  if (!publishesBlog(site)) {
     return [];
   }
 
@@ -22,7 +23,7 @@ export function getStaticPaths() {
 
 const site = getSite();
 
-if (!site.features.enable_blog) {
+if (!publishesBlog(site)) {
   return Astro.redirect('/');
 }
 

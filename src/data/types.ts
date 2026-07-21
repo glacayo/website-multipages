@@ -118,12 +118,17 @@ export interface SiteAnalytics {
   gtm_id?: string;
 }
 
+/** Publication authority. Missing → effective `seo`. */
+export type SiteType = 'one-page' | 'multipage' | 'seo';
+
 export interface Site {
   _instructions: InstructionsBlock;
   url: string;
   lang: string;
   region: string;
   timezone?: string;
+  /** Optional; missing → seo. Invalid values fail validate:data. */
+  site_type?: SiteType;
   logo: SiteLogo;
   favicon: SiteFavicon;
   seo: SiteSeo;

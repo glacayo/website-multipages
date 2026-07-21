@@ -9,11 +9,12 @@ import {
   getPublishedBlogPosts,
   getSite,
 } from '../../data/loaders';
+import { publishesBlog } from '../../utils/routes';
 
 const business = getBusiness();
 const site = getSite();
 
-if (!site.features.enable_blog) {
+if (!publishesBlog(site)) {
   return Astro.redirect('/');
 }
 

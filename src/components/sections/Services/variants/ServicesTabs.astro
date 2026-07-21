@@ -5,6 +5,7 @@
  */
 import type { ServicesData } from '../../../../data/types';
 import { getSite } from '../../../../data/loaders';
+import { publishesServiceDetail } from '../../../../utils/routes';
 import SectionWrapper from '../../../ui/SectionWrapper.astro';
 import SectionHeader from '../../../ui/SectionHeader.astro';
 import ResponsiveImage from '../../../ui/ResponsiveImage.astro';
@@ -17,7 +18,7 @@ interface Props {
 
 const { data } = Astro.props;
 const site = getSite();
-const enableLandings = site.features?.enable_landings !== false;
+const showServiceDetail = publishesServiceDetail(site);
 const firstId = data.services[0]?.id ?? '';
 ---
 
@@ -87,7 +88,7 @@ const firstId = data.services[0]?.id ?? '';
                 ))}
               </ul>
             )}
-            {enableLandings && (
+            {showServiceDetail && (
               <Button href={`/services/${service.slug}`} variant="primary" size="md">
                 View {service.name}
               </Button>

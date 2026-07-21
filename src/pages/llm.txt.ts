@@ -1,13 +1,23 @@
 /**
  * Lightweight llm.txt summary for AI crawlers (static text from v2 JSON).
  */
-import { getBusiness, getSite } from '../data/loaders';
+import { getBusiness, getPublishedBlogPosts, getSite } from '../data/loaders';
+import { buildLlmKeyPages, getIndexablePaths } from '../utils/routes';
 
 export async function GET() {
   const business = getBusiness();
   const site = getSite();
   const base = site.url.replace(/\/+$/, '');
   const services = business.services_offered.map((s) => s.name).join(', ');
+  const posts = getPublishedBlogPosts();
+  const keyPages = buildLlmKeyPages(
+    site.url,
+    getIndexablePaths({
+      site,
+      serviceSlugs: business.services_offered.map((s) => s.slug),
+      blogPosts: posts.map((p) => ({ slug: p.slug, date: p.date, updated: p.updated })),
+    }),
+  );
 
   const body = `# ${business.name}
 
@@ -26,12 +36,7 @@ ${site.seo.default_description}
 ${services}
 
 ## Key pages
-- Home: ${base}/
-- About: ${base}/about-us
-- Services: ${base}/services
-- Gallery: ${base}/gallery
-- Blog: ${base}/blog
-- Contact: ${base}/contact-us
+${keyPages}
 - Sitemap: ${base}/sitemap.xml
 
 ## Notes

@@ -2,6 +2,7 @@
   "_instructions": {
     "url": "Production URL of the site, used for canonical and OG tags.",
     "lang": "HTML lang attribute and SEO region hint.",
+    "site_type": "Publication authority: one-page | multipage | seo. Missing → seo. Invalid fails validate:data.",
     "seo": "Default SEO metadata when a page does not provide its own.",
     "theme": "Primary brand colors and font stack. Required: primary, accent, dark, light, body_font, heading_font. Optional additive: primary_dark, muted, surface, border (hex). Runtime CSS vars + Google Fonts load from these values.",
     "features": "Toggle entire sections on/off without deleting JSON files.",
@@ -12,6 +13,7 @@
   "lang": "en-US",
   "region": "US-VA",
   "timezone": "America/New_York",
+  "site_type": "seo",
   "logo": {
     "src": "/logo.svg",
     "alt": "Example Masonry & Hardscape",

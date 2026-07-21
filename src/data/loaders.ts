@@ -21,6 +21,8 @@ import type {
   TestimonialsData,
 } from './types';
 
+import { filterNavigationForSite } from '../utils/routes';
+
 import business from './business.json';
 import site from './site.json';
 import navigation from './navigation.json';
@@ -42,8 +44,9 @@ export function getSite(): Site {
   return site as Site;
 }
 
+/** Filtered clone: drop unpublished blog/service-detail links; never mutate JSON. */
 export function getNavigation(): Navigation {
-  return navigation as Navigation;
+  return filterNavigationForSite(navigation as Navigation, getSite());
 }
 
 export function getHero(): HeroData {
