@@ -84,6 +84,43 @@ This repo is not a client project. It is a reusable template.
 - rename keys without updating every consumer + Zod schemas
 - flatten structured JSON without code changes
 
+## 2.1 Authoritative identity vs seed content (after scaffold)
+
+After `create-contractor-site` scaffolds a client repo, treat identity and leftover demo content differently:
+
+### Authoritative client identity
+
+These two files are the **authoritative client identity** source after scaffold:
+
+- `src/data/business.json` — legal/trade name, phones, emails, address, hours, license, insurance, payment methods, services offered, social links, and related business facts
+- `src/data/site.json` — site URL, SEO defaults, theme, feature flags, header/footer variants
+
+When identity conflicts with older copy elsewhere, **trust `business.json` and `site.json`** and rewrite the other files to match.
+
+### Expected seed content (not a conflict)
+
+The scaffold intentionally leaves masonry/hardscape-oriented **seed content** so the site builds and demos immediately. Leftover demo material is **normal**, not an error or merge conflict. Rewrite it for the real trade:
+
+- services catalog and landings (`services.json`, `landings.json`, and related `business.json.services_offered` entries that still describe the demo trade)
+- blog posts (`blog.json`)
+- gallery, hero, testimonials, FAQ, areas, directories copy (`gallery.json`, `hero.json`, `testimonials.json`, `faq.json`, `areas.json`, `directories.json`)
+- navigation labels/paths that still describe demo sections (`navigation.json`)
+- demo images under `src/assets/images/` and public placeholders under `public/` when they do not match the client
+
+### How to rewrite safely
+
+- Replace **values, copy, and assets only**
+- Preserve JSON **top-level keys**, nested object shape, required arrays/item shapes, slugs where the contract expects them, `variant` keys, and every file’s `_instructions` block
+- Do **not** hardcode phones, emails, addresses, or service copy into `.astro` components — read loaders
+- Keep the **shared template base** placeholder/neutral; put real client data only in client repos
+- Never put real client PII back into this template repository
+- Finish nontrivial client customization with:
+
+```bash
+pnpm run validate:data
+pnpm run build
+```
+
 ## 3. JSON data contract (v2 — 12 files)
 
 Canonical data layer under `src/data/`:
@@ -114,6 +151,7 @@ Supporting code:
 - preserve required arrays and item shapes
 - keep each file’s `_instructions` block
 - do not remove a key just because current copy looks optional
+- after scaffold, treat leftover masonry/hardscape services, blog, assets, and section copy as rewritable seed content (see §2.1)
 
 ### Variant fields
 
@@ -212,6 +250,10 @@ Before submitting changes, confirm:
 - [ ] `package-lock.json` is not reintroduced
 - [ ] guard docs/scripts remain intact
 - [ ] only the 12 contract JSON files are the data source
+- [ ] after scaffold, `business.json` + `site.json` are treated as authoritative identity
+- [ ] leftover masonry/hardscape seed content was rewritten (not flagged as a conflict)
+- [ ] JSON shape and `_instructions` blocks were preserved while replacing values/copy/assets
+- [ ] no real client PII was added to the shared template base
 - [ ] variants still fall back safely
 - [ ] `pnpm run validate:data` passes
 - [ ] `pnpm run build` passes

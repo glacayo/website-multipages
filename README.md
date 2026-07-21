@@ -30,6 +30,8 @@ The CLI:
 6. Runs **`pnpm install`**, **`pnpm run validate:data`**, and **`pnpm run build`** in the target
 7. Runs `git init` + initial commit: `chore: initial client scaffold from contractor template` — **only after** validate + build succeed. If install/validate/build fails, git steps are intentionally skipped.
 
+**After scaffold:** treat `business.json` and `site.json` as the **authoritative client identity**. Any remaining masonry/hardscape services, blog posts, gallery/hero copy, and demo assets are **expected seed content** — rewrite them for the real trade. Do not treat those leftovers as a conflict or error. Keep replacing values/copy/assets only; preserve JSON shape and `_instructions`. Keep real client PII out of this shared template base.
+
 **Required tools:** Node.js 22+, pnpm >= 11.1.2, git.
 
 Package-runner compatibility (`pnpm create`, etc.) may invoke the binary, but **the CLI itself always uses pnpm internally**. Do not use `npm install` or `npx` as the project workflow.
@@ -133,24 +135,32 @@ Client customization happens only through these files under `src/data/`:
 
 | File | Purpose |
 |------|---------|
-| `business.json` | Name, phones, address, hours, services_offered |
-| `site.json` | URL, SEO defaults, theme, feature flags, header/footer variants |
-| `navigation.json` | Header, footer, mobile, legal links |
-| `hero.json` | Hero slides + `variant` |
-| `services.json` | Service catalog + `variant` |
-| `gallery.json` | Gallery items + `variant` |
-| `testimonials.json` | Reviews + `variant` |
-| `faq.json` | FAQ items + `variant` |
-| `areas.json` | Service areas + `variant` |
-| `directories.json` | Directory badges + `variant` |
-| `blog.json` | Blog posts (`published` flag) |
-| `landings.json` | Optional long-form service landings |
+| `business.json` | **Authoritative** business identity: name, phones, address, hours, services_offered, license, insurance, payments, social |
+| `site.json` | **Authoritative** site identity: URL, SEO defaults, theme, feature flags, header/footer variants |
+| `navigation.json` | Header, footer, mobile, legal links (often still seed after scaffold — rewrite) |
+| `hero.json` | Hero slides + `variant` (seed after scaffold — rewrite) |
+| `services.json` | Service catalog + `variant` (seed after scaffold — rewrite) |
+| `gallery.json` | Gallery items + `variant` (seed after scaffold — rewrite) |
+| `testimonials.json` | Reviews + `variant` (seed after scaffold — rewrite) |
+| `faq.json` | FAQ items + `variant` (seed after scaffold — rewrite) |
+| `areas.json` | Service areas + `variant` (seed after scaffold — rewrite for real service area) |
+| `directories.json` | Directory badges + `variant` (seed after scaffold — rewrite) |
+| `blog.json` | Blog posts (`published` flag) (seed after scaffold — rewrite) |
+| `landings.json` | Optional long-form service landings (seed after scaffold — rewrite) |
+
+### Authoritative identity vs seed content
+
+| Layer | Files | Rule |
+|-------|-------|------|
+| Authoritative identity | `business.json`, `site.json` | Source of truth for client/site identity after scaffold |
+| Rewritable seed content | Other `src/data/*.json`, demo images/assets, leftover masonry/hardscape services & blog | Expected after scaffold; rewrite for the real trade — **not a conflict** |
 
 Rules:
 
-- Preserve top-level keys and nested shapes
-- Do not rename fields without updating components + Zod schemas
+- Preserve top-level keys, nested shapes, required arrays, and `_instructions` blocks
+- Replace values, copy, and assets only — do not flatten or rename fields without updating components + Zod schemas
 - Run `pnpm run validate:data` after edits
+- Finish nontrivial work with `pnpm run build`
 - Keep template content placeholder-safe (no real client PII in the shared base)
 
 Types live in `src/data/types.ts`. Loaders live in `src/data/loaders.ts`.
@@ -221,6 +231,14 @@ Do not remove or weaken these safeguards.
 ## Agent / AI workflow
 
 See `AGENTS.md` (non-negotiable rules) and `SKILL.md` (template skill for agents).
+
+For generated client sites:
+
+1. Trust `business.json` + `site.json` as authoritative identity
+2. Rewrite leftover masonry/hardscape seed content (services, blog, section copy, assets) for the real trade
+3. Preserve JSON shape and `_instructions` while replacing values/copy/assets
+4. Do not hardcode client business data into components
+5. Keep the shared template base neutral — real client PII only in client repos
 
 Before finishing nontrivial work:
 

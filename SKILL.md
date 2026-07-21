@@ -32,6 +32,35 @@ Spin up a multi-page contractor marketing site that is:
 3. **No client data hardcoded** in components
 4. **Build must pass**: `pnpm run build`
 5. **Content images** in `src/assets/images/`; public untransformed assets in `public/`
+6. **Authoritative identity after scaffold** — `business.json` + `site.json`
+7. **Seed content is rewritable** — leftover masonry/hardscape demo is expected, not a conflict
+
+## Authoritative identity vs seed content
+
+After scaffolding a client site, agents and developers MUST follow this split:
+
+| Source | Role | Action |
+|--------|------|--------|
+| `src/data/business.json` | Authoritative business identity | Keep as source of truth for name, contact, hours, license, insurance, payments, services offered, social |
+| `src/data/site.json` | Authoritative site identity | Keep as source of truth for URL, SEO defaults, theme, feature flags, header/footer variants |
+| Remaining `src/data/*.json`, images, blog, services catalog/landings | Seed / demo content | Rewrite for the real trade; do **not** treat masonry/hardscape leftovers as a conflict |
+
+### Expected leftovers after scaffold
+
+The CLI replaces core identity fields, but demo masonry/hardscape material often remains so the site still builds. That is intentional seed content, including:
+
+- services, landings, and related catalog copy that still describe the demo trade
+- blog posts and blog images
+- gallery / hero / testimonials / FAQ / areas / directories placeholder copy
+- demo assets under `src/assets/images/` (and public placeholders when needed)
+
+Rewrite those for the client’s real trade. Prefer value-only edits: preserve keys, nested shapes, required arrays, slugs the contract expects, `variant` fields, and every `_instructions` block.
+
+### Template neutrality
+
+- Shared template base stays placeholder/neutral — no real client PII
+- Real client data belongs only in the scaffolded client repository
+- Do not hardcode phones, emails, addresses, or service copy in components
 
 ## Quick start
 
@@ -114,6 +143,14 @@ Also:
 - `types.ts` — TypeScript interfaces
 - `loaders.ts` — typed getters used by pages/components
 - validation via `pnpm run validate:data` (wired into build)
+
+### Post-scaffold client rewrite (typical agent path)
+
+1. Read `business.json` and `site.json` as authoritative identity
+2. Rewrite seed services/blog/gallery/hero/FAQ/etc. for the real trade (not masonry/hardscape leftovers)
+3. Replace demo images/assets while keeping JSON image path shape (`./images/...`)
+4. Preserve JSON shape + `_instructions` everywhere
+5. Run `pnpm run validate:data` and `pnpm run build` before finishing
 
 ### How to add a service
 
@@ -204,8 +241,10 @@ scripts/               # enforce-package-manager, validate-data
 - Do **not** recommend `npm install` / `npx` for scaffolding or day-to-day workflow
 - Do **not** reintroduce `content.json` / `blogs.json` as the contract
 - Do **not** break JSON shapes without updating types + Zod + consumers
+- Do **not** strip `_instructions` blocks or remove keys because seed copy “looks unused”
 - Do **not** hardcode client phone/email/address/services in components
 - Do **not** put real client PII into this shared template base (scaffold writes target only)
+- Do **not** flag leftover masonry/hardscape services, blog, or assets after scaffold as a conflict — rewrite them
 - Do **not** put content images only in `public/` (use `src/assets/images/`)
 - Do **not** skip `pnpm run build` after nontrivial edits
 - Do **not** strip guard files (`AGENTS.md`, `.npmrc`, `scripts/enforce-package-manager.cjs`, `pnpm-workspace.yaml`)
