@@ -35,10 +35,13 @@ import {
   DEFAULT_LICENSE,
   DEFAULT_PAYMENT_METHODS,
   DEFAULT_YEARS_EXPERIENCE,
+  normalizeDirectories,
   normalizeHours,
   normalizePaymentMethods,
+  normalizeSocial,
   optionalText,
   requiredText,
+  SOCIAL_NETWORK_KEYS,
 } from '../src/prompts.mjs';
 import { isSameOrInside, validateTarget, TargetValidationError } from '../src/validate-target.mjs';
 import { findLocalTemplateRoot } from '../src/copy-template.mjs';
@@ -74,6 +77,32 @@ async function test(name, fn) {
  */
 function assert(condition, message) {
   if (!condition) throw new Error(message);
+}
+
+/** @param {string} file */
+function readJson(file) {
+  return JSON.parse(fs.readFileSync(file, 'utf8'));
+}
+
+/** Seed template data files into a temp target. @param {string} prefix */
+function seedDataDir(prefix) {
+  assert(REPO_ROOT, 'expected local template root');
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
+  const dataSrc = path.join(REPO_ROOT, 'src', 'data');
+  const dataDst = path.join(tmp, 'src', 'data');
+  fs.mkdirSync(dataDst, { recursive: true });
+  for (const f of [
+    'business.json',
+    'site.json',
+    'services.json',
+    'areas.json',
+    'navigation.json',
+    'landings.json',
+    'directories.json',
+  ]) {
+    fs.copyFileSync(path.join(dataSrc, f), path.join(dataDst, f));
+  }
+  return { tmp, dataDst };
 }
 
 /**
@@ -312,6 +341,7 @@ async function main() {
       'areas.json',
       'navigation.json',
       'landings.json',
+      'directories.json',
     ]) {
       fs.copyFileSync(path.join(dataSrc, file), path.join(dataDst, file));
     }
@@ -480,7 +510,7 @@ async function main() {
     );
   });
 
-  await test('replaceTargetData writes trust + payment + hours; social untouched', () => {
+  await test('replaceTargetData writes trust + payment + hours + empty social', () => {
     assert(REPO_ROOT, 'expected local template root');
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'ccs-trust-'));
     const dataSrc = path.join(REPO_ROOT, 'src', 'data');
@@ -493,12 +523,16 @@ async function main() {
       'areas.json',
       'navigation.json',
       'landings.json',
+      'directories.json',
     ]) {
       fs.copyFileSync(path.join(dataSrc, file), path.join(dataDst, file));
     }
 
     const original = JSON.parse(
       fs.readFileSync(path.join(dataDst, 'business.json'), 'utf8'),
+    );
+    const originalDirs = JSON.parse(
+      fs.readFileSync(path.join(dataDst, 'directories.json'), 'utf8'),
     );
 
     const answers = buildAnswers({
@@ -520,6 +554,10 @@ async function main() {
 
     const business = JSON.parse(
       fs.readFileSync(path.join(dataDst, 'business.json'), 'utf8'),
+    );
+    const site = JSON.parse(fs.readFileSync(path.join(dataDst, 'site.json'), 'utf8'));
+    const directories = JSON.parse(
+      fs.readFileSync(path.join(dataDst, 'directories.json'), 'utf8'),
     );
     assert(business._instructions, '_instructions preserved');
     assert(
@@ -544,13 +582,130 @@ async function main() {
     assert(business.hours[0].days === 'Monday - Friday', 'hours days shape');
     assert(business.hours[0].time === '8:00 AM - 4:00 PM', 'hours time written');
     assert(business.hours[1].time === 'Closed', 'saturday closed');
-    // Out-of-scope for 2b
-    assert(JSON.stringify(business.social) === JSON.stringify(original.social), 'social untouched');
-
+    assert(JSON.stringify(business.social) === '{}', 'omitted social → {}');
+    assert(site.features.enable_directories === false, 'no dirs → enable false');
+    assert(directories.directories.length >= 1, 'directories min(1) when none');
+    assert(directories.directories.length === originalDirs.directories.length);
+    assert(directories._instructions && directories.variant === originalDirs.variant);
     fs.rmSync(tmp, { recursive: true, force: true });
   });
 
-  await test('--help documents trust/payment/hours defaults', () => {
+  await test('normalizeSocial/directories + replace populate/none parity', () => {
+    // Social blank omission + population (object + compact CSV)
+    assert(JSON.stringify(normalizeSocial(undefined)) === '{}', 'missing social → {}');
+    assert(
+      JSON.stringify(normalizeSocial({ facebook: '  ', instagram: null, x: '' })) === '{}',
+      'blank social keys omitted',
+    );
+    const populated = normalizeSocial({
+      facebook: ' https://facebook.com/acme ',
+      instagram: '',
+      youtube: 'https://youtube.com/@acme',
+      unknown: 'https://nope.example',
+    });
+    assert(
+      JSON.stringify(populated) ===
+        JSON.stringify({
+          facebook: 'https://facebook.com/acme',
+          youtube: 'https://youtube.com/@acme',
+        }),
+    );
+    const compact = normalizeSocial(
+      'facebook=https://facebook.com/a, google-business=https://g.co/a, ,tiktok=',
+    );
+    assert(compact.facebook === 'https://facebook.com/a' && compact.google_business === 'https://g.co/a');
+    assert(!Object.prototype.hasOwnProperty.call(compact, 'tiktok'));
+    assert(SOCIAL_NETWORK_KEYS.includes('linkedin'));
+
+    // Directories provided vs none
+    assert(normalizeDirectories(undefined).length === 0);
+    assert(normalizeDirectories([]).length === 0);
+    const fromCsv = normalizeDirectories(
+      'Google Business|https://g.co/acme,  BBB|https://bbb.org/acme ,badrow',
+    );
+    assert(fromCsv.length === 2 && fromCsv[0].url === 'https://g.co/acme' && fromCsv[0].initials);
+    const fromRows = normalizeDirectories([
+      { name: 'Angi', url: 'https://angi.com/x', initials: 'A' },
+      { name: '  ', url: 'https://skip.example' },
+      { name: 'Houzz', url: '  ' },
+    ]);
+    assert(fromRows.length === 1 && fromRows[0].initials === 'A');
+
+    const none = buildAnswers({ businessName: 'No Social', primaryServices: ['Masonry'] });
+    assert(JSON.stringify(none.social) === '{}' && none.directories.length === 0);
+    assert(none.enableDirectories === false);
+    const withDirs = buildAnswers({
+      businessName: 'With Dirs',
+      primaryServices: ['Masonry'],
+      social: { facebook: 'https://facebook.com/x', instagram: '  ' },
+      directories: 'Google|https://g.co/x',
+    });
+    assert(withDirs.social.facebook === 'https://facebook.com/x');
+    assert(!Object.prototype.hasOwnProperty.call(withDirs.social, 'instagram'));
+    assert(withDirs.directories.length === 1 && withDirs.enableDirectories === true);
+
+    // directories:[] + enableDirectories:true → feature false
+    const forcedEmpty = buildAnswers({
+      businessName: 'Forced Empty Dirs',
+      primaryServices: ['Masonry'],
+      directories: [],
+      enableDirectories: true,
+    });
+    assert(forcedEmpty.directories.length === 0 && forcedEmpty.enableDirectories === false);
+
+    // replace: populated social + directories
+    const seeded = seedDataDir('ccs-social-');
+    replaceTargetData(
+      seeded.tmp,
+      buildAnswers({
+        businessName: 'Social Co',
+        primaryServices: ['Patios'],
+        social: {
+          facebook: 'https://facebook.com/socialco',
+          instagram: '',
+          youtube: 'https://youtube.com/@socialco',
+        },
+        directories: [
+          { name: 'Google Business', url: 'https://g.co/socialco', initials: 'G' },
+          { name: 'Angi', url: 'https://angi.com/socialco' },
+        ],
+      }),
+    );
+    const business = readJson(path.join(seeded.dataDst, 'business.json'));
+    const site = readJson(path.join(seeded.dataDst, 'site.json'));
+    const directories = readJson(path.join(seeded.dataDst, 'directories.json'));
+    assert(
+      JSON.stringify(business.social) ===
+        JSON.stringify({
+          facebook: 'https://facebook.com/socialco',
+          youtube: 'https://youtube.com/@socialco',
+        }),
+    );
+    assert(site.features.enable_directories === true);
+    assert(directories.directories.length === 2 && directories.directories[0].initials === 'G');
+    assert(directories.directories[1].initials && directories._instructions);
+
+    // replace: directories:[] + enable true → flag false + min(1) placeholder rows
+    const forced = seedDataDir('ccs-dirs-force-');
+    const origLen = readJson(path.join(forced.dataDst, 'directories.json')).directories.length;
+    replaceTargetData(
+      forced.tmp,
+      buildAnswers({
+        businessName: 'Force Enable Empty',
+        primaryServices: ['Masonry'],
+        directories: [],
+        enableDirectories: true,
+      }),
+    );
+    const siteForced = readJson(path.join(forced.dataDst, 'site.json'));
+    const dirsForced = readJson(path.join(forced.dataDst, 'directories.json'));
+    assert(siteForced.features.enable_directories === false, 'empty+force → enable false');
+    assert(dirsForced.directories.length >= 1 && dirsForced.directories.length === origLen);
+    fs.rmSync(forced.tmp, { recursive: true, force: true });
+    fs.rmSync(seeded.tmp, { recursive: true, force: true });
+  });
+
+  await test('--help documents trust/payment/hours/social/directories defaults', () => {
     const help = runCli(['--help']);
     assert(help.status === 0, `help exit 0, got ${help.status}`);
     const helpOut = `${help.stdout}\n${help.stderr}`;
@@ -559,10 +714,13 @@ async function main() {
     assert(/empty string/i.test(helpOut), 'help documents foundedYear empty string');
     assert(/paymentMethods/i.test(helpOut), 'help lists paymentMethods');
     assert(/hoursWeekday/i.test(helpOut), 'help lists compact hours keys');
+    assert(/social/i.test(helpOut), 'help lists social');
+    assert(/directories/i.test(helpOut), 'help lists directories');
+    assert(/enable_directories/i.test(helpOut), 'help mentions enable_directories');
     assert(/CREATE_CONTRACTOR_SITE_ANSWERS_JSON/i.test(helpOut), 'help lists JSON env');
   });
 
-  await test('CREATE_CONTRACTOR_SITE_ANSWERS_JSON CLI path defaults trust/payment/hours', () => {
+  await test('CREATE_CONTRACTOR_SITE_ANSWERS_JSON CLI path defaults trust/payment/hours/social/dirs', () => {
     assert(REPO_ROOT, 'expected local template root');
     // Fresh non-existent target (CLI rejects existing dirs that are non-empty).
     const targetDir = path.join(
@@ -582,6 +740,8 @@ async function main() {
       // Blank payments + empty hours → defaults (never [])
       paymentMethods: '  ,  ',
       hours: [],
+      social: { facebook: '  ', instagram: '' }, // blank → {}
+      directories: [], // none → enable false + min(1)
     };
 
     const result = runCli([targetDir], {
@@ -589,7 +749,6 @@ async function main() {
         CREATE_CONTRACTOR_TEMPLATE_ROOT: REPO_ROOT,
         CREATE_CONTRACTOR_SITE_ANSWERS_JSON: JSON.stringify(payload),
         NODE_ENV: 'test',
-        // Exercise bin resolveAnswers + replace without full install/build E2E.
         CREATE_CONTRACTOR_SITE_SKIP_SETUP: '1',
       },
     });
@@ -602,6 +761,8 @@ async function main() {
       const businessPath = path.join(targetDir, 'src/data/business.json');
       assert(fs.existsSync(businessPath), 'expected generated business.json');
       const business = JSON.parse(fs.readFileSync(businessPath, 'utf8'));
+      const site = readJson(path.join(targetDir, 'src/data/site.json'));
+      const directories = readJson(path.join(targetDir, 'src/data/directories.json'));
 
       assert(business.name === 'JSON Env Masonry', 'env business name via CLI');
       assert(
@@ -635,6 +796,9 @@ async function main() {
         'CLI empty hours → DEFAULT_HOURS',
       );
       assert(business.hours.every((h) => h.days && h.time), 'hours rows shaped');
+      assert(JSON.stringify(business.social) === '{}', 'CLI blank social → {}');
+      assert(site.features.enable_directories === false, 'CLI no dirs → enable false');
+      assert(directories.directories.length >= 1, 'CLI directories min(1)');
     } finally {
       const parent = path.dirname(targetDir);
       try {
@@ -645,7 +809,7 @@ async function main() {
     }
   });
 
-  await test('CREATE_CONTRACTOR_SITE_ANSWERS_JSON compact payment/hours path', () => {
+  await test('CREATE_CONTRACTOR_SITE_ANSWERS_JSON compact payment/hours/social/dirs path', () => {
     assert(REPO_ROOT, 'expected local template root');
     const targetDir = path.join(
       fs.mkdtempSync(path.join(os.tmpdir(), 'ccs-jsoncompact-parent-')),
@@ -659,6 +823,8 @@ async function main() {
       hoursWeekday: '9:00 AM - 5:00 PM',
       hoursSaturday: 'Closed',
       hoursSunday: 'Closed',
+      social: 'facebook=https://facebook.com/compact,instagram=https://instagram.com/compact',
+      directories: 'Google Business|https://g.co/compact,BBB|https://bbb.org/compact',
     };
 
     const result = runCli([targetDir], {
@@ -676,6 +842,8 @@ async function main() {
       const business = JSON.parse(
         fs.readFileSync(path.join(targetDir, 'src/data/business.json'), 'utf8'),
       );
+      const site = readJson(path.join(targetDir, 'src/data/site.json'));
+      const directories = readJson(path.join(targetDir, 'src/data/directories.json'));
       assert(
         JSON.stringify(business.payment_methods) === JSON.stringify(['Cash', 'ACH']),
         `compact payments, got ${JSON.stringify(business.payment_methods)}`,
@@ -688,6 +856,11 @@ async function main() {
       // Trust defaults still apply when omitted
       assert(business.free_estimate === DEFAULT_FREE_ESTIMATE, 'trust default still works');
       assert(business.founded_year === '', 'founded_year still ""');
+      assert(business.social.facebook === 'https://facebook.com/compact');
+      assert(business.social.instagram === 'https://instagram.com/compact');
+      assert(site.features.enable_directories === true, 'compact dirs → enable true');
+      assert(directories.directories.length === 2);
+      assert(directories.directories[0].url === 'https://g.co/compact');
     } finally {
       const parent = path.dirname(targetDir);
       try {
@@ -726,6 +899,7 @@ async function main() {
       'areas.json',
       'navigation.json',
       'landings.json',
+      'directories.json',
     ]) {
       fs.copyFileSync(path.join(dataSrc, file), path.join(dataDst, file));
     }
@@ -826,6 +1000,11 @@ async function main() {
         business.hours.every((h) => typeof h.days === 'string' && typeof h.time === 'string'),
         'E2E hours shape',
       );
+      assert(JSON.stringify(business.social) === '{}', 'E2E omitted social → {}');
+      const siteE2E = readJson(path.join(targetDir, 'src/data/site.json'));
+      const dirsE2E = readJson(path.join(targetDir, 'src/data/directories.json'));
+      assert(siteE2E.features.enable_directories === false, 'E2E no dirs → enable false');
+      assert(dirsE2E.directories.length >= 1, 'E2E directories min(1)');
 
       const services = JSON.parse(
         fs.readFileSync(path.join(targetDir, 'src/data/services.json'), 'utf8'),

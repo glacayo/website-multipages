@@ -385,6 +385,7 @@ export function replaceTargetData(targetDir, answers) {
       days: String(row.days),
       time: String(row.time),
     }));
+    business.social = { ...(answers.social || {}) }; // non-blank keys only
     business.type_of_services = typeOfServices;
 
     if (aligned) {
@@ -396,15 +397,40 @@ export function replaceTargetData(targetDir, answers) {
     if (answers.siteUrl) {
       site.url = answers.siteUrl.replace(/\/$/, '');
     }
-    site.logo = {
-      ...site.logo,
-      alt: answers.businessName,
-    };
+    site.logo = { ...site.logo, alt: answers.businessName };
     site.seo = {
       ...site.seo,
       default_title: `${answers.businessName} | ${answers.city}, ${answers.state}`,
       default_description: `${answers.tagline} Serving ${answers.serviceArea}.`,
     };
+    site.features = {
+      ...site.features,
+      enable_directories: Boolean(answers.enableDirectories),
+    };
+  });
+
+  updateJsonFile(path.join(dataDir, 'directories.json'), (directoriesData) => {
+    const provided = Array.isArray(answers.directories) ? answers.directories : [];
+    if (provided.length > 0) {
+      directoriesData.directories = provided.map((row) => {
+        /** @type {Record<string, unknown>} */
+        const out = { name: String(row.name), url: String(row.url) };
+        if (row.initials) out.initials = String(row.initials);
+        if (row.icon) out.icon = String(row.icon);
+        if (row.badge_image) out.badge_image = String(row.badge_image);
+        return out;
+      });
+      return;
+    }
+    // none: keep existing rows; never write directories: []
+    const existing = Array.isArray(directoriesData.directories)
+      ? directoriesData.directories
+      : [];
+    if (existing.length === 0) {
+      directoriesData.directories = [
+        { name: 'Google Business', url: 'https://example.com/business', initials: 'G' },
+      ];
+    }
   });
 
   updateJsonFile(path.join(dataDir, 'areas.json'), (areas) => {

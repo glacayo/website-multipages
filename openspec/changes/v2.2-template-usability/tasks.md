@@ -53,11 +53,11 @@ Chain strategy: feature-branch-chain
 
 ## Phase 2c: CLI Social + Directories (PR 2c)
 
-- [ ] 2c.1 Extend prompts/`ScaffoldAnswers`/`buildAnswers` for social links (blank = key omitted from `business.social`) and directory links (per template row: URL or Enter to skip URL).
-- [ ] 2c.2 Directory handling: `directories.json.directories` MUST remain `.min(1)`. If operator provides no URLs, keep a placeholder/default row and set `enable_directories: false` — **do not** write `[]`.
-- [ ] 2c.3 Extend `replace-data.mjs` for social + directories value-only updates; preserve keys, arrays, slugs, `variant`, and `_instructions`.
-- [ ] 2c.4 Smoke coverage for social omit-on-blank, directories min(1) when none provided, and answer-path parity.
-- [ ] 2c.5 Verify `pnpm run validate:data` and `pnpm run test:cli` pass; source template stays placeholder-only.
+- [x] 2c.1 Extend prompts/`ScaffoldAnswers`/`buildAnswers` for social links (blank = key omitted from `business.social`) and directory links (per template row: URL or Enter to skip URL).
+- [x] 2c.2 Directory handling: `directories.json.directories` MUST remain `.min(1)`. If operator provides no URLs, keep a placeholder/default row and set `enable_directories: false` — **do not** write `[]`.
+- [x] 2c.3 Extend `replace-data.mjs` for social + directories value-only updates; preserve keys, arrays, slugs, `variant`, and `_instructions`.
+- [x] 2c.4 Smoke coverage for social omit-on-blank, directories min(1) when none provided, and answer-path parity.
+- [x] 2c.5 Verify `pnpm run validate:data` and `pnpm run test:cli` pass; source template stays placeholder-only.
 
 ## Phase 3a: Theme Tokens + Fonts + Audit (PR 3a)
 
