@@ -45,12 +45,12 @@ function initials(name: string): string {
           </div>
           <div class="flex-1 min-w-0">
             <div class="flex flex-wrap items-center gap-2 mb-2">
-              <div class="flex gap-0.5 text-amber-400" aria-label={`${t.stars} out of 5 stars`}>
+              <div class="flex gap-0.5 text-accent" aria-label={`${t.stars} out of 5 stars`}>
                 {Array.from({ length: 5 }).map((_, si) => (
                   <Star
                     class:list={[
                       'w-3.5 h-3.5',
-                      si < t.stars ? 'fill-amber-400' : 'text-border fill-none',
+                      si < t.stars ? 'fill-accent' : 'text-border fill-none',
                     ]}
                   />
                 ))}

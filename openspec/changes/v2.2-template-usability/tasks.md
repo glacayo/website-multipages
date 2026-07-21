@@ -69,10 +69,10 @@ Chain strategy: feature-branch-chain
 
 ## Phase 3b: Tokenize Offenders + Theme Lint (PR 3b)
 
-- [ ] 3b.1 Tokenize every inventoried offender (or document rare `theme-lint-ignore` with reason) so source is lint-clean.
-- [ ] 3b.2 Create `scripts/lint-theme.cjs` (hex/rgb/hsl/oklch + Tailwind stock-palette utilities; strips comments + `@theme` block; allow token utilities + `white/black/transparent/current/inherit`; `theme-lint-ignore` escape).
-- [ ] 3b.3 Wire lint into `package.json` build **between** `validate-data` and `astro check` only after 3b.1 is clean — lint must pass on the PR that enables it.
-- [ ] 3b.4 Verify an out-of-palette color fails `pnpm run build` (no `dist/`), additive keys still pass `pnpm run validate:data`, and emitted Google Fonts link matches configured fonts. Keep this PR under 400 lines; split further only if still over budget.
+- [x] 3b.1 Tokenize every inventoried offender (or document rare `theme-lint-ignore` with reason) so source is lint-clean.
+- [x] 3b.2 Create `scripts/lint-theme.cjs` (hex/rgb/hsl/oklch + Tailwind stock-palette utilities; strips comments + `@theme` block; allow token utilities + `white/black/transparent/current/inherit`; `theme-lint-ignore` escape).
+- [x] 3b.3 Wire lint into `package.json` build **between** `validate-data` and `astro check` only after 3b.1 is clean — lint must pass on the PR that enables it.
+- [x] 3b.4 Verify an out-of-palette color fails `pnpm run build` (no `dist/`), additive keys still pass `pnpm run validate:data`, and emitted Google Fonts link matches configured fonts. Keep this PR under 400 lines; split further only if still over budget.
 
 ## Phase 4a: Route Policy + Dynamic Gates (PR 4a)
 

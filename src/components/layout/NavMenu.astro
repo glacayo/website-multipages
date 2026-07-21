@@ -38,7 +38,7 @@ function desktopLinkClass(href: string): string {
 
 function mobileLinkClass(href: string): string {
   const base =
-    'block px-4 py-3 text-base font-medium rounded-md transition-colors duration-200 text-dark hover:bg-gray-50 hover:text-accent';
+    'block px-4 py-3 text-base font-medium rounded-md transition-colors duration-200 text-dark hover:bg-surface hover:text-accent';
   return isActive(href) ? `${base} bg-accent/10 text-accent` : base;
 }
 ---
@@ -72,7 +72,7 @@ function mobileLinkClass(href: string): string {
             <button
               type="button"
               class:list={[
-                'flex w-full items-center justify-between px-4 py-3 text-base font-medium rounded-md text-dark hover:bg-gray-50 hover:text-accent',
+                'flex w-full items-center justify-between px-4 py-3 text-base font-medium rounded-md text-dark hover:bg-surface hover:text-accent',
                 isActive(item.href) ? 'text-accent' : '',
               ]}
               x-on:click="open = !open"
@@ -143,7 +143,7 @@ function mobileLinkClass(href: string): string {
             <a
               href={item.href}
               class:list={[
-                'block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-accent',
+                'block px-4 py-2 text-sm text-dark hover:bg-surface hover:text-accent',
                 isActive(item.href) ? 'text-accent font-semibold' : '',
               ]}
             >
@@ -153,7 +153,7 @@ function mobileLinkClass(href: string): string {
               <a
                 href={child.href}
                 class:list={[
-                  'block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-accent',
+                  'block px-4 py-2 text-sm text-dark hover:bg-surface hover:text-accent',
                   isActive(child.href) ? 'text-accent font-semibold' : '',
                 ]}
               >

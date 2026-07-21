@@ -32,12 +32,12 @@ function initials(name: string): string {
       data.testimonials.map((t, i) => (
         <div data-reveal data-reveal-delay={String(i * 0.08)}>
           <Card as="article" variant="hover-lift" class="p-6 border border-border h-full flex flex-col">
-            <div class="flex gap-0.5 text-amber-400 mb-4" aria-label={`${t.stars} out of 5 stars`}>
+            <div class="flex gap-0.5 text-accent mb-4" aria-label={`${t.stars} out of 5 stars`}>
               {Array.from({ length: 5 }).map((_, si) => (
                 <Star
                   class:list={[
                     'w-4 h-4',
-                    si < t.stars ? 'fill-amber-400' : 'text-border fill-none',
+                    si < t.stars ? 'fill-accent' : 'text-border fill-none',
                   ]}
                 />
               ))}
