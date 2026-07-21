@@ -94,6 +94,8 @@ const schemas = {
     lang: z.string().min(1),
     region: z.string().min(1),
     timezone: z.string().optional(),
+    // Additive; missing → effective seo. Invalid FAIL validation.
+    site_type: z.enum(['one-page', 'multipage', 'seo']).optional(),
     logo: z.object({
       src: z.string().min(1),
       alt: z.string().min(1),

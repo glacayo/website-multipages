@@ -6,10 +6,14 @@ import {
   getPublishedBlogPosts,
   getSite,
 } from '../data/loaders';
-
-function normalizeBase(url: string): string {
-  return url.replace(/\/+$/, '');
-}
+import {
+  LEGAL_PATHS,
+  publishesBlog,
+  publishesServiceDetail,
+  publishesStaticInternals,
+  STATIC_INTERNAL_PATHS,
+  toAbsoluteUrl,
+} from '../utils/routes';
 
 function urlEntry(loc: string, lastmod?: string): string {
   const lastmodTag = lastmod ? `\n    <lastmod>${lastmod}</lastmod>` : '';
@@ -19,42 +23,39 @@ function urlEntry(loc: string, lastmod?: string): string {
 export async function GET() {
   const site = getSite();
   const business = getBusiness();
-  const base = normalizeBase(site.url);
   const urls: string[] = [];
 
-  const staticPaths = [
-    '/',
-    '/about-us',
-    '/services',
-    '/gallery',
-    '/contact-us',
-    '/privacy-policy',
-  ];
+  const staticPaths = ['/'];
+  if (publishesStaticInternals(site)) {
+    staticPaths.push(...STATIC_INTERNAL_PATHS);
+  }
+  staticPaths.push(...LEGAL_PATHS);
 
-  if (site.features.enable_blog) {
+  if (publishesBlog(site)) {
     staticPaths.push('/blog');
   }
 
   for (const path of staticPaths) {
-    const loc = path === '/' ? `${base}/` : `${base}${path}`;
-    urls.push(urlEntry(loc));
+    urls.push(urlEntry(toAbsoluteUrl(site.url, path)));
   }
 
   // Service landing routes (generated in PR 8; listed for SEO readiness)
-  for (const service of business.services_offered) {
-    urls.push(urlEntry(`${base}/services/${service.slug}`));
+  if (publishesServiceDetail(site)) {
+    for (const service of business.services_offered) {
+      urls.push(urlEntry(toAbsoluteUrl(site.url, `/services/${service.slug}`)));
+    }
   }
 
-  if (site.features.enable_blog) {
+  if (publishesBlog(site)) {
     const posts = getPublishedBlogPosts();
     for (const post of posts) {
-      urls.push(urlEntry(`${base}/blog/${post.slug}`, post.updated || post.date));
+      urls.push(urlEntry(toAbsoluteUrl(site.url, `/blog/${post.slug}`), post.updated || post.date));
     }
 
     const postsPerPage = 10;
     const totalPages = Math.ceil(posts.length / postsPerPage);
     for (let page = 2; page <= totalPages; page += 1) {
-      urls.push(urlEntry(`${base}/blog/${page}`));
+      urls.push(urlEntry(toAbsoluteUrl(site.url, `/blog/${page}`)));
     }
   }
 

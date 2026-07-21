@@ -4,6 +4,7 @@
  */
 import type { ServicesData } from '../../../../data/types';
 import { getSite } from '../../../../data/loaders';
+import { publishesServiceDetail } from '../../../../utils/routes';
 import { resolveIcon } from '../../../icons/icon-map';
 import SectionWrapper from '../../../ui/SectionWrapper.astro';
 import SectionHeader from '../../../ui/SectionHeader.astro';
@@ -16,7 +17,7 @@ interface Props {
 
 const { data } = Astro.props;
 const site = getSite();
-const enableLandings = site.features?.enable_landings !== false;
+const showServiceDetail = publishesServiceDetail(site);
 ---
 
 <SectionWrapper background="default" id="services">
@@ -38,7 +39,7 @@ const enableLandings = site.features?.enable_landings !== false;
               <p class="text-muted text-sm leading-relaxed mb-4">
                 {service.short_description}
               </p>
-              {enableLandings && (
+              {showServiceDetail && (
                 <a
                   href={`/services/${service.slug}`}
                   class="inline-flex items-center gap-1 text-accent font-semibold text-sm hover:text-primary transition-colors"

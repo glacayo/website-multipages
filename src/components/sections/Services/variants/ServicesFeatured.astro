@@ -4,6 +4,7 @@
  */
 import type { ServicesData } from '../../../../data/types';
 import { getSite } from '../../../../data/loaders';
+import { publishesServiceDetail } from '../../../../utils/routes';
 import SectionWrapper from '../../../ui/SectionWrapper.astro';
 import SectionHeader from '../../../ui/SectionHeader.astro';
 import ResponsiveImage from '../../../ui/ResponsiveImage.astro';
@@ -16,7 +17,7 @@ interface Props {
 
 const { data } = Astro.props;
 const site = getSite();
-const enableLandings = site.features?.enable_landings !== false;
+const showServiceDetail = publishesServiceDetail(site);
 const [featured, ...rest] = data.services;
 ---
 
@@ -49,7 +50,7 @@ const [featured, ...rest] = data.services;
           <p class="text-muted leading-relaxed mb-6">
             {featured.full_description}
           </p>
-          {enableLandings && (
+          {showServiceDetail && (
             <Button href={`/services/${featured.slug}`} variant="primary" size="lg">
               Explore {featured.name}
               <ArrowRight class="w-4 h-4" />
@@ -84,7 +85,7 @@ const [featured, ...rest] = data.services;
                 {service.name}
               </h3>
               <p class="text-muted text-sm mb-3">{service.short_description}</p>
-              {enableLandings && (
+              {showServiceDetail && (
                 <a
                   href={`/services/${service.slug}`}
                   class="inline-flex items-center gap-1 text-accent font-semibold text-sm"

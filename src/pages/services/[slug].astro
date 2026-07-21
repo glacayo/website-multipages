@@ -5,9 +5,15 @@
  * services.json + landings.json with a generic fallback.
  */
 import LandingLayout from '../../layouts/LandingLayout.astro';
-import { getBusiness } from '../../data/loaders';
+import { getBusiness, getSite } from '../../data/loaders';
+import { publishesServiceDetail } from '../../utils/routes';
 
 export function getStaticPaths() {
+  const site = getSite();
+  if (!publishesServiceDetail(site)) {
+    return [];
+  }
+
   const business = getBusiness();
   return business.services_offered.map((entry) => ({
     params: { slug: entry.slug },
