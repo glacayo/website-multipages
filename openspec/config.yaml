@@ -1,29 +1,26 @@
 schema: spec-driven
 
 context: |
-  Stack: Astro 7.0.9 (static output), Tailwind CSS 4 via @tailwindcss/vite, Alpine.js 3.
-  Extras: Swiper 12, @lucide/astro, Sharp, Zod, schema-dts. Package manager: pnpm only
-  (npm/npx forbidden, enforced by scripts/enforce-package-manager.cjs + .npmrc + devEngines).
-  Architecture: multipage Astro site (src/pages/*.astro), layout components in
-  src/components/layout/, section components in src/components/sections/, SEO components in
-  src/components/seo/, UI primitives in src/components/ui/.
-  Data contract: 12 typed JSON files under src/data/*.json with Zod validation
-  (business, site, navigation, hero, services, gallery, testimonials, faq, areas,
-  directories, blog, landings). Preserve schema per AGENTS.md.
-  Testing: no test runner configured; strict_tdd disabled.
+  Stack: Astro 7.0.9 (static), Tailwind CSS 4 via @tailwindcss/vite, Alpine.js 3, Swiper 12,
+  @lucide/astro, Sharp, Zod, schema-dts. pnpm only (npm/npx forbidden; guard + .npmrc + devEngines).
+  Architecture: multipage Astro site (src/pages/*.astro); layout/sections/seo/ui components under src/components/.
+  Data contract: 12 typed JSON files under src/data/*.json with Zod validation (business, site, navigation,
+  hero, services, gallery, testimonials, faq, areas, directories, blog, landings). Preserve schema per AGENTS.md.
+  Monorepo: packages/create-contractor-site scaffolds client sites (copy + JSON replace + pnpm install/build + git).
+  Testing: pnpm run test:cli (Node smoke script, CLI package only); template site has no test framework.
 
 strict_tdd: false
 
 testing:
   strict_tdd: false
-  detected: 2026-07-15
+  detected: 2026-07-20
   test_runner:
-    command: ""
-    framework: none
+    command: "pnpm run test:cli"
+    framework: "node:assert smoke script (packages/create-contractor-site only)"
   layers:
     unit: false
-    integration: false
-    e2e: false
+    integration: true
+    e2e: true
   coverage:
     available: false
     command: ""
@@ -38,10 +35,12 @@ testing:
       available: false
       command: ""
   notes: >
-    No unit/integration/e2e runner is installed (no vitest, jest, playwright,
-    or cypress in package.json; no test files under src/). `astro check`
-    provides type/template diagnostics via the Astro + TS toolchain
-    (astro.config.mjs, tsconfig.json) but is not a test suite.
+    The template site (src/) has no unit/integration/e2e framework (no vitest, jest,
+    playwright, or cypress). `pnpm run test:cli` runs a committed Node built-ins smoke
+    script (packages/create-contractor-site/scripts/smoke-test.mjs) covering CLI arg
+    validation, service/area normalization, JSON replacement alignment, and an opt-out
+    full temp-target scaffold E2E (skip via SKIP_CLI_E2E=1). Coverage applies to the CLI
+    package only, not the Astro template. `astro check` provides template type diagnostics.
 
 rules:
   proposal:
