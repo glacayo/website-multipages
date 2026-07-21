@@ -38,12 +38,12 @@ function initials(name: string): string {
           data.testimonials.map((t) => (
             <div class="swiper-slide flex h-auto py-2">
               <article class="testimonial-slide-card bg-surface border border-border rounded-2xl p-6 md:p-7 shadow-sm flex flex-col flex-1 mx-1">
-                <div class="flex gap-0.5 text-amber-400 mb-4" aria-label={`${t.stars} out of 5 stars`}>
+                <div class="flex gap-0.5 text-accent mb-4" aria-label={`${t.stars} out of 5 stars`}>
                   {Array.from({ length: 5 }).map((_, i) => (
                     <Star
                       class:list={[
                         'w-4 h-4',
-                        i < t.stars ? 'fill-amber-400' : 'text-border fill-none',
+                        i < t.stars ? 'fill-accent' : 'text-border fill-none',
                       ]}
                     />
                   ))}

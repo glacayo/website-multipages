@@ -51,7 +51,7 @@ const telHref = primaryPhone ? `tel:${primaryPhone.replace(/\D/g, '')}` : '/cont
 
         <button
           type="button"
-          class="inline-flex size-9 items-center justify-center rounded-md text-dark hover:bg-gray-100 lg:hidden"
+          class="inline-flex size-9 items-center justify-center rounded-md text-dark hover:bg-surface lg:hidden"
           x-on:click="menuOpen = !menuOpen"
           :aria-expanded="menuOpen.toString()"
           aria-controls="mobile-nav-minimal"

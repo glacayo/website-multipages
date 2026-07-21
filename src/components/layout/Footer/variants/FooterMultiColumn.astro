@@ -19,7 +19,7 @@ const telHref = primaryPhone ? `tel:${primaryPhone.replace(/\D/g, '')}` : undefi
 
 <footer
   data-footer-variant="multi-column"
-  class="bg-gradient-to-b from-dark via-[#011a35] to-[#00162e] text-white"
+  class="bg-gradient-to-b from-dark via-primary-dark to-primary-dark text-white"
 >
   <div class="container-site py-16 md:py-20">
     <div class="grid grid-cols-1 gap-10 sm:grid-cols-2 xl:grid-cols-5">
@@ -33,9 +33,9 @@ const telHref = primaryPhone ? `tel:${primaryPhone.replace(/\D/g, '')}` : undefi
             class="h-14 w-auto object-contain brightness-200 contrast-125 md:h-16"
           />
         </a>
-        <p class="mb-4 max-w-md text-sm leading-relaxed text-gray-400">{business.tagline}</p>
-        <p class="mb-2 text-sm text-gray-300">{business.service_area}</p>
-        <p class="inline-flex items-center gap-2 text-sm text-gray-300">
+        <p class="mb-4 max-w-md text-sm leading-relaxed text-white/60">{business.tagline}</p>
+        <p class="mb-2 text-sm text-white/70">{business.service_area}</p>
+        <p class="inline-flex items-center gap-2 text-sm text-white/70">
           <Check class="size-4 text-accent" aria-hidden="true" />
           {business.free_estimate}
         </p>
@@ -50,7 +50,7 @@ const telHref = primaryPhone ? `tel:${primaryPhone.replace(/\D/g, '')}` : undefi
                 <li>
                   <a
                     href={link.href}
-                    class="text-sm text-gray-400 transition-colors hover:text-accent"
+                    class="text-sm text-white/60 transition-colors hover:text-accent"
                   >
                     {link.label}
                   </a>
@@ -63,7 +63,7 @@ const telHref = primaryPhone ? `tel:${primaryPhone.replace(/\D/g, '')}` : undefi
 
       <div>
         <h4 class="font-heading mb-5 text-lg font-bold text-white">Contact</h4>
-        <ul class="mb-6 space-y-3 text-sm text-gray-400">
+        <ul class="mb-6 space-y-3 text-sm text-white/60">
           <li class="flex items-start gap-3">
             <MapPin class="mt-0.5 size-4 shrink-0 text-accent" aria-hidden="true" />
             <span>{business.address.full}</span>
@@ -112,7 +112,7 @@ const telHref = primaryPhone ? `tel:${primaryPhone.replace(/\D/g, '')}` : undefi
   </div>
 
   <div class="border-t border-white/10">
-    <div class="container-site flex flex-col items-center justify-between gap-3 py-5 text-sm text-gray-500 sm:flex-row">
+    <div class="container-site flex flex-col items-center justify-between gap-3 py-5 text-sm text-white/50 sm:flex-row">
       <p>
         &copy; {year} {business.name}. All rights reserved.
       </p>

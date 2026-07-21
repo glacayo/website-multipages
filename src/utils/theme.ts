@@ -1,6 +1,7 @@
 /**
  * Runtime theme helpers: CSS custom properties + Google Fonts URL from site.json.theme.
  * Unlayered :root overrides win over Tailwind v4 @theme fallbacks.
+ * theme-lint-ignore-file: palette definition source (hex defaults mirror @theme / site.json.theme)
  */
 import type { SiteTheme } from '../data/types';
 
