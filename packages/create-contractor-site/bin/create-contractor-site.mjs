@@ -48,12 +48,14 @@ Environment:
   CREATE_CONTRACTOR_TEMPLATE_REF
       Git branch/tag/ref to clone for the published fallback. Default: v2.1.2
 
-  Answer defaults (buildAnswers — blank/whitespace uses these; --yes omits trust fields):
+  Answer defaults (buildAnswers — blank/whitespace uses these; --yes omits trust/payment/hours):
   freeEstimate      Free On-Site Estimate
   yearsExperience   10+
   license           Licensed & Insured
   insurance         Fully insured with general liability and workers' compensation.
   foundedYear       "" (optional; key always written; skip/blank → empty string)
+  paymentMethods    Cash, Check, Credit Card, Financing Available (CSV or string[]; blank/[] → defaults, never [])
+  hours             3-row [{days,time}] Mon–Fri / Sat / Sun (or compact hoursWeekday/hoursSaturday/hoursSunday)
 
 Answer precedence (highest first):
   1. CREATE_CONTRACTOR_SITE_ANSWERS_JSON
@@ -128,8 +130,8 @@ async function resolveAnswers(nonInteractive) {
   }
 
   if (nonInteractive) {
-    // Trust fields omitted on purpose — buildAnswers supplies blank defaults
-    // (freeEstimate/yearsExperience/license/insurance + foundedYear "").
+    // Trust/payment/hours omitted on purpose — buildAnswers supplies defaults
+    // (text trust + foundedYear "" + paymentMethods + 3-row hours).
     return buildAnswers({
       businessName: 'Acme Masonry',
       legalName: 'Acme Masonry LLC',

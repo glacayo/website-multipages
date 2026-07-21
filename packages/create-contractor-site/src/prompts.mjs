@@ -10,8 +10,23 @@ export const DEFAULT_LICENSE = 'Licensed & Insured';
 /** Default insurance statement when blank/omitted. */
 export const DEFAULT_INSURANCE =
   "Fully insured with general liability and workers' compensation.";
+/** Default payment methods when blank/omitted/empty. */
+export const DEFAULT_PAYMENT_METHODS = [
+  'Cash',
+  'Check',
+  'Credit Card',
+  'Financing Available',
+];
+/** Default 3-row business hours (Mon–Fri / Sat / Sun). */
+export const DEFAULT_HOURS = [
+  { days: 'Monday - Friday', time: '7:00 AM - 6:00 PM' },
+  { days: 'Saturday', time: '8:00 AM - 2:00 PM' },
+  { days: 'Sunday', time: 'Closed' },
+];
 
 /**
+ * @typedef {{ days: string, time: string }} BusinessHourRow
+ *
  * @typedef {object} ScaffoldAnswers
  * @property {string} businessName
  * @property {string} legalName
@@ -28,6 +43,8 @@ export const DEFAULT_INSURANCE =
  * @property {string} yearsExperience
  * @property {string} license
  * @property {string} insurance
+ * @property {string[]} paymentMethods
+ * @property {BusinessHourRow[]} hours always length 3
  * @property {string[]} primaryServices
  * @property {string} [siteUrl]
  */
@@ -51,6 +68,65 @@ export function requiredText(value, fallback) {
 export function optionalText(value) {
   if (value == null) return '';
   return String(value).trim();
+}
+
+/**
+ * CSV string or string[] → trimmed non-empty list; blank/empty → defaults (never []).
+ * @param {unknown} value
+ * @returns {string[]}
+ */
+export function normalizePaymentMethods(value) {
+  /** @type {string[]} */
+  let items = [];
+  if (typeof value === 'string') {
+    items = value
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+  } else if (Array.isArray(value)) {
+    items = value.map((s) => String(s ?? '').trim()).filter(Boolean);
+  }
+  return items.length > 0 ? items : [...DEFAULT_PAYMENT_METHODS];
+}
+
+/**
+ * Normalize hours to the fixed 3-row `{ days, time }` shape.
+ * Accepts full rows, time-only strings, or compact weekday/sat/sun fields via buildAnswers.
+ * Blank/missing rows fall back to defaults — never empty array or partial shape.
+ * @param {unknown} value
+ * @returns {BusinessHourRow[]}
+ */
+export function normalizeHours(value) {
+  const defaults = DEFAULT_HOURS.map((row) => ({ days: row.days, time: row.time }));
+  if (!Array.isArray(value) || value.length === 0) {
+    return defaults;
+  }
+
+  return defaults.map((def, index) => {
+    const raw = value[index];
+    if (raw == null || raw === '') {
+      return { ...def };
+    }
+    if (typeof raw === 'string') {
+      const time = raw.trim();
+      return { days: def.days, time: time || def.time };
+    }
+    if (typeof raw === 'object') {
+      const days =
+        /** @type {{ days?: unknown, time?: unknown }} */ (raw).days != null
+          ? String(/** @type {{ days?: unknown }} */ (raw).days).trim()
+          : '';
+      const time =
+        /** @type {{ time?: unknown }} */ (raw).time != null
+          ? String(/** @type {{ time?: unknown }} */ (raw).time).trim()
+          : '';
+      return {
+        days: days || def.days,
+        time: time || def.time,
+      };
+    }
+    return { ...def };
+  });
 }
 
 /**
@@ -111,6 +187,18 @@ export async function collectClientAnswers() {
       required: false,
       defaultValue: '',
     });
+    const paymentMethodsRaw = await ask(rl, 'Payment methods (comma-separated)', {
+      defaultValue: DEFAULT_PAYMENT_METHODS.join(', '),
+    });
+    const hoursWeekday = await ask(rl, 'Weekday hours (Mon–Fri)', {
+      defaultValue: DEFAULT_HOURS[0].time,
+    });
+    const hoursSaturday = await ask(rl, 'Saturday hours', {
+      defaultValue: DEFAULT_HOURS[1].time,
+    });
+    const hoursSunday = await ask(rl, 'Sunday hours', {
+      defaultValue: DEFAULT_HOURS[2].time,
+    });
     const servicesRaw = await ask(rl, 'Primary services (comma-separated)');
     const siteUrl = await ask(rl, 'Site URL (optional)', {
       required: false,
@@ -142,6 +230,10 @@ export async function collectClientAnswers() {
       license,
       insurance,
       foundedYear,
+      paymentMethods: paymentMethodsRaw,
+      hoursWeekday,
+      hoursSaturday,
+      hoursSunday,
       primaryServices,
       siteUrl: siteUrl || undefined,
     });
@@ -154,7 +246,17 @@ export async function collectClientAnswers() {
  * Non-interactive answers helper for scripted verification.
  * All answer paths (interactive, --yes, CREATE_CONTRACTOR_SITE_ANSWERS_JSON) funnel here.
  *
- * @param {Partial<ScaffoldAnswers> & { businessName: string, primaryServices: string[] }} overrides
+ * Compact hours keys (hoursWeekday / hoursSaturday / hoursSunday) are accepted
+ * alongside a full `hours` array — useful for CREATE_CONTRACTOR_SITE_ANSWERS_JSON.
+ *
+ * @param {Partial<ScaffoldAnswers> & {
+ *   businessName: string,
+ *   primaryServices: string[],
+ *   paymentMethods?: string | string[],
+ *   hoursWeekday?: string,
+ *   hoursSaturday?: string,
+ *   hoursSunday?: string,
+ * }} overrides
  * @returns {ScaffoldAnswers}
  */
 export function buildAnswers(overrides) {
@@ -168,6 +270,24 @@ export function buildAnswers(overrides) {
     .filter(Boolean);
   if (primaryServices.length === 0) {
     throw new Error('primaryServices must include at least one service');
+  }
+
+  // Prefer full hours array when present; else compact weekday/sat/sun times.
+  const hasCompactHours =
+    overrides.hoursWeekday != null ||
+    overrides.hoursSaturday != null ||
+    overrides.hoursSunday != null;
+  /** @type {unknown} */
+  let hoursInput = overrides.hours;
+  if (
+    hasCompactHours &&
+    (hoursInput == null || (Array.isArray(hoursInput) && hoursInput.length === 0))
+  ) {
+    hoursInput = [
+      overrides.hoursWeekday,
+      overrides.hoursSaturday,
+      overrides.hoursSunday,
+    ];
   }
 
   return {
@@ -190,6 +310,10 @@ export function buildAnswers(overrides) {
     insurance: requiredText(overrides.insurance, DEFAULT_INSURANCE),
     // Optional/secondary: missing, blank, or whitespace → ""
     foundedYear: optionalText(overrides.foundedYear),
+    paymentMethods: normalizePaymentMethods(
+      /** @type {{ paymentMethods?: unknown }} */ (overrides).paymentMethods,
+    ),
+    hours: normalizeHours(hoursInput),
     primaryServices,
     siteUrl: overrides.siteUrl ? String(overrides.siteUrl).trim() || undefined : undefined,
   };
