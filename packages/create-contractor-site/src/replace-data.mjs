@@ -379,6 +379,12 @@ export function replaceTargetData(targetDir, answers) {
     business.insurance = answers.insurance;
     // Optional: always preserve key; skipped/blank → ""
     business.founded_year = answers.foundedYear;
+    // Always write non-empty arrays from buildAnswers (never [] / never skip).
+    business.payment_methods = answers.paymentMethods.map((m) => String(m));
+    business.hours = answers.hours.map((row) => ({
+      days: String(row.days),
+      time: String(row.time),
+    }));
     business.type_of_services = typeOfServices;
 
     if (aligned) {

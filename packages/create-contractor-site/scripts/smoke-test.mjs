@@ -30,9 +30,13 @@ import {
 import {
   buildAnswers,
   DEFAULT_FREE_ESTIMATE,
+  DEFAULT_HOURS,
   DEFAULT_INSURANCE,
   DEFAULT_LICENSE,
+  DEFAULT_PAYMENT_METHODS,
   DEFAULT_YEARS_EXPERIENCE,
+  normalizeHours,
+  normalizePaymentMethods,
   optionalText,
   requiredText,
 } from '../src/prompts.mjs';
@@ -405,7 +409,78 @@ async function main() {
     assert(optionalText(undefined) === '', 'optionalText missing → ""');
   });
 
-  await test('replaceTargetData writes text trust fields; founded_year key stays ""', () => {
+  await test('normalizePaymentMethods CSV/array blank → defaults never []', () => {
+    assert(
+      JSON.stringify(normalizePaymentMethods('Cash,  Check , ,Credit Card')) ===
+        JSON.stringify(['Cash', 'Check', 'Credit Card']),
+      'CSV trims and drops blanks',
+    );
+    assert(
+      JSON.stringify(normalizePaymentMethods(['  Visa ', '', 'Cash'])) ===
+        JSON.stringify(['Visa', 'Cash']),
+      'array trims and drops blanks',
+    );
+    assert(
+      JSON.stringify(normalizePaymentMethods('   ')) ===
+        JSON.stringify(DEFAULT_PAYMENT_METHODS),
+      'whitespace CSV → defaults',
+    );
+    assert(
+      JSON.stringify(normalizePaymentMethods([])) ===
+        JSON.stringify(DEFAULT_PAYMENT_METHODS),
+      'empty array → defaults',
+    );
+    assert(
+      JSON.stringify(normalizePaymentMethods(null)) ===
+        JSON.stringify(DEFAULT_PAYMENT_METHODS),
+      'null → defaults',
+    );
+    assert(normalizePaymentMethods('').length > 0, 'never empty list');
+  });
+
+  await test('normalizeHours keeps 3-row {days,time} shape with safe defaults', () => {
+    const fromBlank = normalizeHours(undefined);
+    assert(fromBlank.length === 3, 'default length 3');
+    assert(
+      JSON.stringify(fromBlank) === JSON.stringify(DEFAULT_HOURS),
+      'missing → DEFAULT_HOURS',
+    );
+    assert(
+      JSON.stringify(normalizeHours([])) === JSON.stringify(DEFAULT_HOURS),
+      'empty array → defaults',
+    );
+
+    const partial = normalizeHours([
+      { days: '  ', time: '9:00 AM - 5:00 PM' },
+      '  10:00 AM - 1:00 PM ',
+      { days: 'Sunday', time: '  ' },
+    ]);
+    assert(partial.length === 3, 'partial still length 3');
+    assert(partial[0].days === DEFAULT_HOURS[0].days, 'blank days → default days');
+    assert(partial[0].time === '9:00 AM - 5:00 PM', 'weekday time kept');
+    assert(partial[1].days === DEFAULT_HOURS[1].days, 'string row uses default days');
+    assert(partial[1].time === '10:00 AM - 1:00 PM', 'string row trims time');
+    assert(partial[2].days === 'Sunday', 'sunday days kept');
+    assert(partial[2].time === DEFAULT_HOURS[2].time, 'blank time → default');
+
+    const compact = buildAnswers({
+      businessName: 'Hours Co',
+      primaryServices: ['Masonry'],
+      hoursWeekday: '8-5',
+      hoursSaturday: '  ',
+      hoursSunday: 'Closed',
+    });
+    assert(compact.hours.length === 3, 'compact → 3 rows');
+    assert(compact.hours[0].time === '8-5', 'compact weekday');
+    assert(compact.hours[1].time === DEFAULT_HOURS[1].time, 'blank sat → default');
+    assert(compact.hours[2].time === 'Closed', 'compact sunday');
+    assert(
+      JSON.stringify(compact.paymentMethods) === JSON.stringify(DEFAULT_PAYMENT_METHODS),
+      'omitted payments → defaults',
+    );
+  });
+
+  await test('replaceTargetData writes trust + payment + hours; social untouched', () => {
     assert(REPO_ROOT, 'expected local template root');
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'ccs-trust-'));
     const dataSrc = path.join(REPO_ROOT, 'src', 'data');
@@ -434,6 +509,12 @@ async function main() {
       license: 'VA Class A #12345',
       insurance: 'Bonded and insured.',
       foundedYear: '',
+      paymentMethods: 'Cash, Zelle',
+      hours: [
+        { days: 'Monday - Friday', time: '8:00 AM - 4:00 PM' },
+        { days: 'Saturday', time: 'Closed' },
+        { days: 'Sunday', time: 'Closed' },
+      ],
     });
     replaceTargetData(tmp, answers);
 
@@ -455,28 +536,33 @@ async function main() {
       'founded_year key must remain',
     );
     assert(business.founded_year === '', 'founded_year skip → ""');
-    // Out-of-scope fields must stay template seed (PR 2a does not touch them)
     assert(
-      JSON.stringify(business.payment_methods) === JSON.stringify(original.payment_methods),
-      'payment_methods untouched in 2a',
+      JSON.stringify(business.payment_methods) === JSON.stringify(['Cash', 'Zelle']),
+      'payment_methods written',
     );
-    assert(JSON.stringify(business.hours) === JSON.stringify(original.hours), 'hours untouched');
+    assert(Array.isArray(business.hours) && business.hours.length === 3, 'hours length 3');
+    assert(business.hours[0].days === 'Monday - Friday', 'hours days shape');
+    assert(business.hours[0].time === '8:00 AM - 4:00 PM', 'hours time written');
+    assert(business.hours[1].time === 'Closed', 'saturday closed');
+    // Out-of-scope for 2b
     assert(JSON.stringify(business.social) === JSON.stringify(original.social), 'social untouched');
 
     fs.rmSync(tmp, { recursive: true, force: true });
   });
 
-  await test('--help documents trust-field defaults', () => {
+  await test('--help documents trust/payment/hours defaults', () => {
     const help = runCli(['--help']);
     assert(help.status === 0, `help exit 0, got ${help.status}`);
     const helpOut = `${help.stdout}\n${help.stderr}`;
     assert(/freeEstimate/i.test(helpOut), 'help lists freeEstimate');
     assert(/foundedYear/i.test(helpOut), 'help lists foundedYear');
     assert(/empty string/i.test(helpOut), 'help documents foundedYear empty string');
+    assert(/paymentMethods/i.test(helpOut), 'help lists paymentMethods');
+    assert(/hoursWeekday/i.test(helpOut), 'help lists compact hours keys');
     assert(/CREATE_CONTRACTOR_SITE_ANSWERS_JSON/i.test(helpOut), 'help lists JSON env');
   });
 
-  await test('CREATE_CONTRACTOR_SITE_ANSWERS_JSON CLI path writes default trust fields', () => {
+  await test('CREATE_CONTRACTOR_SITE_ANSWERS_JSON CLI path defaults trust/payment/hours', () => {
     assert(REPO_ROOT, 'expected local template root');
     // Fresh non-existent target (CLI rejects existing dirs that are non-empty).
     const targetDir = path.join(
@@ -493,6 +579,9 @@ async function main() {
       license: '',
       insurance: null,
       foundedYear: '   ',
+      // Blank payments + empty hours → defaults (never [])
+      paymentMethods: '  ,  ',
+      hours: [],
     };
 
     const result = runCli([targetDir], {
@@ -536,6 +625,69 @@ async function main() {
         'founded_year key must remain',
       );
       assert(business.founded_year === '', 'CLI founded_year blank → ""');
+      assert(
+        JSON.stringify(business.payment_methods) === JSON.stringify(DEFAULT_PAYMENT_METHODS),
+        'CLI blank payments → defaults',
+      );
+      assert(business.payment_methods.length > 0, 'payment_methods never []');
+      assert(
+        JSON.stringify(business.hours) === JSON.stringify(DEFAULT_HOURS),
+        'CLI empty hours → DEFAULT_HOURS',
+      );
+      assert(business.hours.every((h) => h.days && h.time), 'hours rows shaped');
+    } finally {
+      const parent = path.dirname(targetDir);
+      try {
+        fs.rmSync(parent, { recursive: true, force: true });
+      } catch {
+        console.warn(`    (could not fully remove ${parent})`);
+      }
+    }
+  });
+
+  await test('CREATE_CONTRACTOR_SITE_ANSWERS_JSON compact payment/hours path', () => {
+    assert(REPO_ROOT, 'expected local template root');
+    const targetDir = path.join(
+      fs.mkdtempSync(path.join(os.tmpdir(), 'ccs-jsoncompact-parent-')),
+      'site',
+    );
+
+    const payload = {
+      businessName: 'Compact Hours Co',
+      primaryServices: ['Patios'],
+      paymentMethods: ['Cash', '  ', 'ACH'],
+      hoursWeekday: '9:00 AM - 5:00 PM',
+      hoursSaturday: 'Closed',
+      hoursSunday: 'Closed',
+    };
+
+    const result = runCli([targetDir], {
+      env: {
+        CREATE_CONTRACTOR_TEMPLATE_ROOT: REPO_ROOT,
+        CREATE_CONTRACTOR_SITE_ANSWERS_JSON: JSON.stringify(payload),
+        NODE_ENV: 'test',
+        CREATE_CONTRACTOR_SITE_SKIP_SETUP: '1',
+      },
+    });
+
+    const out = `${result.stdout}\n${result.stderr}`;
+    try {
+      assert(result.status === 0, `CLI exit 0, got ${result.status}:\n${out.slice(-2000)}`);
+      const business = JSON.parse(
+        fs.readFileSync(path.join(targetDir, 'src/data/business.json'), 'utf8'),
+      );
+      assert(
+        JSON.stringify(business.payment_methods) === JSON.stringify(['Cash', 'ACH']),
+        `compact payments, got ${JSON.stringify(business.payment_methods)}`,
+      );
+      assert(business.hours.length === 3, 'compact hours length');
+      assert(business.hours[0].days === 'Monday - Friday', 'weekday days label');
+      assert(business.hours[0].time === '9:00 AM - 5:00 PM', 'compact weekday time');
+      assert(business.hours[1].time === 'Closed', 'compact saturday');
+      assert(business.hours[2].time === 'Closed', 'compact sunday');
+      // Trust defaults still apply when omitted
+      assert(business.free_estimate === DEFAULT_FREE_ESTIMATE, 'trust default still works');
+      assert(business.founded_year === '', 'founded_year still ""');
     } finally {
       const parent = path.dirname(targetDir);
       try {
@@ -652,7 +804,7 @@ async function main() {
         fs.readFileSync(path.join(targetDir, 'src/data/business.json'), 'utf8'),
       );
       assert(business.name === 'Acme Masonry', 'expected replaced business name');
-      // --yes omits trust fields → buildAnswers defaults (not sample-specific facts)
+      // --yes omits trust/payment/hours → buildAnswers defaults (not sample-specific facts)
       assert(business.free_estimate === DEFAULT_FREE_ESTIMATE, 'E2E free_estimate default');
       assert(
         business.years_experience === DEFAULT_YEARS_EXPERIENCE,
@@ -661,6 +813,19 @@ async function main() {
       assert(business.license === DEFAULT_LICENSE, 'E2E license default');
       assert(business.insurance === DEFAULT_INSURANCE, 'E2E insurance default');
       assert(business.founded_year === '', 'E2E founded_year omitted → ""');
+      assert(
+        JSON.stringify(business.payment_methods) === JSON.stringify(DEFAULT_PAYMENT_METHODS),
+        'E2E payment_methods defaults',
+      );
+      assert(business.payment_methods.length > 0, 'E2E payment_methods never []');
+      assert(
+        JSON.stringify(business.hours) === JSON.stringify(DEFAULT_HOURS),
+        'E2E hours defaults',
+      );
+      assert(
+        business.hours.every((h) => typeof h.days === 'string' && typeof h.time === 'string'),
+        'E2E hours shape',
+      );
 
       const services = JSON.parse(
         fs.readFileSync(path.join(targetDir, 'src/data/services.json'), 'utf8'),

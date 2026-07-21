@@ -46,10 +46,10 @@ Chain strategy: feature-branch-chain
 
 ## Phase 2b: CLI Payments + Hours (PR 2b)
 
-- [ ] 2b.1 Extend prompts/`ScaffoldAnswers`/`buildAnswers` for payment methods (CSV → `payment_methods[]`) and hours (3 fixed prompts: Mon–Fri / Sat / Sun → existing 3-row shape). Enter accepts defaults.
-- [ ] 2b.2 Extend `replace-data.mjs` value-only writes for `payment_methods` and `hours`; preserve keys, arrays, and `_instructions`.
-- [ ] 2b.3 Smoke coverage for payments CSV parsing, hours 3-row shape, and schema preservation.
-- [ ] 2b.4 Verify `pnpm run validate:data` and `pnpm run test:cli` pass.
+- [x] 2b.1 Extend prompts/`ScaffoldAnswers`/`buildAnswers` for payment methods (CSV → `payment_methods[]`) and hours (3 fixed prompts: Mon–Fri / Sat / Sun → existing 3-row shape). Enter accepts defaults.
+- [x] 2b.2 Extend `replace-data.mjs` value-only writes for `payment_methods` and `hours`; preserve keys, arrays, and `_instructions`.
+- [x] 2b.3 Smoke coverage for payments CSV parsing, hours 3-row shape, and schema preservation.
+- [x] 2b.4 Verify `pnpm run validate:data` and `pnpm run test:cli` pass.
 
 ## Phase 2c: CLI Social + Directories (PR 2c)
 
