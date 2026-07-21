@@ -9,7 +9,8 @@
  * 4. Duplicate service input normalization + slug uniqueness + business/services alignment
  * 5. Service-area name parse/dedupe (Chesapeake duplicate-slug case) + areas rebuild
  *    without leaking stale template county/ZIP metadata into new areas
- * 6. Temp-target --yes scaffold (install/validate/build) unless SKIP_CLI_E2E=1
+ * 6. CREATE_CONTRACTOR_SITE_ANSWERS_JSON real CLI spawn (copy+replace, skip setup)
+ * 7. Temp-target --yes scaffold (install/validate/build) unless SKIP_CLI_E2E=1
  */
 
 import { spawnSync } from 'node:child_process';
@@ -26,7 +27,15 @@ import {
   replaceTargetData,
   slugify,
 } from '../src/replace-data.mjs';
-import { buildAnswers } from '../src/prompts.mjs';
+import {
+  buildAnswers,
+  DEFAULT_FREE_ESTIMATE,
+  DEFAULT_INSURANCE,
+  DEFAULT_LICENSE,
+  DEFAULT_YEARS_EXPERIENCE,
+  optionalText,
+  requiredText,
+} from '../src/prompts.mjs';
 import { isSameOrInside, validateTarget, TargetValidationError } from '../src/validate-target.mjs';
 import { findLocalTemplateRoot } from '../src/copy-template.mjs';
 import { isVersionAtLeast, resolveCommandPath } from '../src/run-command.mjs';
@@ -376,6 +385,182 @@ async function main() {
     fs.rmSync(tmp, { recursive: true, force: true });
   });
 
+  await test('buildAnswers normalizes blank text trust fields and foundedYear', () => {
+    const answers = buildAnswers({
+      businessName: 'Trust Co',
+      primaryServices: ['Masonry'],
+      freeEstimate: '   ',
+      yearsExperience: '\t',
+      license: '',
+      insurance: null,
+      foundedYear: '  ',
+    });
+    assert(answers.freeEstimate === DEFAULT_FREE_ESTIMATE, 'freeEstimate default');
+    assert(answers.yearsExperience === DEFAULT_YEARS_EXPERIENCE, 'yearsExperience default');
+    assert(answers.license === DEFAULT_LICENSE, 'license default');
+    assert(answers.insurance === DEFAULT_INSURANCE, 'insurance default');
+    assert(answers.foundedYear === '', 'foundedYear blank → ""');
+    assert(requiredText('  x  ', 'y') === 'x', 'requiredText trims');
+    assert(optionalText('  2012 ') === '2012', 'optionalText trims');
+    assert(optionalText(undefined) === '', 'optionalText missing → ""');
+  });
+
+  await test('replaceTargetData writes text trust fields; founded_year key stays ""', () => {
+    assert(REPO_ROOT, 'expected local template root');
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'ccs-trust-'));
+    const dataSrc = path.join(REPO_ROOT, 'src', 'data');
+    const dataDst = path.join(tmp, 'src', 'data');
+    fs.mkdirSync(dataDst, { recursive: true });
+    for (const file of [
+      'business.json',
+      'site.json',
+      'services.json',
+      'areas.json',
+      'navigation.json',
+      'landings.json',
+    ]) {
+      fs.copyFileSync(path.join(dataSrc, file), path.join(dataDst, file));
+    }
+
+    const original = JSON.parse(
+      fs.readFileSync(path.join(dataDst, 'business.json'), 'utf8'),
+    );
+
+    const answers = buildAnswers({
+      businessName: 'Trust Builders',
+      primaryServices: ['Masonry'],
+      freeEstimate: 'Free Quote Today',
+      yearsExperience: '20+',
+      license: 'VA Class A #12345',
+      insurance: 'Bonded and insured.',
+      foundedYear: '',
+    });
+    replaceTargetData(tmp, answers);
+
+    const business = JSON.parse(
+      fs.readFileSync(path.join(dataDst, 'business.json'), 'utf8'),
+    );
+    assert(business._instructions, '_instructions preserved');
+    assert(
+      JSON.stringify(Object.keys(business._instructions)) ===
+        JSON.stringify(Object.keys(original._instructions)),
+      '_instructions keys stable',
+    );
+    assert(business.free_estimate === 'Free Quote Today', 'free_estimate written');
+    assert(business.years_experience === '20+', 'years_experience written');
+    assert(business.license === 'VA Class A #12345', 'license written');
+    assert(business.insurance === 'Bonded and insured.', 'insurance written');
+    assert(
+      Object.prototype.hasOwnProperty.call(business, 'founded_year'),
+      'founded_year key must remain',
+    );
+    assert(business.founded_year === '', 'founded_year skip → ""');
+    // Out-of-scope fields must stay template seed (PR 2a does not touch them)
+    assert(
+      JSON.stringify(business.payment_methods) === JSON.stringify(original.payment_methods),
+      'payment_methods untouched in 2a',
+    );
+    assert(JSON.stringify(business.hours) === JSON.stringify(original.hours), 'hours untouched');
+    assert(JSON.stringify(business.social) === JSON.stringify(original.social), 'social untouched');
+
+    fs.rmSync(tmp, { recursive: true, force: true });
+  });
+
+  await test('--help documents trust-field defaults', () => {
+    const help = runCli(['--help']);
+    assert(help.status === 0, `help exit 0, got ${help.status}`);
+    const helpOut = `${help.stdout}\n${help.stderr}`;
+    assert(/freeEstimate/i.test(helpOut), 'help lists freeEstimate');
+    assert(/foundedYear/i.test(helpOut), 'help lists foundedYear');
+    assert(/empty string/i.test(helpOut), 'help documents foundedYear empty string');
+    assert(/CREATE_CONTRACTOR_SITE_ANSWERS_JSON/i.test(helpOut), 'help lists JSON env');
+  });
+
+  await test('CREATE_CONTRACTOR_SITE_ANSWERS_JSON CLI path writes default trust fields', () => {
+    assert(REPO_ROOT, 'expected local template root');
+    // Fresh non-existent target (CLI rejects existing dirs that are non-empty).
+    const targetDir = path.join(
+      fs.mkdtempSync(path.join(os.tmpdir(), 'ccs-jsonenv-parent-')),
+      'site',
+    );
+
+    const payload = {
+      businessName: 'JSON Env Masonry',
+      primaryServices: ['Patios'],
+      // Blank/whitespace trust fields → buildAnswers defaults; foundedYear → ""
+      freeEstimate: '   ',
+      yearsExperience: '\t',
+      license: '',
+      insurance: null,
+      foundedYear: '   ',
+    };
+
+    const result = runCli([targetDir], {
+      env: {
+        CREATE_CONTRACTOR_TEMPLATE_ROOT: REPO_ROOT,
+        CREATE_CONTRACTOR_SITE_ANSWERS_JSON: JSON.stringify(payload),
+        NODE_ENV: 'test',
+        // Exercise bin resolveAnswers + replace without full install/build E2E.
+        CREATE_CONTRACTOR_SITE_SKIP_SETUP: '1',
+      },
+    });
+
+    const out = `${result.stdout}\n${result.stderr}`;
+    try {
+      assert(result.status === 0, `CLI exit 0, got ${result.status}:\n${out.slice(-2000)}`);
+      assert(/Data replace complete/i.test(out), 'expected skip-setup success banner');
+
+      const businessPath = path.join(targetDir, 'src/data/business.json');
+      assert(fs.existsSync(businessPath), 'expected generated business.json');
+      const business = JSON.parse(fs.readFileSync(businessPath, 'utf8'));
+
+      assert(business.name === 'JSON Env Masonry', 'env business name via CLI');
+      assert(
+        business.free_estimate === DEFAULT_FREE_ESTIMATE,
+        `free_estimate default via CLI, got ${business.free_estimate}`,
+      );
+      assert(
+        business.years_experience === DEFAULT_YEARS_EXPERIENCE,
+        `years_experience default via CLI, got ${business.years_experience}`,
+      );
+      assert(
+        business.license === DEFAULT_LICENSE,
+        `license default via CLI, got ${business.license}`,
+      );
+      assert(
+        business.insurance === DEFAULT_INSURANCE,
+        `insurance default via CLI, got ${business.insurance}`,
+      );
+      assert(
+        Object.prototype.hasOwnProperty.call(business, 'founded_year'),
+        'founded_year key must remain',
+      );
+      assert(business.founded_year === '', 'CLI founded_year blank → ""');
+    } finally {
+      const parent = path.dirname(targetDir);
+      try {
+        fs.rmSync(parent, { recursive: true, force: true });
+      } catch {
+        console.warn(`    (could not fully remove ${parent})`);
+      }
+    }
+  });
+
+  await test('skip setup guard requires NODE_ENV test', () => {
+    const parent = fs.mkdtempSync(path.join(os.tmpdir(), 'ccs-skip-guard-'));
+    const targetDir = path.join(parent, 'site');
+    try {
+      const result = runCli(['--yes', targetDir], {
+        env: { CREATE_CONTRACTOR_TEMPLATE_ROOT: REPO_ROOT || '', CREATE_CONTRACTOR_SITE_SKIP_SETUP: '1', NODE_ENV: '' },
+      });
+      const out = `${result.stdout}\n${result.stderr}`;
+      assert(result.status === 1, `expected guard failure, got ${result.status}`);
+      assert(/requires NODE_ENV=test/i.test(out), `expected guard message:\n${out}`);
+    } finally {
+      fs.rmSync(parent, { recursive: true, force: true });
+    }
+  });
+
   await test('replaceTargetData Chesapeake case keeps unique area slugs', () => {
     assert(REPO_ROOT, 'expected local template root');
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'ccs-areas-'));
@@ -467,6 +652,15 @@ async function main() {
         fs.readFileSync(path.join(targetDir, 'src/data/business.json'), 'utf8'),
       );
       assert(business.name === 'Acme Masonry', 'expected replaced business name');
+      // --yes omits trust fields → buildAnswers defaults (not sample-specific facts)
+      assert(business.free_estimate === DEFAULT_FREE_ESTIMATE, 'E2E free_estimate default');
+      assert(
+        business.years_experience === DEFAULT_YEARS_EXPERIENCE,
+        'E2E years_experience default',
+      );
+      assert(business.license === DEFAULT_LICENSE, 'E2E license default');
+      assert(business.insurance === DEFAULT_INSURANCE, 'E2E insurance default');
+      assert(business.founded_year === '', 'E2E founded_year omitted → ""');
 
       const services = JSON.parse(
         fs.readFileSync(path.join(targetDir, 'src/data/services.json'), 'utf8'),

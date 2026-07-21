@@ -4,14 +4,14 @@
 
 | Field | Value |
 |-------|-------|
-| Estimated changed lines | 900–1400 (across 6 default slices) |
+| Estimated changed lines | 900–1400 (across chained slices; PR 2 split into 2a/2b/2c) |
 | 400-line budget risk | High |
 | Chained PRs recommended | Yes |
-| Suggested split | PR 1 docs → PR 2 CLI intake → PR 3a theme tokens/fonts → PR 3b lint+offenders → PR 4a route policy+gates → PR 4b prune+nav+CLI |
+| Suggested split | PR 1 docs → PR 2a CLI text trust → PR 2b payments/hours → PR 2c social/directories → PR 3a theme tokens/fonts → PR 3b lint+offenders → PR 4a route policy+gates → PR 4b prune+nav+CLI |
 | Delivery strategy | chained PRs (feature-branch-chain; apply does not open PRs) |
 | Chain strategy | feature-branch-chain |
 
-Decision needed before apply: No (orchestrator preflight: chained PRs, 400-line budget; **3a/3b and 4a/4b are default splits, not overflow fallbacks**)
+Decision needed before apply: No (orchestrator preflight: chained PRs, 400-line budget; **3a/3b and 4a/4b are default splits, not overflow fallbacks**; **PR 2 further split into 2a/2b/2c**)
 Chained PRs recommended: Yes
 Chain strategy: feature-branch-chain
 400-line budget risk: High
@@ -21,8 +21,10 @@ Chain strategy: feature-branch-chain
 | Unit | Goal | Likely PR | Base | Notes |
 |------|------|-----------|------|-------|
 | 1 | Authoritative-identity vs seed-content guidance | PR 1 | feature branch | Docs-only; low risk. |
-| 2 | Expanded CLI intake + value-only replacement + smoke coverage | PR 2 | PR 1 | Preserve 12-file contract; `founded_year` skip → `""`; directories min(1). |
-| 3a | Theme tokens, fonts, Zod/CJS, CSS aligned to existing `site.json.theme`, full color-audit inventory | PR 3a | PR 2 | No lint in build yet. Preserve `light: #f8fafc`. |
+| 2a | CLI text trust fields (estimate, years, license, insurance, founded_year) | PR 2a | PR 1 | Value-only `business.json`; `founded_year` skip → `""`. |
+| 2b | CLI payment methods + business hours | PR 2b | PR 2a | CSV payments; 3-row hours shape. |
+| 2c | CLI social links + directories.json intake | PR 2c | PR 2b | Blank social = key omitted; directories min(1) + `enable_directories`. |
+| 3a | Theme tokens, fonts, Zod/CJS, CSS aligned to existing `site.json.theme`, full color-audit inventory | PR 3a | PR 2c | No lint in build yet. Preserve `light: #f8fafc`. |
 | 3b | Tokenize inventoried offenders, then land `lint-theme.cjs` in build | PR 3b | PR 3a | Lint must pass on same PR; do not merge failing lint. |
 | 4a | `site_type` + `routes.ts` + dynamic gates (blog + **services/[slug]**) + sitemap/llm | PR 4a | PR 3b | `site_type` authority; flags subordinate. Missing key → seo. |
 | 4b | Post-build prune + parity/link audit + repurpose `navigation.ts` + anchors + CLI type prompt + smoke | PR 4b | PR 4a | Explicit slice under 400 lines — not optional. |
@@ -33,15 +35,29 @@ Chain strategy: feature-branch-chain
 - [x] 1.2 Update `SKILL.md` and `README.md` to state leftover masonry/hardscape content, assets, blog, and services after scaffold are normal seed content to rewrite — not a conflict.
 - [x] 1.3 Confirm docs remain pnpm-only and reference `pnpm run build` as the pre-finish check.
 
-## Phase 2: CLI Contractor Intake (PR 2)
+## Phase 2a: CLI Text Trust Fields (PR 2a)
 
-- [ ] 2.1 Extend `packages/create-contractor-site/src/prompts.mjs` to ask for payment methods (CSV), hours (3 fixed prompts: Mon–Fri / Sat / Sun → existing 3-row shape), free-estimate wording, years of experience, license, insurance, social links (blank = key omitted), and directory links (per template row: URL or Enter to skip URL). Enter accepts defaults.
-- [ ] 2.2 Keep `founded_year` optional/secondary: skippable prompt; when skipped, **preserve the top-level key** and write `""` (never remove the key; never leave unrelated seed year if operator skipped — empty string is the skip signal).
-- [ ] 2.3 Directory handling: `directories.json.directories` MUST remain `.min(1)`. If operator provides no URLs, keep a placeholder/default row and set `enable_directories: false` to gate UI — **do not** write `[]`.
-- [ ] 2.4 Extend `packages/create-contractor-site/src/replace-data.mjs` for value-only replacement into existing `business.json` keys (hours, license, insurance, payment_methods, free_estimate, years_experience, social, founded_year) and `directories.json` rows; preserve keys, arrays, slugs, `variant`, and `_instructions`. No new JSON keys needed in PR 2.
-- [ ] 2.5 Update `packages/create-contractor-site/scripts/smoke-test.mjs` to cover the new fields, schema preservation, founded_year → `""` skip, and directories min(1) when none provided.
-- [ ] 2.6 Route ALL answer paths (interactive, `--yes`, `CREATE_CONTRACTOR_SITE_ANSWERS_JSON`) through extended `buildAnswers` defaults so parity holds by construction; document defaults in `--help` and the CLI README; add smoke coverage asserting equivalent JSON shape.
-- [ ] 2.7 Verify `pnpm run validate:data` and `pnpm run test:cli` pass; source template `src/data/*.json` stays placeholder-only.
+- [x] 2a.1 Extend `ScaffoldAnswers` + `prompts.mjs` for free-estimate wording, years of experience, license, and insurance (Enter accepts defaults; trim + blank → defaults).
+- [x] 2a.2 Keep `founded_year` optional/secondary: skippable prompt; skipped/blank/whitespace **preserves the top-level key** as `""` (never remove the key).
+- [x] 2a.3 Extend `replace-data.mjs` value-only writes for `free_estimate`, `years_experience`, `license`, `insurance`, `founded_year`; preserve `_instructions` and JSON shape. Do **not** touch payment_methods, hours, social, or directories in this slice.
+- [x] 2a.4 Route ALL answer paths (interactive, `--yes`, `CREATE_CONTRACTOR_SITE_ANSWERS_JSON`) through extended `buildAnswers`; document defaults in `--help` and the CLI README.
+- [x] 2a.5 Update `smoke-test.mjs` for text trust fields, blank normalization, `founded_year` → `""`, and JSON-env/`buildAnswers` path coverage.
+- [x] 2a.6 Verify `pnpm run validate:data` and `pnpm run test:cli` pass; source template `src/data/*.json` stays placeholder-only.
+
+## Phase 2b: CLI Payments + Hours (PR 2b)
+
+- [ ] 2b.1 Extend prompts/`ScaffoldAnswers`/`buildAnswers` for payment methods (CSV → `payment_methods[]`) and hours (3 fixed prompts: Mon–Fri / Sat / Sun → existing 3-row shape). Enter accepts defaults.
+- [ ] 2b.2 Extend `replace-data.mjs` value-only writes for `payment_methods` and `hours`; preserve keys, arrays, and `_instructions`.
+- [ ] 2b.3 Smoke coverage for payments CSV parsing, hours 3-row shape, and schema preservation.
+- [ ] 2b.4 Verify `pnpm run validate:data` and `pnpm run test:cli` pass.
+
+## Phase 2c: CLI Social + Directories (PR 2c)
+
+- [ ] 2c.1 Extend prompts/`ScaffoldAnswers`/`buildAnswers` for social links (blank = key omitted from `business.social`) and directory links (per template row: URL or Enter to skip URL).
+- [ ] 2c.2 Directory handling: `directories.json.directories` MUST remain `.min(1)`. If operator provides no URLs, keep a placeholder/default row and set `enable_directories: false` — **do not** write `[]`.
+- [ ] 2c.3 Extend `replace-data.mjs` for social + directories value-only updates; preserve keys, arrays, slugs, `variant`, and `_instructions`.
+- [ ] 2c.4 Smoke coverage for social omit-on-blank, directories min(1) when none provided, and answer-path parity.
+- [ ] 2c.5 Verify `pnpm run validate:data` and `pnpm run test:cli` pass; source template stays placeholder-only.
 
 ## Phase 3a: Theme Tokens + Fonts + Audit (PR 3a)
 
@@ -80,7 +96,7 @@ Chain strategy: feature-branch-chain
 - [ ] V.1 `pnpm run validate:data` exits `0`.
 - [ ] V.2 `pnpm run build` exits `0` (fails on out-of-palette colors; fails on **indexable** route parity or bad link/anchor violations).
 - [ ] V.3 `pnpm run test:cli` exits `0` (includes founded_year `""`, directories min(1), scaffold `multipage`).
-- [ ] V.4 Each chained PR (1, 2, 3a, 3b, 4a, 4b) is under 400 changed lines or records an accepted `size:exception`.
+- [ ] V.4 Each chained PR (1, 2a, 2b, 2c, 3a, 3b, 4a, 4b) is under 400 changed lines or records an accepted `size:exception`.
 - [ ] V.5 Confirm `site_type` vs `enable_*` precedence with at least one multipage + flags-true fixture (blog/landings still unpublished; no dead links).
 - [ ] V.6 Confirm parity: `/404` and `/thank-you` remain in `dist/` but are absent from sitemap/llm without failing the audit; sitemap matches the indexable set only.
 - [ ] V.7 Confirm one-page + `enable_gallery: false` (or equivalent) emits no `/#gallery` (or other missing-section) hrefs and the link/anchor audit passes.

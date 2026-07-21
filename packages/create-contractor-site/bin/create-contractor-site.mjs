@@ -35,6 +35,7 @@ Environment:
   CREATE_CONTRACTOR_SITE_ANSWERS_JSON
       JSON object with at least businessName and primaryServices[].
       When set, skips prompts (and overrides --yes sample answers).
+      All paths funnel through buildAnswers (trim + blank defaults).
 
   CREATE_CONTRACTOR_TEMPLATE_ROOT
       Absolute/relative path to a local template checkout (preferred for
@@ -46,6 +47,13 @@ Environment:
 
   CREATE_CONTRACTOR_TEMPLATE_REF
       Git branch/tag/ref to clone for the published fallback. Default: v2.1.2
+
+  Answer defaults (buildAnswers — blank/whitespace uses these; --yes omits trust fields):
+  freeEstimate      Free On-Site Estimate
+  yearsExperience   10+
+  license           Licensed & Insured
+  insurance         Fully insured with general liability and workers' compensation.
+  foundedYear       "" (optional; key always written; skip/blank → empty string)
 
 Answer precedence (highest first):
   1. CREATE_CONTRACTOR_SITE_ANSWERS_JSON
@@ -120,6 +128,8 @@ async function resolveAnswers(nonInteractive) {
   }
 
   if (nonInteractive) {
+    // Trust fields omitted on purpose — buildAnswers supplies blank defaults
+    // (freeEstimate/yearsExperience/license/insurance + foundedYear "").
     return buildAnswers({
       businessName: 'Acme Masonry',
       legalName: 'Acme Masonry LLC',
@@ -131,7 +141,6 @@ async function resolveAnswers(nonInteractive) {
       state: 'VA',
       zip: '23451',
       serviceArea: 'Virginia Beach and Hampton Roads',
-      foundedYear: '2015',
       primaryServices: ['Masonry', 'Patios', 'Retaining Walls'],
       siteUrl: 'https://acmemasonry.example',
     });
@@ -250,6 +259,21 @@ async function main() {
     stage = 'replace-data';
     console.log('→ Replacing JSON values in src/data (shape preserved)…');
     replaceTargetData(targetDir, answers);
+
+    const skipSetupForTests = process.env.CREATE_CONTRACTOR_SITE_SKIP_SETUP === '1';
+    if (skipSetupForTests && process.env.NODE_ENV !== 'test') {
+      throw new Error('CREATE_CONTRACTOR_SITE_SKIP_SETUP is test-only and requires NODE_ENV=test.');
+    }
+
+    if (skipSetupForTests) {
+      console.log(`
+✓ Data replace complete (setup skipped)
+
+  Path: ${targetDir}
+  CREATE_CONTRACTOR_SITE_SKIP_SETUP=1 — pnpm install/validate/build and git init were skipped.
+`);
+      return;
+    }
 
     stage = 'pnpm-setup';
     runPnpmSetup(targetDir);

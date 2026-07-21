@@ -1,6 +1,16 @@
 import * as readline from 'node:readline/promises';
 import { stdin as input, stdout as output } from 'node:process';
 
+/** Default free-estimate CTA when blank/omitted. */
+export const DEFAULT_FREE_ESTIMATE = 'Free On-Site Estimate';
+/** Default years-of-experience text when blank/omitted. */
+export const DEFAULT_YEARS_EXPERIENCE = '10+';
+/** Default license statement when blank/omitted. */
+export const DEFAULT_LICENSE = 'Licensed & Insured';
+/** Default insurance statement when blank/omitted. */
+export const DEFAULT_INSURANCE =
+  "Fully insured with general liability and workers' compensation.";
+
 /**
  * @typedef {object} ScaffoldAnswers
  * @property {string} businessName
@@ -13,10 +23,35 @@ import { stdin as input, stdout as output } from 'node:process';
  * @property {string} state
  * @property {string} zip
  * @property {string} serviceArea
- * @property {string} foundedYear
+ * @property {string} foundedYear empty string when skipped/blank
+ * @property {string} freeEstimate
+ * @property {string} yearsExperience
+ * @property {string} license
+ * @property {string} insurance
  * @property {string[]} primaryServices
  * @property {string} [siteUrl]
  */
+
+/**
+ * Trim and fall back when the value is blank-looking.
+ * @param {unknown} value
+ * @param {string} fallback
+ * @returns {string}
+ */
+export function requiredText(value, fallback) {
+  const text = value == null ? '' : String(value).trim();
+  return text || fallback;
+}
+
+/**
+ * Optional text field: trim; blank/whitespace → "".
+ * @param {unknown} value
+ * @returns {string}
+ */
+export function optionalText(value) {
+  if (value == null) return '';
+  return String(value).trim();
+}
 
 /**
  * @param {string} label
@@ -31,7 +66,8 @@ async function ask(rl, label, opts = {}) {
     const raw = await rl.question(`${label}${hint}: `);
     const answer = raw.trim();
     if (answer) return answer;
-    if (!required) return defaultValue;
+    if (defaultValue) return defaultValue;
+    if (!required) return '';
     console.log('  This field is required. Please enter a value (or Ctrl+C to abort).');
   }
 }
@@ -59,7 +95,22 @@ export async function collectClientAnswers() {
     const state = await ask(rl, 'State');
     const zip = await ask(rl, 'ZIP');
     const serviceArea = await ask(rl, 'Service area description');
-    const foundedYear = await ask(rl, 'Founded year');
+    const freeEstimate = await ask(rl, 'Free-estimate wording', {
+      defaultValue: DEFAULT_FREE_ESTIMATE,
+    });
+    const yearsExperience = await ask(rl, 'Years of experience', {
+      defaultValue: DEFAULT_YEARS_EXPERIENCE,
+    });
+    const license = await ask(rl, 'License text', {
+      defaultValue: DEFAULT_LICENSE,
+    });
+    const insurance = await ask(rl, 'Insurance statement', {
+      defaultValue: DEFAULT_INSURANCE,
+    });
+    const foundedYear = await ask(rl, 'Founded year (optional)', {
+      required: false,
+      defaultValue: '',
+    });
     const servicesRaw = await ask(rl, 'Primary services (comma-separated)');
     const siteUrl = await ask(rl, 'Site URL (optional)', {
       required: false,
@@ -75,7 +126,7 @@ export async function collectClientAnswers() {
       throw new Error('At least one primary service is required.');
     }
 
-    return {
+    return buildAnswers({
       businessName,
       legalName,
       tagline,
@@ -86,10 +137,14 @@ export async function collectClientAnswers() {
       state,
       zip,
       serviceArea,
+      freeEstimate,
+      yearsExperience,
+      license,
+      insurance,
       foundedYear,
       primaryServices,
       siteUrl: siteUrl || undefined,
-    };
+    });
   } finally {
     rl.close();
   }
@@ -97,25 +152,45 @@ export async function collectClientAnswers() {
 
 /**
  * Non-interactive answers helper for scripted verification.
+ * All answer paths (interactive, --yes, CREATE_CONTRACTOR_SITE_ANSWERS_JSON) funnel here.
  *
  * @param {Partial<ScaffoldAnswers> & { businessName: string, primaryServices: string[] }} overrides
  * @returns {ScaffoldAnswers}
  */
 export function buildAnswers(overrides) {
-  const businessName = overrides.businessName;
+  const businessName = requiredText(overrides.businessName, '');
+  if (!businessName) {
+    throw new Error('businessName is required');
+  }
+
+  const primaryServices = (overrides.primaryServices || [])
+    .map((s) => String(s || '').trim())
+    .filter(Boolean);
+  if (primaryServices.length === 0) {
+    throw new Error('primaryServices must include at least one service');
+  }
+
   return {
     businessName,
-    legalName: overrides.legalName ?? `${businessName} LLC`,
-    tagline: overrides.tagline ?? `Quality work from ${businessName}.`,
-    phone: overrides.phone ?? '(555) 555-0100',
-    email: overrides.email ?? 'hello@example.com',
-    street: overrides.street ?? '123 Main St',
-    city: overrides.city ?? 'Example City',
-    state: overrides.state ?? 'VA',
-    zip: overrides.zip ?? '00000',
-    serviceArea: overrides.serviceArea ?? `${overrides.city ?? 'Example City'} and surrounding areas`,
-    foundedYear: overrides.foundedYear ?? '2020',
-    primaryServices: overrides.primaryServices,
-    siteUrl: overrides.siteUrl,
+    legalName: requiredText(overrides.legalName, `${businessName} LLC`),
+    tagline: requiredText(overrides.tagline, `Quality work from ${businessName}.`),
+    phone: requiredText(overrides.phone, '(555) 555-0100'),
+    email: requiredText(overrides.email, 'hello@example.com'),
+    street: requiredText(overrides.street, '123 Main St'),
+    city: requiredText(overrides.city, 'Example City'),
+    state: requiredText(overrides.state, 'VA'),
+    zip: requiredText(overrides.zip, '00000'),
+    serviceArea: requiredText(
+      overrides.serviceArea,
+      `${requiredText(overrides.city, 'Example City')} and surrounding areas`,
+    ),
+    freeEstimate: requiredText(overrides.freeEstimate, DEFAULT_FREE_ESTIMATE),
+    yearsExperience: requiredText(overrides.yearsExperience, DEFAULT_YEARS_EXPERIENCE),
+    license: requiredText(overrides.license, DEFAULT_LICENSE),
+    insurance: requiredText(overrides.insurance, DEFAULT_INSURANCE),
+    // Optional/secondary: missing, blank, or whitespace → ""
+    foundedYear: optionalText(overrides.foundedYear),
+    primaryServices,
+    siteUrl: overrides.siteUrl ? String(overrides.siteUrl).trim() || undefined : undefined,
   };
 }

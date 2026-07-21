@@ -83,10 +83,22 @@ Template source precedence: `CREATE_CONTRACTOR_TEMPLATE_ROOT` → local monorepo
 
 ### Scripted answers example
 
+Trust fields may be omitted (or blank) so `buildAnswers` fills the defaults below. `--yes` also omits them for the same parity.
+
 ```bash
-CREATE_CONTRACTOR_SITE_ANSWERS_JSON='{"businessName":"Acme Masonry","phone":"(757) 555-0199","email":"info@example.com","address":"123 Main St","city":"Virginia Beach","state":"VA","zip":"23451","serviceArea":"Virginia Beach, Norfolk, Chesapeake","primaryServices":["Masonry","Patios"]}' \
+CREATE_CONTRACTOR_SITE_ANSWERS_JSON='{"businessName":"Acme Masonry","phone":"(757) 555-0199","email":"info@example.com","street":"123 Main St","city":"Virginia Beach","state":"VA","zip":"23451","serviceArea":"Virginia Beach, Norfolk, Chesapeake","primaryServices":["Masonry","Patios"]}' \
   pnpm dlx create-contractor-site my-client-site
 ```
+
+All answer paths (`CREATE_CONTRACTOR_SITE_ANSWERS_JSON`, `--yes`, interactive) go through `buildAnswers`:
+
+| Field | JSON key | Blank / omitted |
+|-------|----------|-----------------|
+| Free-estimate wording | `freeEstimate` | `Free On-Site Estimate` |
+| Years of experience | `yearsExperience` | `10+` |
+| License | `license` | `Licensed & Insured` |
+| Insurance | `insurance` | Fully insured with general liability and workers' compensation. |
+| Founded year (optional) | `foundedYear` | `""` — key always written; never removed |
 
 ## pnpm only
 

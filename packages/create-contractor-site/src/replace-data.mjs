@@ -373,6 +373,11 @@ export function replaceTargetData(targetDir, answers) {
       full: fullAddress,
     };
     business.service_area = answers.serviceArea;
+    business.free_estimate = answers.freeEstimate;
+    business.years_experience = answers.yearsExperience;
+    business.license = answers.license;
+    business.insurance = answers.insurance;
+    // Optional: always preserve key; skipped/blank → ""
     business.founded_year = answers.foundedYear;
     business.type_of_services = typeOfServices;
 
