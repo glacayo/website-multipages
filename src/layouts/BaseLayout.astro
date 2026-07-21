@@ -19,6 +19,7 @@ import {
   type BreadcrumbItem,
   type PageType,
 } from '../utils/schema';
+import { buildGoogleFontsUrl, buildThemeCssVars } from '../utils/theme';
 
 export interface Props {
   title?: string;
@@ -85,6 +86,10 @@ const schemas =
     breadcrumbs,
     includeFaq,
   });
+
+/** Unlayered :root vars from site.json.theme (wins over @theme). */
+const themeCssVars = buildThemeCssVars(site.theme);
+const googleFontsUrl = buildGoogleFontsUrl(site.theme);
 ---
 
 <!doctype html>
@@ -92,6 +97,20 @@ const schemas =
   <head>
     <SeoHead seo={seo} />
     <SchemaOrg schemas={schemas} />
+
+    {/* Google Fonts from site.json.theme — skipped when URL cannot be built safely */}
+    {
+      googleFontsUrl && (
+        <>
+          <link rel="preconnect" href="https://fonts.googleapis.com" />
+          <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+          <link rel="stylesheet" href={googleFontsUrl} />
+        </>
+      )
+    }
+
+    <!-- site.json.theme → CSS variables (unlayered, overrides @theme fallbacks) -->
+    <style is:inline set:html={themeCssVars} />
 
     <!-- Alpine.js (collapse plugin first, then core) -->
     <script is:inline defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.14.3/dist/cdn.min.js"

@@ -3,7 +3,7 @@
     "url": "Production URL of the site, used for canonical and OG tags.",
     "lang": "HTML lang attribute and SEO region hint.",
     "seo": "Default SEO metadata when a page does not provide its own.",
-    "theme": "Primary brand colors and font stack. Maps to Tailwind tokens.",
+    "theme": "Primary brand colors and font stack. Required: primary, accent, dark, light, body_font, heading_font. Optional additive: primary_dark, muted, surface, border (hex). Runtime CSS vars + Google Fonts load from these values.",
     "features": "Toggle entire sections on/off without deleting JSON files.",
     "header_variant": "Optional header visual variant: default | centered | transparent | minimal (default: default).",
     "footer_variant": "Optional footer visual variant: default | dark | compact | multi-column (default: default)."
@@ -35,7 +35,11 @@
     "dark": "#012141",
     "light": "#f8fafc",
     "body_font": "Source Sans 3",
-    "heading_font": "Montserrat"
+    "heading_font": "Montserrat",
+    "primary_dark": "#012141",
+    "muted": "#6b7280",
+    "surface": "#f9fafb",
+    "border": "#e5e7eb"
   },
   "features": {
     "enable_blog": true,

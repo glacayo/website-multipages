@@ -8,12 +8,13 @@
     "preinstall": "node ./scripts/enforce-package-manager.cjs",
     "dev": "node ./scripts/enforce-package-manager.cjs && astro dev",
     "start": "node ./scripts/enforce-package-manager.cjs && astro dev",
-    "build": "node ./scripts/enforce-package-manager.cjs && node ./scripts/validate-data.cjs && astro check && astro build",
+    "build": "node ./scripts/enforce-package-manager.cjs && node ./scripts/validate-data.cjs && pnpm run test:theme && astro check && astro build",
     "preview": "node ./scripts/enforce-package-manager.cjs && astro preview",
     "astro": "node ./scripts/enforce-package-manager.cjs && astro",
     "ci:install": "pnpm install --frozen-lockfile",
     "deps:outdated": "pnpm outdated",
     "validate:data": "node ./scripts/enforce-package-manager.cjs && node ./scripts/validate-data.cjs",
+    "test:theme": "node --experimental-strip-types ./scripts/test-theme.mjs",
     "test:cli": "node ./packages/create-contractor-site/scripts/smoke-test.mjs"
   },
   "keywords": [

@@ -93,6 +93,14 @@ export interface SiteTheme {
   light: string;
   body_font: string;
   heading_font: string;
+  /** Optional darker primary for gradients / hover states. */
+  primary_dark?: string;
+  /** Optional secondary text / muted UI color. */
+  muted?: string;
+  /** Optional page/section surface background. */
+  surface?: string;
+  /** Optional border / divider color. */
+  border?: string;
 }
 
 export interface SiteFeatures {
