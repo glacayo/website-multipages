@@ -61,11 +61,11 @@ Chain strategy: feature-branch-chain
 
 ## Phase 3a: Theme Tokens + Fonts + Audit (PR 3a)
 
-- [ ] 3a.1 Create `src/utils/theme.ts` (unlayered `:root` CSS-var override from **current** `site.json.theme` values + Google Fonts URL builder) and inject both from `src/layouts/BaseLayout.astro` head.
-- [ ] 3a.2 Add additive optional `theme` keys (`primary_dark`, `muted`, `surface`, `border`) with hex validation to `src/data/validation.ts` + `scripts/validate-data.cjs` mirror + `src/data/types.ts`.
-- [ ] 3a.3 Align `global.css` `@theme` / body fallbacks **to** existing `site.json.theme` (preserve `light: #f8fafc` and other committed theme hexes; fonts → Source Sans 3 / Montserrat). Do **not** rewrite `site.json` theme values to match old CSS drift unless explicitly documented in this task list.
-- [ ] 3a.4 Produce expanded color-audit offender inventory (start from design.md known set: blog slug styles, global.css, animations.css, NavMenu, Header variants, FooterDark/MultiColumn, DirectoryBadges, HeroSlider fallbacks, and any additional hits). Record file + literal for 3b.
-- [ ] 3a.5 Verify fonts link matches configured families; `pnpm run validate:data` passes. **Do not** wire failing lint into build in this PR.
+- [x] 3a.1 Create `src/utils/theme.ts` (unlayered `:root` CSS-var override from **current** `site.json.theme` values + Google Fonts URL builder) and inject both from `src/layouts/BaseLayout.astro` head.
+- [x] 3a.2 Add additive optional `theme` keys (`primary_dark`, `muted`, `surface`, `border`) with hex validation to `src/data/validation.ts` + `scripts/validate-data.cjs` mirror + `src/data/types.ts`.
+- [x] 3a.3 Align `global.css` `@theme` / body fallbacks **to** existing `site.json.theme` (preserve `light: #f8fafc` and other committed theme hexes; fonts → Source Sans 3 / Montserrat). Do **not** rewrite `site.json` theme values to match old CSS drift unless explicitly documented in this task list.
+- [x] 3a.4 Produce expanded color-audit offender inventory (start from design.md known set: blog slug styles, global.css, animations.css, NavMenu, Header variants, FooterDark/MultiColumn, DirectoryBadges, HeroSlider fallbacks, and any additional hits). Record file + literal for 3b.
+- [x] 3a.5 Verify fonts link matches configured families; `pnpm run validate:data` passes. **Do not** wire failing lint into build in this PR.
 
 ## Phase 3b: Tokenize Offenders + Theme Lint (PR 3b)
 

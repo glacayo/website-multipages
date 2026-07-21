@@ -30,6 +30,11 @@ const REQUIRED_FILES = [
 
 const IMAGE_EXT = /\.(jpe?g|png|webp|avif|gif|svg|ico)$/i;
 
+/** Hex color: #RGB, #RRGGBB, or #RRGGBBAA. */
+const hexColor = z
+  .string()
+  .regex(/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/, 'Expected hex color (#RGB, #RRGGBB, or #RRGGBBAA)');
+
 const instructionsSchema = z.record(z.string(), z.string());
 const ctaLinkSchema = z.object({
   label: z.string().min(1),
@@ -108,12 +113,18 @@ const schemas = {
       og_type: z.enum(['website', 'business.business']),
     }),
     theme: z.object({
+      // Legacy required keys stay min(1) — do not break existing client values.
       primary: z.string().min(1),
       accent: z.string().min(1),
       dark: z.string().min(1),
       light: z.string().min(1),
       body_font: z.string().min(1),
       heading_font: z.string().min(1),
+      // Additive optional palette tokens (backward-compatible when omitted); hex when present.
+      primary_dark: hexColor.optional(),
+      muted: hexColor.optional(),
+      surface: hexColor.optional(),
+      border: hexColor.optional(),
     }),
     features: z.object({
       enable_blog: z.boolean(),

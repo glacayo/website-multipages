@@ -2,21 +2,21 @@
 @import "./animations.css";
 
 /*
-  Theme tokens map to site.json.theme (PR 2+).
-  Keep names stable so JSON-driven theming can override later.
+  Theme token fallbacks — keep hex/fonts aligned to site.json.theme.
+  Runtime unlayered :root overrides from BaseLayout (utils/theme.ts) win over @theme.
 */
 @theme {
   --color-primary: #003060;
   --color-primary-dark: #012141;
   --color-accent: #962e20;
-  --color-light: #ffffff;
+  --color-light: #f8fafc;
   --color-dark: #012141;
   --color-muted: #6b7280;
   --color-surface: #f9fafb;
   --color-border: #e5e7eb;
 
-  --font-sans: "Inter", system-ui, sans-serif;
-  --font-heading: "Poppins", system-ui, sans-serif;
+  --font-sans: "Source Sans 3", system-ui, sans-serif;
+  --font-heading: "Montserrat", system-ui, sans-serif;
 
   --container-site: 90rem;
 }
@@ -28,7 +28,7 @@
 
   body {
     font-family: var(--font-sans);
-    color: #1a1a1a;
+    color: var(--color-dark);
     background-color: var(--color-surface);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
