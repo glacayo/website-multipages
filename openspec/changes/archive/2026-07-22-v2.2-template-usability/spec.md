@@ -35,7 +35,7 @@
 
 When the selected website type publishes service detail pages (SEO **and** subordinate `enable_landings` is true), the system MUST generate a static route at `/services/{slug}` for each entry in `business.json.services_offered`, combining `services.json` and, when present, `landings.json`; services without a `landings.json` entry MUST fall back to a generic landing built from `services.json` + `business.json`. When service detail is NOT published (One page, Multipage, or SEO with `enable_landings: false`), the system MUST NOT emit `/services/{slug}` routes to `dist/`, and the corresponding `src/pages/services/[slug]` files MUST remain in the repository.
 
-**Baseline gap (must fix):** `src/pages/services/[slug].astro` currently has **no** publication gate (unlike blog’s `enable_blog` checks). This change MUST add a gate driven by the shared route policy (`site_type` authority + `enable_landings` subordinate toggle).
+**Baseline gap fixed by this change:** `src/pages/services/[slug].astro` needed a publication gate (unlike blog’s existing `enable_blog` checks). The implementation adds a gate driven by the shared route policy (`site_type` authority + `enable_landings` subordinate toggle).
 
 (Previously: service landing pages were generated unconditionally for every service, with no website-type gating.)
 

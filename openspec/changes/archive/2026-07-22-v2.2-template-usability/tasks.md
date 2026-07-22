@@ -78,7 +78,7 @@ Chain strategy: feature-branch-chain
 
 - [x] 4a.1 Add additive `site.json.site_type` (`one-page | multipage | seo`) to `site.json` `_instructions`, `types.ts`, `validation.ts`, and `validate-data.cjs` mirror. **Invalid values FAIL validation.** Document read semantics: **missing key → effective `seo`** (backward compat). *(PR 4a / #38)*
 - [x] 4a.2 Create `src/utils/routes.ts` with shared policy helpers and the precedence matrix: `site_type` is publication authority; `enable_blog` / `enable_landings` only narrow within SEO. Export helpers used by pages, sitemap, llm, and (later) nav/CTAs. *(PR 4a / #38)*
-- [x] 4a.3 Gate dynamic routes via `getStaticPaths` returning `[]`: existing blog guards must compose with `site_type`; **add a new gate to `src/pages/services/[slug].astro`** (currently ungated). *(PR 4a / #38)*
+- [x] 4a.3 Gate dynamic routes via `getStaticPaths` returning `[]`: existing blog guards must compose with `site_type`; **add a new gate to `src/pages/services/[slug].astro`** (was ungated before v2.2). *(PR 4a / #38)*
 - [x] 4a.4 Rewrite `sitemap.xml.ts` and `llm.txt.ts` to use the same helpers so unpublished routes never appear, and always-published **non-indexable/technical** routes (`/404`, `/thank-you`) are classified and **omitted** from sitemap/llm while remaining in `dist/`. *(PR 4a / #38)*
 - [x] 4a.5 Verify multipage/one-page builds emit no blog or service-detail routes from dynamic generation; missing-`site_type` fixture behaves as seo. Keep under 400 lines. *(PR 4a / #38; `test:routes`)*
 

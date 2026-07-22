@@ -42,7 +42,7 @@ The v2.0 CLI scaffolds a client site but leaves real usability gaps: agents mist
 | `/gallery` | prune | publish | publish | post-build prune |
 | `/contact-us` | prune | publish | publish | post-build prune |
 | `/blog`, `/blog/*` | prune / empty paths | prune / empty paths | publish iff `enable_blog` | dynamic `getStaticPaths` + prune static index |
-| `/services/{slug}` | empty paths | empty paths | publish iff `enable_landings` | dynamic `getStaticPaths` (**currently ungated — must gain a gate**) |
+| `/services/{slug}` | empty paths | empty paths | publish iff `enable_landings` | dynamic `getStaticPaths` (**was ungated before v2.2 — this change adds the gate**) |
 | `/thank-you` | publish (non-indexable) | publish (non-indexable) | publish (non-indexable) | always kept; omit from sitemap/llm |
 | `/privacy-policy`, `/terms-of-service` | publish | publish | publish | always kept; indexable legal |
 | `/404` | publish (technical) | publish (technical) | publish (technical) | always kept; omit from sitemap/llm |
