@@ -24,12 +24,18 @@ export const DEFAULT_HOURS = [
   { days: 'Sunday', time: 'Closed' },
 ];
 
+/** Canonical `site.json.site_type` values written by new scaffolds. */
+export const SITE_TYPES = /** @type {const} */ (['one-page', 'multipage', 'seo']);
+/** Default website type for NEW CLI scaffolds (all answer paths). */
+export const DEFAULT_SITE_TYPE = /** @type {const} */ ('multipage');
+
 /** Allowed `business.social` keys (blank values omitted, never empty strings). */
 export const SOCIAL_NETWORK_KEYS = [
   'facebook', 'instagram', 'youtube', 'tiktok', 'google_business', 'linkedin', 'x',
 ];
 
 /**
+ * @typedef {'one-page' | 'multipage' | 'seo'} SiteType
  * @typedef {{ days: string, time: string }} BusinessHourRow
  * @typedef {{ name: string, url: string, initials?: string, icon?: string, badge_image?: string }} DirectoryRow
  *
@@ -54,6 +60,7 @@ export const SOCIAL_NETWORK_KEYS = [
  * @property {Record<string, string>} social non-blank network keys only
  * @property {DirectoryRow[]} directories empty = none (keep template row + disable)
  * @property {boolean} enableDirectories true iff directories.length > 0
+ * @property {SiteType} siteType written to site.json.site_type
  * @property {string[]} primaryServices
  * @property {string} [siteUrl]
  */
@@ -211,6 +218,38 @@ export function normalizeDirectories(value) {
 }
 
 /**
+ * Normalize website type to a canonical `site.json.site_type` value.
+ * Accepts canonical values and common human-ish aliases; blank/invalid → multipage.
+ * Always returns only: one-page | multipage | seo (never weakens validate:data).
+ * @param {unknown} value
+ * @returns {SiteType}
+ */
+export function normalizeSiteType(value) {
+  if (value == null) return DEFAULT_SITE_TYPE;
+  const raw = String(value)
+    .trim()
+    .toLowerCase()
+    .replace(/[_]+/g, '-')
+    .replace(/\s+/g, '-');
+  if (!raw) return DEFAULT_SITE_TYPE;
+
+  /** @type {Record<string, SiteType>} */
+  const aliases = {
+    'one-page': 'one-page',
+    onepage: 'one-page',
+    one: 'one-page',
+    single: 'one-page',
+    'single-page': 'one-page',
+    singlepage: 'one-page',
+    multipage: 'multipage',
+    'multi-page': 'multipage',
+    multi: 'multipage',
+    seo: 'seo',
+  };
+  return aliases[raw] || DEFAULT_SITE_TYPE;
+}
+
+/**
  * @param {string} label
  * @param {{ required?: boolean, defaultValue?: string }} [opts]
  * @param {import('node:readline/promises').Interface} rl
@@ -288,6 +327,9 @@ export async function collectClientAnswers() {
       required: false,
       defaultValue: '',
     });
+    const siteTypeRaw = await ask(rl, 'Website type (one-page | multipage | seo)', {
+      defaultValue: DEFAULT_SITE_TYPE,
+    });
     const servicesRaw = await ask(rl, 'Primary services (comma-separated)');
     const siteUrl = await ask(rl, 'Site URL (optional)', {
       required: false,
@@ -325,6 +367,7 @@ export async function collectClientAnswers() {
       hoursSunday,
       social: socialRaw,
       directories: directoriesRaw,
+      siteType: siteTypeRaw,
       primaryServices,
       siteUrl: siteUrl || undefined,
     });
@@ -336,6 +379,7 @@ export async function collectClientAnswers() {
 /**
  * All answer paths funnel here. Hours: full rows or compact weekday/sat/sun.
  * Social: object or `network=url` CSV. Directories: rows or `Name|url` CSV.
+ * siteType: canonical or human-ish → one-page | multipage | seo (default multipage).
  *
  * @param {Partial<ScaffoldAnswers> & {
  *   businessName: string,
@@ -346,6 +390,7 @@ export async function collectClientAnswers() {
  *   hoursSunday?: string,
  *   social?: string | Record<string, string>,
  *   directories?: string | DirectoryRow[],
+ *   siteType?: string,
  * }} overrides
  * @returns {ScaffoldAnswers}
  */
@@ -379,6 +424,9 @@ export function buildAnswers(overrides) {
   );
   // Derived from rows only: directories:[] + enableDirectories:true → false.
   const enableDirectories = directories.length > 0;
+  const siteType = normalizeSiteType(
+    /** @type {{ siteType?: unknown }} */ (overrides).siteType,
+  );
 
   return {
     businessName,
@@ -406,6 +454,7 @@ export function buildAnswers(overrides) {
     social,
     directories,
     enableDirectories,
+    siteType,
     primaryServices,
     siteUrl: overrides.siteUrl ? String(overrides.siteUrl).trim() || undefined : undefined,
   };

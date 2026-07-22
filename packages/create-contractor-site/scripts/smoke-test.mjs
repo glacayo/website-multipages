@@ -34,13 +34,16 @@ import {
   DEFAULT_INSURANCE,
   DEFAULT_LICENSE,
   DEFAULT_PAYMENT_METHODS,
+  DEFAULT_SITE_TYPE,
   DEFAULT_YEARS_EXPERIENCE,
   normalizeDirectories,
   normalizeHours,
   normalizePaymentMethods,
+  normalizeSiteType,
   normalizeSocial,
   optionalText,
   requiredText,
+  SITE_TYPES,
   SOCIAL_NETWORK_KEYS,
 } from '../src/prompts.mjs';
 import { isSameOrInside, validateTarget, TargetValidationError } from '../src/validate-target.mjs';
@@ -705,7 +708,86 @@ async function main() {
     fs.rmSync(seeded.tmp, { recursive: true, force: true });
   });
 
-  await test('--help documents trust/payment/hours/social/directories defaults', () => {
+  await test('normalizeSiteType canonical + human-ish aliases; invalid → multipage', () => {
+    assert(DEFAULT_SITE_TYPE === 'multipage', 'default site type is multipage');
+    assert(JSON.stringify(SITE_TYPES) === JSON.stringify(['one-page', 'multipage', 'seo']));
+    assert(normalizeSiteType(undefined) === 'multipage', 'missing → multipage');
+    assert(normalizeSiteType('') === 'multipage', 'blank → multipage');
+    assert(normalizeSiteType('  ') === 'multipage', 'whitespace → multipage');
+    assert(normalizeSiteType('one-page') === 'one-page');
+    assert(normalizeSiteType('multipage') === 'multipage');
+    assert(normalizeSiteType('seo') === 'seo');
+    assert(normalizeSiteType('one page') === 'one-page', 'one page alias');
+    assert(normalizeSiteType('onepage') === 'one-page', 'onepage alias');
+    assert(normalizeSiteType('multi page') === 'multipage', 'multi page alias');
+    assert(normalizeSiteType('multi-page') === 'multipage', 'multi-page alias');
+    assert(normalizeSiteType('SEO') === 'seo', 'case fold');
+    assert(normalizeSiteType('not-a-type') === 'multipage', 'invalid → multipage');
+    assert(normalizeSiteType('blog') === 'multipage', 'unknown → multipage');
+
+    const omitted = buildAnswers({ businessName: 'Type Co', primaryServices: ['Masonry'] });
+    assert(omitted.siteType === 'multipage', 'buildAnswers omits → multipage');
+    assert(buildAnswers({
+      businessName: 'One Page Co',
+      primaryServices: ['Masonry'],
+      siteType: 'one page',
+    }).siteType === 'one-page');
+    assert(buildAnswers({
+      businessName: 'SEO Co',
+      primaryServices: ['Masonry'],
+      siteType: 'seo',
+    }).siteType === 'seo');
+  });
+
+  await test('replaceTargetData writes site_type from answers (default multipage)', () => {
+    assert(REPO_ROOT, 'expected local template root');
+    const seeded = seedDataDir('ccs-sitetype-');
+    try {
+      const originalSite = readJson(path.join(seeded.dataDst, 'site.json'));
+      replaceTargetData(
+        seeded.tmp,
+        buildAnswers({ businessName: 'Type Default Co', primaryServices: ['Masonry'] }),
+      );
+      const siteDefault = readJson(path.join(seeded.dataDst, 'site.json'));
+      assert(siteDefault.site_type === 'multipage', `default write multipage, got ${siteDefault.site_type}`);
+      assert(siteDefault._instructions, '_instructions preserved');
+      assert(
+        JSON.stringify(Object.keys(siteDefault._instructions)) ===
+          JSON.stringify(Object.keys(originalSite._instructions)),
+        '_instructions keys stable',
+      );
+
+      // one-page
+      const one = seedDataDir('ccs-sitetype-one-');
+      replaceTargetData(
+        one.tmp,
+        buildAnswers({
+          businessName: 'One Page Site',
+          primaryServices: ['Patios'],
+          siteType: 'one-page',
+        }),
+      );
+      assert(readJson(path.join(one.dataDst, 'site.json')).site_type === 'one-page');
+      fs.rmSync(one.tmp, { recursive: true, force: true });
+
+      // seo
+      const seo = seedDataDir('ccs-sitetype-seo-');
+      replaceTargetData(
+        seo.tmp,
+        buildAnswers({
+          businessName: 'SEO Site',
+          primaryServices: ['Patios'],
+          siteType: 'seo',
+        }),
+      );
+      assert(readJson(path.join(seo.dataDst, 'site.json')).site_type === 'seo');
+      fs.rmSync(seo.tmp, { recursive: true, force: true });
+    } finally {
+      fs.rmSync(seeded.tmp, { recursive: true, force: true });
+    }
+  });
+
+  await test('--help documents trust/payment/hours/social/directories/siteType defaults', () => {
     const help = runCli(['--help']);
     assert(help.status === 0, `help exit 0, got ${help.status}`);
     const helpOut = `${help.stdout}\n${help.stderr}`;
@@ -717,10 +799,13 @@ async function main() {
     assert(/social/i.test(helpOut), 'help lists social');
     assert(/directories/i.test(helpOut), 'help lists directories');
     assert(/enable_directories/i.test(helpOut), 'help mentions enable_directories');
+    assert(/siteType/i.test(helpOut), 'help lists siteType');
+    assert(/multipage/i.test(helpOut), 'help documents multipage default');
+    assert(/one-page/i.test(helpOut), 'help lists one-page');
     assert(/CREATE_CONTRACTOR_SITE_ANSWERS_JSON/i.test(helpOut), 'help lists JSON env');
   });
 
-  await test('CREATE_CONTRACTOR_SITE_ANSWERS_JSON CLI path defaults trust/payment/hours/social/dirs', () => {
+  await test('CREATE_CONTRACTOR_SITE_ANSWERS_JSON CLI path defaults intake and siteType', () => {
     assert(REPO_ROOT, 'expected local template root');
     // Fresh non-existent target (CLI rejects existing dirs that are non-empty).
     const targetDir = path.join(
@@ -799,12 +884,51 @@ async function main() {
       assert(JSON.stringify(business.social) === '{}', 'CLI blank social → {}');
       assert(site.features.enable_directories === false, 'CLI no dirs → enable false');
       assert(directories.directories.length >= 1, 'CLI directories min(1)');
+      assert(site.site_type === 'multipage', `CLI omitted siteType → multipage, got ${site.site_type}`);
     } finally {
       const parent = path.dirname(targetDir);
       try {
         fs.rmSync(parent, { recursive: true, force: true });
       } catch {
         console.warn(`    (could not fully remove ${parent})`);
+      }
+    }
+  });
+
+  await test('CREATE_CONTRACTOR_SITE_ANSWERS_JSON can set siteType one-page and seo', () => {
+    assert(REPO_ROOT, 'expected local template root');
+
+    for (const { label, siteType, expected } of [
+      { label: 'one-page', siteType: 'one page', expected: 'one-page' },
+      { label: 'seo', siteType: 'seo', expected: 'seo' },
+    ]) {
+      const targetDir = path.join(
+        fs.mkdtempSync(path.join(os.tmpdir(), `ccs-sitetype-${label}-`)),
+        'site',
+      );
+      const result = runCli([targetDir], {
+        env: {
+          CREATE_CONTRACTOR_TEMPLATE_ROOT: REPO_ROOT,
+          CREATE_CONTRACTOR_SITE_ANSWERS_JSON: JSON.stringify({
+            businessName: `JSON ${label}`,
+            primaryServices: ['Patios'],
+            siteType,
+          }),
+          NODE_ENV: 'test',
+          CREATE_CONTRACTOR_SITE_SKIP_SETUP: '1',
+        },
+      });
+      const out = `${result.stdout}\n${result.stderr}`;
+      try {
+        assert(result.status === 0, `CLI ${label} exit 0, got ${result.status}:\n${out.slice(-1500)}`);
+        const site = readJson(path.join(targetDir, 'src/data/site.json'));
+        assert(site.site_type === expected, `CLI ${label} site_type, got ${site.site_type}`);
+      } finally {
+        try {
+          fs.rmSync(path.dirname(targetDir), { recursive: true, force: true });
+        } catch {
+          console.warn(`    (could not fully remove ${path.dirname(targetDir)})`);
+        }
       }
     }
   });
@@ -1005,6 +1129,11 @@ async function main() {
       const dirsE2E = readJson(path.join(targetDir, 'src/data/directories.json'));
       assert(siteE2E.features.enable_directories === false, 'E2E no dirs → enable false');
       assert(dirsE2E.directories.length >= 1, 'E2E directories min(1)');
+      assert(
+        siteE2E.site_type === 'multipage',
+        `E2E --yes site_type multipage, got ${siteE2E.site_type}`,
+      );
+      // Full scaffold already ran validate:data + build (includes route gate) successfully.
 
       const services = JSON.parse(
         fs.readFileSync(path.join(targetDir, 'src/data/services.json'), 'utf8'),

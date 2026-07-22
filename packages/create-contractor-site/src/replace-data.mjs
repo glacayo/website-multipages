@@ -397,6 +397,8 @@ export function replaceTargetData(targetDir, answers) {
     if (answers.siteUrl) {
       site.url = answers.siteUrl.replace(/\/$/, '');
     }
+    // New scaffolds always write canonical site_type (default multipage via buildAnswers).
+    site.site_type = answers.siteType;
     site.logo = { ...site.logo, alt: answers.businessName };
     site.seo = {
       ...site.seo,
