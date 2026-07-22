@@ -2,7 +2,18 @@
 
 Scaffold a client contractor website from the [website-multipages](https://github.com/glacayo/website-multipages) Astro template.
 
+**Package version:** `2.2.0` · **Default template ref:** `v2.2.0` (`CREATE_CONTRACTOR_TEMPLATE_REF`)
+
 The CLI validates the target, copies the template, replaces placeholder values in `src/data/*.json`, installs with **pnpm**, validates data, builds, and initializes git **only after** success.
+
+## What's new in 2.2.0
+
+- **`siteType`** — choose `one-page`, `multipage`, or `seo` (aliases accepted). Written to `site.json.site_type`. Default for new scaffolds: `multipage`.
+- **Expanded intake** — payment methods, hours, free-estimate wording, years of experience, license, insurance, social links, and directories (interactive, `--yes` defaults, or `CREATE_CONTRACTOR_SITE_ANSWERS_JSON`).
+- **Template clone default** — published fallback uses git ref **`v2.2.0`** unless you set `CREATE_CONTRACTOR_TEMPLATE_ROOT` or `CREATE_CONTRACTOR_TEMPLATE_REF`.
+- After scaffold, treat `business.json` + `site.json` as authoritative identity; leftover demo trade content is expected seed material to rewrite.
+
+Full release notes: repository root [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ## Requirements
 
@@ -50,7 +61,7 @@ CREATE_CONTRACTOR_TEMPLATE_ROOT=/path/to/website-multipages \
 1. Checks that **pnpm** and **git** are available
 2. Resolves the template source (see env vars below)
 3. Validates the target directory and refuses targets equal to or inside the template root
-4. Copies the template into the target directory (denylist excludes `node_modules`, `dist`, `.astro`, `.git`, `.codegraph`, `docs_trash`, `openspec`, `.atl`, logs, `.env*`, `package-lock.json`, and `packages/`)
+4. Copies the template into the target directory (denylist excludes `node_modules`, `dist`, `.astro`, `.git`, `.codegraph`, `docs_trash`, `openspec`, `.atl`, `logs`, `*.log`, `.env*`, `package-lock.json`, and `packages/`)
 5. Replaces **values only** in target `src/data/*.json` (schema/shape preserved)
 6. Runs `pnpm install`
 7. Runs `pnpm run validate:data`
@@ -77,7 +88,7 @@ See the template root `AGENTS.md`, `SKILL.md`, and `README.md` for the full agen
 | `CREATE_CONTRACTOR_SITE_ANSWERS_JSON` | JSON object with client answers for scripted/non-interactive scaffolds |
 | `CREATE_CONTRACTOR_TEMPLATE_ROOT` | Path to a local template checkout (preferred for monorepo/dev) |
 | `CREATE_CONTRACTOR_TEMPLATE_REPO` | Git URL for the published fallback clone (default: this template repo) |
-| `CREATE_CONTRACTOR_TEMPLATE_REF` | Git branch/tag/ref to clone (default: `v2.1.2`) |
+| `CREATE_CONTRACTOR_TEMPLATE_REF` | Git branch/tag/ref to clone (default: `v2.2.0`) |
 
 Template source precedence: `CREATE_CONTRACTOR_TEMPLATE_ROOT` → local monorepo discovery → temporary clone of repo @ ref.
 

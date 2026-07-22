@@ -1,7 +1,9 @@
-# Contractor Multipages Template (v2.1.2)
+# Contractor Multipages Template (v2.2.0)
 
 Reusable **Astro 7** static template for contractor and local service-business websites.
 This repository is a template base — placeholder content only, not a client project.
+
+**Release notes:** see [`CHANGELOG.md`](./CHANGELOG.md) for v2.2.0 highlights (CLI intake, `siteType` modes, theme palette lint, route policy/prune/audit).
 
 ## Quick path
 
@@ -24,7 +26,7 @@ The CLI:
 
 1. Checks **pnpm** and **git** are available (before any writes)
 2. Resolves the template source (see below), refusing targets equal to or inside the template root
-3. Copies the template (denylist excludes `node_modules`, `dist`, `.astro`, `.git`, `.codegraph`, `docs_trash`, `openspec`, logs, `.env*`, `package-lock.json`, and the CLI `packages/` tree)
+3. Copies the template (denylist excludes `node_modules`, `dist`, `.astro`, `.git`, `.codegraph`, `docs_trash`, `openspec`, `logs`, `.atl`, `*.log`, `.env*`, `package-lock.json`, and the CLI `packages/` tree)
 4. Prompts for client business fields (or uses non-interactive answers)
 5. Replaces **values only** in the target `src/data/*.json` (keys, shapes, and `_instructions` stay intact; service names/slugs stay unique and aligned across `business.json` + `services.json`; service-area city lists are parsed/deduped so `areas.json` slugs stay unique)
 6. Runs **`pnpm install`**, **`pnpm run validate:data`**, and **`pnpm run build`** in the target
@@ -68,7 +70,7 @@ The published npm package ships only the CLI (`bin`/`src`/`scripts`). Template f
 |----------|--------|
 | 1 | `CREATE_CONTRACTOR_TEMPLATE_ROOT` — local checkout path (best for monorepo/dev) |
 | 2 | Local monorepo root discovered by walking parents from the package |
-| 3 | Temporary `git clone` of `CREATE_CONTRACTOR_TEMPLATE_REPO` @ `CREATE_CONTRACTOR_TEMPLATE_REF` (defaults: this GitHub repo @ `v2.1.2`), cleaned up afterward |
+| 3 | Temporary `git clone` of `CREATE_CONTRACTOR_TEMPLATE_REPO` @ `CREATE_CONTRACTOR_TEMPLATE_REF` (defaults: this GitHub repo @ `v2.2.0`), cleaned up afterward |
 
 ```bash
 # Force a local template root
@@ -109,7 +111,7 @@ Output mode is **static**. Package manager is **pnpm only** — npm/npx are forb
 ## Requirements
 
 - Node.js **v22+**
-- pnpm **>= 11**
+- pnpm **>= 11.1.2**
 
 ## Install and build
 
@@ -185,13 +187,16 @@ Unknown variants fall back to the documented default without failing the build.
 
 ## Routes
 
-| Route | Source |
-|-------|--------|
-| `/`, `/about-us`, `/services`, `/gallery`, `/contact-us` | Static pages |
-| `/privacy-policy`, `/terms-of-service`, `/thank-you`, `/404` | Static pages |
-| `/services/{slug}` | `business.json.services_offered` + `services.json` + optional `landings.json` |
-| `/blog`, `/blog/{page}`, `/blog/{slug}` | `blog.json` when `site.features.enable_blog` |
-| `/sitemap.xml`, `/robots.txt`, `/llm.txt` | Generated endpoints |
+Publication is controlled by `site.json.site_type` (`one-page` | `multipage` | `seo`). Source pages stay in the repo; gated routes are omitted from `dist/` (and dynamic paths return empty) via the shared route policy and post-build gate. Feature flags only narrow content within SEO scope.
+
+| Route | Source / notes |
+|-------|----------------|
+| `/`, `/about-us`, `/services`, `/gallery`, `/contact-us` | Static pages (internals pruned for `one-page`) |
+| `/privacy-policy`, `/terms-of-service` | Always published; indexable legal |
+| `/thank-you`, `/404` | Always published; **non-indexable** (omitted from sitemap/llm) |
+| `/services/{slug}` | SEO + `enable_landings` only |
+| `/blog`, `/blog/{page}`, `/blog/{slug}` | SEO + `enable_blog` only |
+| `/sitemap.xml`, `/robots.txt`, `/llm.txt` | Generated; lists **indexable** published routes only |
 
 ## Contact form (Netlify Forms)
 

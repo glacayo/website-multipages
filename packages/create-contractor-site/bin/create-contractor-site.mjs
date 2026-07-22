@@ -46,7 +46,7 @@ Environment:
       Default: https://github.com/glacayo/website-multipages.git
 
   CREATE_CONTRACTOR_TEMPLATE_REF
-      Git branch/tag/ref to clone for the published fallback. Default: v2.1.2
+      Git branch/tag/ref to clone for the published fallback. Default: v2.2.0
 
   Answer defaults (buildAnswers; blank/whitespace → these; --yes omits trust/payment/hours/social/directories/siteType):
   freeEstimate      Free On-Site Estimate

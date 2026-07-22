@@ -6,11 +6,12 @@
  * 1. Missing target argument
  * 2. Existing non-empty target
  * 3. Target equal to / inside template root
- * 4. Duplicate service input normalization + slug uniqueness + business/services alignment
- * 5. Service-area name parse/dedupe (Chesapeake duplicate-slug case) + areas rebuild
+ * 4. Published DEFAULT_TEMPLATE_REF / CREATE_CONTRACTOR_TEMPLATE_REF contract (v2.2.0)
+ * 5. Duplicate service input normalization + slug uniqueness + business/services alignment
+ * 6. Service-area name parse/dedupe (Chesapeake duplicate-slug case) + areas rebuild
  *    without leaking stale template county/ZIP metadata into new areas
- * 6. CREATE_CONTRACTOR_SITE_ANSWERS_JSON real CLI spawn (copy+replace, skip setup)
- * 7. Temp-target --yes scaffold (install/validate/build) unless SKIP_CLI_E2E=1
+ * 7. CREATE_CONTRACTOR_SITE_ANSWERS_JSON real CLI spawn (copy+replace, skip setup)
+ * 8. Temp-target --yes scaffold (install/validate/build) unless SKIP_CLI_E2E=1
  */
 
 import { spawnSync } from 'node:child_process';
@@ -47,7 +48,10 @@ import {
   SOCIAL_NETWORK_KEYS,
 } from '../src/prompts.mjs';
 import { isSameOrInside, validateTarget, TargetValidationError } from '../src/validate-target.mjs';
-import { findLocalTemplateRoot } from '../src/copy-template.mjs';
+import {
+  DEFAULT_TEMPLATE_REF,
+  findLocalTemplateRoot,
+} from '../src/copy-template.mjs';
 import { isVersionAtLeast, resolveCommandPath } from '../src/run-command.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -139,6 +143,43 @@ async function main() {
     assert(!isVersionAtLeast('11.1.1', '11.1.2'), 'older patch should fail');
     assert(!isVersionAtLeast('10.9.9', '11.1.2'), 'older major should fail');
   });
+
+  await test(
+    'DEFAULT_TEMPLATE_REF / CREATE_CONTRACTOR_TEMPLATE_REF published contract is v2.2.0',
+    () => {
+      const copySrcPath = path.join(PKG_ROOT, 'src', 'copy-template.mjs');
+      const copySrc = fs.readFileSync(copySrcPath, 'utf8');
+      // Pin the source fallback so a silent ref bump cannot ship without updating this test.
+      assert(
+        /CREATE_CONTRACTOR_TEMPLATE_REF\s*\|\|\s*['"]v2\.2\.0['"]/.test(copySrc),
+        'copy-template.mjs DEFAULT_TEMPLATE_REF fallback must be v2.2.0',
+      );
+      const expected =
+        process.env.CREATE_CONTRACTOR_TEMPLATE_REF || 'v2.2.0';
+      assert(
+        DEFAULT_TEMPLATE_REF === expected,
+        `DEFAULT_TEMPLATE_REF must equal CREATE_CONTRACTOR_TEMPLATE_REF or v2.2.0 (got ${DEFAULT_TEMPLATE_REF})`,
+      );
+      if (!process.env.CREATE_CONTRACTOR_TEMPLATE_REF) {
+        assert(
+          DEFAULT_TEMPLATE_REF === 'v2.2.0',
+          `published default template ref must be v2.2.0 (got ${DEFAULT_TEMPLATE_REF})`,
+        );
+      }
+
+      const help = runCli(['--help']);
+      assert(help.status === 0, `help exit 0, got ${help.status}`);
+      const helpOut = `${help.stdout}\n${help.stderr}`;
+      assert(
+        /CREATE_CONTRACTOR_TEMPLATE_REF/i.test(helpOut),
+        'help must document CREATE_CONTRACTOR_TEMPLATE_REF',
+      );
+      assert(
+        /v2\.2\.0/.test(helpOut),
+        'help must document default template ref v2.2.0',
+      );
+    },
+  );
 
   await test('missing target argument exits 1 with usage', () => {
     const result = runCli([]);

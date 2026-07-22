@@ -1,4 +1,4 @@
-# Contractor Multipages — Template Skill (v2.1.2)
+# Contractor Multipages — Template Skill (v2.2.0)
 
 > Reusable static website template for contractors (masonry, hardscape, roofing, landscaping, tree services, etc.).
 > Customize via JSON only. Never use npm.
@@ -83,7 +83,7 @@ What the CLI does:
 
 1. Asserts **pnpm** + **git** are on PATH **before any writes**
 2. Resolves template source, then validates `<target-dir>` (refuses missing arg, non-empty targets, and targets equal to/inside the template root)
-3. Copies template files via denylist (no `node_modules`, `dist`, `.git`, `openspec`, `.env*`, `package-lock.json`, CLI `packages/`, etc.)
+3. Copies template files via denylist (excludes `node_modules`, `dist`, `.astro`, `.git`, `.codegraph`, `docs_trash`, `openspec`, `logs`, `.atl`, `*.log`, `.env*`, `package-lock.json`, and the CLI `packages/` tree)
 4. Collects business/site/service/area fields (interactive, `--yes`, or env JSON)
 5. Value-only JSON replacement in target `src/data/*.json` — never edits this template repo; service names **and** slugs are deduped and kept aligned between `business.services_offered` and `services.json`; service-area cities are parsed/deduped so `areas.json` slugs stay unique (city first)
 6. `pnpm install` → `pnpm run validate:data` → `pnpm run build` (pnpm only; never npm/npx)
@@ -104,7 +104,7 @@ Package runners may start the binary; **install/build inside the scaffold always
 | Template env | Behavior |
 |--------------|----------|
 | `CREATE_CONTRACTOR_TEMPLATE_ROOT` | Use this local template path (preferred for monorepo/dev) |
-| `CREATE_CONTRACTOR_TEMPLATE_REPO` / `CREATE_CONTRACTOR_TEMPLATE_REF` | Remote clone fallback when published (default repo + `v2.1.2`) |
+| `CREATE_CONTRACTOR_TEMPLATE_REPO` / `CREATE_CONTRACTOR_TEMPLATE_REF` | Remote clone fallback when published (default repo + `v2.2.0`) |
 
 Published package contents are CLI-only; template files are resolved via env, local monorepo discovery, or a temporary git clone (cleaned up).
 
