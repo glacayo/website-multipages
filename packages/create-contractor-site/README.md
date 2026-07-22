@@ -83,17 +83,17 @@ Template source precedence: `CREATE_CONTRACTOR_TEMPLATE_ROOT` → local monorepo
 
 ### Scripted answers example
 
-Trust, payment, hours, social, and directory fields may be omitted/blank — `buildAnswers` fills defaults. `--yes` omits them for the same parity.
+Trust, payment, hours, social, directory, and website-type fields may be omitted/blank — `buildAnswers` fills defaults. `--yes` omits them for the same parity (including `site_type: multipage`).
 
 ```bash
 CREATE_CONTRACTOR_SITE_ANSWERS_JSON='{"businessName":"Acme Masonry","phone":"(757) 555-0199","email":"info@example.com","street":"123 Main St","city":"Virginia Beach","state":"VA","zip":"23451","serviceArea":"Virginia Beach, Norfolk, Chesapeake","primaryServices":["Masonry","Patios"]}' \
   pnpm dlx create-contractor-site my-client-site
 ```
 
-Compact payment/hours/social/directories:
+Compact payment/hours/social/directories + website type:
 
 ```bash
-CREATE_CONTRACTOR_SITE_ANSWERS_JSON='{"businessName":"Acme Masonry","primaryServices":["Masonry"],"paymentMethods":"Cash, Credit Card","hoursWeekday":"8:00 AM - 5:00 PM","hoursSaturday":"Closed","hoursSunday":"Closed","social":"facebook=https://facebook.com/acme,instagram=https://instagram.com/acme","directories":"Google Business|https://g.co/acme,BBB|https://bbb.org/acme"}' \
+CREATE_CONTRACTOR_SITE_ANSWERS_JSON='{"businessName":"Acme Masonry","primaryServices":["Masonry"],"paymentMethods":"Cash, Credit Card","hoursWeekday":"8:00 AM - 5:00 PM","hoursSaturday":"Closed","hoursSunday":"Closed","social":"facebook=https://facebook.com/acme,instagram=https://instagram.com/acme","directories":"Google Business|https://g.co/acme,BBB|https://bbb.org/acme","siteType":"one-page"}' \
   pnpm dlx create-contractor-site my-client-site
 ```
 
@@ -110,6 +110,7 @@ All answer paths (`CREATE_CONTRACTOR_SITE_ANSWERS_JSON`, `--yes`, interactive) g
 | Business hours | `hours` (`[{days,time}]` ×3) or compact `hoursWeekday` / `hoursSaturday` / `hoursSunday` | Mon–Fri `7:00 AM - 6:00 PM`, Sat `8:00 AM - 2:00 PM`, Sun `Closed` |
 | Social links | `social` (object or `network=url` CSV) | `{}`; blank keys omitted (`facebook`…`x`) |
 | Directories | `directories` (`[{name,url}]` or `Name\|url` CSV) | none → ≥1 placeholder + `enable_directories: false` (never `[]`) |
+| Website type | `siteType` (`one-page` \| `multipage` \| `seo`; aliases like `one page` / `single-page` / `multi page` / `multi` accepted) | `multipage` — always written to `site.json.site_type` as a canonical value |
 
 ## pnpm only
 

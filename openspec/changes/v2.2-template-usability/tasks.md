@@ -89,7 +89,7 @@ Chain strategy: feature-branch-chain
 - [x] 4b.3 **Repurpose** `src/utils/navigation.ts`: feature-aware one-page anchors; multipage drops blog+detail; SEO respects flags. Via `getNavigation()`. *(PR 4b1)*
 - [x] 4b.4 Path helpers + `getHero` CTA resolve; `id="about"` / `id="contact"`. *(PR 4b1)*
 - [x] 4b.5 Always-published technical/legal kept; per-type build verify (seo/multipage/one-page + flag-off). *(PR 4b2)*
-- [ ] 4b.6 CLI website-type prompt (all answer paths default `site_type: multipage`) + smoke. *(PR 4b3)*
+- [x] 4b.6 CLI website-type prompt (all answer paths default `site_type: multipage`) + smoke. *(PR 4b3)*
 
 ## Final Verification (per slice and at chain tip)
 

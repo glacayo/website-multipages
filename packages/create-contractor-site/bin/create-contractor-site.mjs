@@ -48,7 +48,7 @@ Environment:
   CREATE_CONTRACTOR_TEMPLATE_REF
       Git branch/tag/ref to clone for the published fallback. Default: v2.1.2
 
-  Answer defaults (buildAnswers; blank/whitespace → these; --yes omits trust/payment/hours/social/directories):
+  Answer defaults (buildAnswers; blank/whitespace → these; --yes omits trust/payment/hours/social/directories/siteType):
   freeEstimate      Free On-Site Estimate
   yearsExperience   10+
   license           Licensed & Insured
@@ -58,6 +58,7 @@ Environment:
   hours             3-row [{days,time}] Mon–Fri / Sat / Sun (or compact hoursWeekday/hoursSaturday/hoursSunday)
   social            object or network=url CSV (facebook…x); blank keys omitted
   directories       [{name,url}] or Name|url CSV; none → ≥1 placeholder + enable_directories false (never [])
+  siteType          multipage (one-page | multipage | seo; aliases like "one page"/"onepage" ok; invalid → multipage)
 
 Answer precedence (highest first):
   1. CREATE_CONTRACTOR_SITE_ANSWERS_JSON
@@ -132,7 +133,7 @@ async function resolveAnswers(nonInteractive) {
   }
 
   if (nonInteractive) {
-    // Omitted trust/payment/hours/social/directories → buildAnswers defaults.
+    // Omitted trust/payment/hours/social/directories/siteType → buildAnswers defaults (siteType multipage).
     return buildAnswers({
       businessName: 'Acme Masonry',
       legalName: 'Acme Masonry LLC',
