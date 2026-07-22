@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /** Route policy smoke tests (Node + --experimental-strip-types). */
 import assert from 'node:assert/strict';
+import { createRequire } from 'node:module';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -20,6 +21,7 @@ import {
 } from '../src/utils/routes.ts';
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
+const gate = createRequire(import.meta.url)('./gate-routes.cjs');
 const BASE = 'https://example.com';
 let passed = 0;
 let failed = 0;
@@ -160,12 +162,33 @@ test('fixtures wire nav resolver + path helpers + CTAs', () => {
     ['src/components/sections/Welcome.astro', /getAboutPath/],
     ['src/components/sections/Services/variants/ServicesGrid.astro', /getServicesPath/],
     ['src/pages/services/[slug].astro', /publishesServiceDetail/],
+    ['scripts/gate-routes.cjs', /getPrunePlan|auditIndexableParity|missing always-published/],
+    ['package.json', /gate-routes\.cjs/],
   ];
   for (const [rel, re] of checks) assert.match(fs.readFileSync(path.join(root, rel), 'utf8'), re);
   assert.equal(fs.readFileSync(path.join(root, 'src/utils/navigation.ts'), 'utf8').includes('import.meta.glob'), false);
   for (const f of ['Cards', 'Featured', 'Grid', 'List', 'Tabs']) {
     assert.match(fs.readFileSync(path.join(root, `src/components/sections/Services/variants/Services${f}.astro`), 'utf8'), /publishesServiceDetail/);
   }
+});
+
+test('CJS gate-routes mirrors TS + same-origin abs', () => {
+  const input = { serviceSlugs: ['patio', 'masonry'], blogPosts: [{ slug: 'a', date: '2026-01-01' }, { slug: 'b', date: '2026-02-01' }], postsPerPage: 1 };
+  for (const o of [{}, { site_type: 'multipage' }, { site_type: 'one-page' }, { site_type: 'seo', features: { enable_blog: false, enable_landings: false } }, { site_type: ' SEO ' }]) {
+    const s = site(o);
+    assert.equal(gate.getEffectiveSiteType(s), getEffectiveSiteType(s));
+    assert.equal(gate.publishesBlog(s), publishesBlog(s));
+    assert.equal(gate.publishesServiceDetail(s), publishesServiceDetail(s));
+    assert.equal(gate.publishesStaticInternals(s), publishesStaticInternals(s));
+    assert.deepEqual(gate.getIndexablePaths({ site: s, ...input }).map((p) => p.path), getIndexablePaths({ site: s, ...input }).map((p) => p.path));
+  }
+  assert.deepEqual([...gate.NON_INDEXABLE], [...NON_INDEXABLE_TECHNICAL_PATHS]);
+  assert.deepEqual([...gate.LEGAL], [...LEGAL_PATHS]);
+  assert.equal(gate.getPrunePlan(site({ site_type: 'multipage' })).servicesChildren, true);
+  assert.ok(gate.getPrunePlan(site({ site_type: 'one-page' })).trees.includes('/about-us'));
+  assert.equal(gate.getPrunePlan(site({ site_type: 'seo' })).trees.length, 0);
+  assert.deepEqual(gate.resolveInternalHref(`${BASE}/services`, '/', BASE), { path: '/services', hash: '' });
+  assert.deepEqual(gate.resolveInternalHref('https://other.test/x', '/', BASE), { external: true });
 });
 
 console.log(`\n${passed} passed, ${failed} failed`);
