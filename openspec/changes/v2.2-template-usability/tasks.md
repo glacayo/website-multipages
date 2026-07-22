@@ -84,12 +84,12 @@ Chain strategy: feature-branch-chain
 
 ## Phase 4b: Prune, Link Safety, Nav, CLI Type (PR 4b)
 
-- [ ] 4b.1 Create `scripts/gate-routes.cjs` post-build prune (CJS mirror of policy) removing gated **static** internal pages from `dist/` only — never delete source files. Wire after `astro build`.
-- [ ] 4b.2 Add post-build **parity audit** scoped to the **indexable published route set** (sitemap/llm lists or shared manifest vs matching HTML in `dist/` — NOT every file under `dist/`). Explicitly classify/exclude always-published non-indexable/technical routes (`/404`, `/thank-you`, meta artifacts) so their presence in `dist/` without sitemap/llm entries does not fail the audit. Add **broken-link / unpublished-route audit** for internal hrefs from JSON + critical components; for hash hrefs, verify the target id exists on the published destination page (anchor existence / published target availability — not route publication alone). Fail build on indexable mismatch or bad href/anchor.
-- [x] 4b.3 **Repurpose** existing `src/utils/navigation.ts`: one-page → **feature-aware** home anchors; multipage → drop blog + service-detail; SEO respects flags. Consume via `getNavigation()`. *(PR 4b1)*
-- [x] 4b.4 Path helpers + `getHero` CTA resolve; `id="about"` / `id="contact"`. Wire remaining hardcoded component CTAs in 4b2 when prune lands. *(PR 4b1)*
-- [ ] 4b.5 Keep `thank-you`, `sitemap.xml`, `robots.txt`, `llm.txt`, `404`, `privacy-policy`, `terms-of-service` always published; verify sitemap/llm list only **indexable** routes; verify per-type `dist/` + indexable parity + feature-aware link/anchor audits via `pnpm run build` for each `site_type` (and SEO with flags off; and one-page with at least one `enable_*` section false).
-- [ ] 4b.6 Add CLI website-type prompt (numbered choice; **all answer paths default write `site_type: multipage`**) in prompts/replace-data; extend `smoke-test.mjs`. This slice is a **planned** PR under 400 lines — not a contingency split.
+- [x] 4b.1 `scripts/gate-routes.cjs` post-build prune (CJS policy mirror); wire after `astro build`. *(PR 4b2)*
+- [x] 4b.2 Indexable parity audit (sitemap/llm vs dist HTML; exclude `/404`/`/thank-you`/meta) + HTML href/anchor audit; CJS↔TS drift via `test:routes` + `--self-test`. *(PR 4b2)*
+- [x] 4b.3 **Repurpose** `src/utils/navigation.ts`: feature-aware one-page anchors; multipage drops blog+detail; SEO respects flags. Via `getNavigation()`. *(PR 4b1)*
+- [x] 4b.4 Path helpers + `getHero` CTA resolve; `id="about"` / `id="contact"`. *(PR 4b1)*
+- [x] 4b.5 Always-published technical/legal kept; per-type build verify (seo/multipage/one-page + flag-off). *(PR 4b2)*
+- [ ] 4b.6 CLI website-type prompt (all answer paths default `site_type: multipage`) + smoke. *(PR 4b3)*
 
 ## Final Verification (per slice and at chain tip)
 
