@@ -16,6 +16,7 @@ import DirectoryBadges from '../components/sections/DirectoryBadges/DirectoryBad
 import type { LandingPage, LandingSection, Service } from '../data/types';
 import {
   getBusiness,
+  getContactPath,
   getLandingPage,
   getService,
   getSite,
@@ -28,6 +29,7 @@ interface Props {
 const { slug } = Astro.props;
 const business = getBusiness();
 const site = getSite();
+const contactHref = getContactPath();
 const service = getService(slug);
 const landing = getLandingPage(slug);
 
@@ -139,7 +141,7 @@ const schemaBreadcrumbs = [
             {page.hero.paragraph}
           </p>
           <div class="flex flex-col items-start gap-3 sm:flex-row">
-            <Button href="/contact-us" variant="primary" size="md">
+            <Button href={contactHref} variant="primary" size="md">
               {page.cta.button_label}
             </Button>
             {
@@ -250,7 +252,7 @@ const schemaBreadcrumbs = [
       <h2 class="font-heading max-w-2xl text-2xl font-bold text-white md:text-3xl">
         {page.cta.headline}
       </h2>
-      <Button href="/contact-us" variant="primary" size="lg">
+      <Button href={contactHref} variant="primary" size="lg">
         {page.cta.button_label}
       </Button>
     </div>

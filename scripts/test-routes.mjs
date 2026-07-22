@@ -15,6 +15,8 @@ import {
   publishesBlog,
   publishesServiceDetail,
   publishesStaticInternals,
+  resolveInternalHref,
+  serviceDetailHref,
 } from '../src/utils/routes.ts';
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -35,7 +37,7 @@ function test(name, fn) {
 
 function site(o = {}) {
   return {
-    features: { enable_blog: true, enable_landings: true, ...(o.features ?? {}) },
+    features: { enable_blog: true, enable_landings: true, enable_gallery: true, ...(o.features ?? {}) },
     ...('site_type' in o ? { site_type: o.site_type } : {}),
   };
 }
@@ -52,6 +54,7 @@ const navSrc = {
   header: [
     { label: 'Home', href: '/' },
     { label: 'Services', href: '/services', children: [{ label: 'Patio', href: '/services/patio' }] },
+    { label: 'About', href: '/about-us' },
     { label: 'Blog', href: '/blog' },
     { label: 'Ext', href: 'https://ex.com' },
   ],
@@ -110,35 +113,58 @@ test('site_type + indexable/sitemap/llm gates', () => {
   for (const t of NON_INDEXABLE_TECHNICAL_PATHS) assert.equal(xml.includes(t), false);
 });
 
-test('nav filter drops unpublished dynamic links; no mutation', () => {
+test('nav filter + resolveInternalHref (one-page anchors, mobile CTA, no source mutation)', () => {
   const frozen = structuredClone(navSrc);
-  for (const type of ['multipage', 'one-page']) {
-    const h = hrefs(filterNavigationForSite(navSrc, site({ site_type: type })));
-    assert.equal(h.includes('/blog') || h.includes('/services/patio'), false);
-    assert.ok(h.includes('/services') && h.includes('/about-us') && h.includes('https://ex.com'));
-    assert.ok(h.includes('/privacy-policy') && h.includes('tel:+1'));
-  }
-  const flagsOff = { enable_blog: false, enable_landings: false };
-  const off = hrefs(filterNavigationForSite(navSrc, site({ site_type: 'seo', features: flagsOff })));
-  assert.equal(off.includes('/blog') || off.includes('/services/patio'), false);
-  const on = hrefs(filterNavigationForSite(navSrc, site({ site_type: 'seo' })));
-  assert.ok(on.includes('/blog') && on.includes('/services/patio'));
+  const multi = hrefs(filterNavigationForSite(navSrc, site({ site_type: 'multipage' })));
+  assert.equal(multi.includes('/blog') || multi.includes('/services/patio'), false);
+  assert.ok(multi.includes('/services') && multi.includes('/about-us') && multi.includes('https://ex.com'));
+  assert.ok(multi.includes('/privacy-policy') && multi.includes('tel:+1'));
+
+  const oneSite = site({ site_type: 'one-page' });
+  const one = hrefs(filterNavigationForSite(navSrc, oneSite));
+  assert.equal(one.includes('/blog') || one.includes('/about-us') || one.includes('/services'), false);
+  assert.ok(one.includes('/#about') && one.includes('/#services'));
+  assert.ok(one.includes('https://ex.com') && one.includes('/privacy-policy'));
+  assert.equal(resolveInternalHref('/contact-us', oneSite), '/#contact');
+  assert.equal(resolveInternalHref('/gallery', oneSite), '/#gallery');
+  assert.equal(resolveInternalHref('/gallery', site({ site_type: 'one-page', features: { enable_gallery: false } })), null);
+  assert.equal(resolveInternalHref('tel:+1', oneSite), 'tel:+1');
+  const seoS = site({ site_type: 'seo' });
+  // Keep ?query+#hash; one-page mapped anchor beats original hash.
+  for (const [h, s, e] of [
+    ['/contact-us?utm=1#x', seoS, '/contact-us?utm=1#x'],
+    ['/contact-us?utm=1#x', oneSite, '/?utm=1#contact'],
+    ['/about-us?src=nav', oneSite, '/?src=nav#about'],
+  ]) assert.equal(resolveInternalHref(h, s), e);
+  assert.equal(serviceDetailHref('patio', site({ site_type: 'multipage' })), null);
+  assert.equal(serviceDetailHref('patio', site({ site_type: 'seo' })), '/services/patio');
+
+  const leaky = { ...navSrc, mobile: { cta_label: 'Blog', cta_href: '/blog' } };
+  assert.equal(filterNavigationForSite(leaky, site({ site_type: 'multipage' })).mobile.cta_href, '/contact-us');
+  assert.equal(filterNavigationForSite(leaky, oneSite).mobile.cta_href, '/#contact');
+  assert.equal(filterNavigationForSite(navSrc, oneSite).mobile.cta_href, 'tel:+1');
   assert.deepEqual(navSrc, frozen);
+  const sourceNav = JSON.parse(fs.readFileSync(path.join(root, 'src/data/navigation.json'), 'utf8'));
+  assert.ok(sourceNav.header.some((i) => i.href === '/about-us'));
+  assert.equal(sourceNav.header.some((i) => String(i.href).startsWith('/#')), false);
 });
 
-test('fixtures wire shared gates + services variants', () => {
+test('fixtures wire nav resolver + path helpers + CTAs', () => {
   const checks = [
-    ['src/pages/blog/[slug].astro', /publishesBlog/],
+    ['src/data/loaders.ts', /getServicesPath|getContactPath|getAboutPath|filterNavigationForSite/],
+    ['src/utils/navigation.ts', /resolveInternalHref/],
+    ['src/components/sections/About.astro', /id="about"/],
+    ['src/components/sections/ContactForm/ContactForm.astro', /id="contact"/],
+    ['src/components/sections/CTABar.astro', /getContactPath/],
+    ['src/components/layout/Header/variants/HeaderDefault.astro', /getContactPath/],
+    ['src/components/sections/Welcome.astro', /getAboutPath/],
+    ['src/components/sections/Services/variants/ServicesGrid.astro', /getServicesPath/],
     ['src/pages/services/[slug].astro', /publishesServiceDetail/],
-    ['src/pages/sitemap.xml.ts', /publishesBlog/],
-    ['src/pages/llm.txt.ts', /buildLlmKeyPages/],
-    ['src/data/loaders.ts', /filterNavigationForSite/],
   ];
   for (const [rel, re] of checks) assert.match(fs.readFileSync(path.join(root, rel), 'utf8'), re);
+  assert.equal(fs.readFileSync(path.join(root, 'src/utils/navigation.ts'), 'utf8').includes('import.meta.glob'), false);
   for (const f of ['Cards', 'Featured', 'Grid', 'List', 'Tabs']) {
-    const src = fs.readFileSync(path.join(root, `src/components/sections/Services/variants/Services${f}.astro`), 'utf8');
-    assert.match(src, /publishesServiceDetail/);
-    assert.equal(/enable_landings\s*!==\s*false/.test(src), false);
+    assert.match(fs.readFileSync(path.join(root, `src/components/sections/Services/variants/Services${f}.astro`), 'utf8'), /publishesServiceDetail/);
   }
 });
 

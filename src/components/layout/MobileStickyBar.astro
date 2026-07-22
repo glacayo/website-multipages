@@ -3,7 +3,7 @@
  * Fixed mobile CTA bar (call / contact).
  * Reads navigation.mobile + business.phones.
  */
-import { getBusiness, getNavigation } from '../../data/loaders';
+import { getBusiness, getContactPath, getNavigation } from '../../data/loaders';
 import Phone from '@lucide/astro/icons/phone';
 
 const business = getBusiness();
@@ -12,7 +12,7 @@ const primaryPhone = business.phones[0];
 const ctaLabel = navigation.mobile.cta_label || 'Call Now';
 const ctaHref =
   navigation.mobile.cta_href ||
-  (primaryPhone ? `tel:${primaryPhone.replace(/\D/g, '')}` : '/contact-us');
+  (primaryPhone ? `tel:${primaryPhone.replace(/\D/g, '')}` : getContactPath());
 ---
 
 <div

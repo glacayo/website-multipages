@@ -30,7 +30,7 @@ const services = getServices().services;
 const primaryPhone = business.phones[0] ?? '';
 ---
 
-<section class:list={[!compact && 'bg-surface py-16 md:py-24', className]}>
+<section id="contact" class:list={[!compact && 'bg-surface py-16 md:py-24', className]}>
   <div class:list={[!compact && 'container-site']}>
     {
       !compact && (

@@ -2,7 +2,7 @@
 /**
  * Minimal header: slim bar with logo + compact nav + phone CTA.
  */
-import { getBusiness, getSite } from '../../../../data/loaders';
+import { getBusiness, getContactPath, getSite } from '../../../../data/loaders';
 import NavMenu from '../../NavMenu.astro';
 import Menu from '@lucide/astro/icons/menu';
 import X from '@lucide/astro/icons/x';
@@ -11,7 +11,7 @@ import Phone from '@lucide/astro/icons/phone';
 const site = getSite();
 const business = getBusiness();
 const primaryPhone = business.phones[0];
-const telHref = primaryPhone ? `tel:${primaryPhone.replace(/\D/g, '')}` : '/contact-us';
+const telHref = primaryPhone ? `tel:${primaryPhone.replace(/\D/g, '')}` : getContactPath();
 ---
 
 <header

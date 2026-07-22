@@ -2,7 +2,7 @@
 /**
  * Centered header: logo centered on top row, nav + CTA below.
  */
-import { getBusiness, getSite } from '../../../../data/loaders';
+import { getBusiness, getContactPath, getSite } from '../../../../data/loaders';
 import NavMenu from '../../NavMenu.astro';
 import Button from '../../../ui/Button.astro';
 import Menu from '@lucide/astro/icons/menu';
@@ -10,6 +10,7 @@ import X from '@lucide/astro/icons/x';
 
 const site = getSite();
 const business = getBusiness();
+const contactHref = getContactPath();
 ---
 
 <header
@@ -47,7 +48,7 @@ const business = getBusiness();
 
     <div class="hidden items-center justify-center gap-6 border-t border-border/50 py-3 lg:flex">
       <NavMenu />
-      <Button href="/contact-us" size="sm">
+      <Button href={contactHref} size="sm">
         {business.free_estimate}
       </Button>
     </div>
@@ -64,7 +65,7 @@ const business = getBusiness();
     <div class="container-site py-4" x-on:click="if ($event.target.closest('a')) menuOpen = false">
       <NavMenu mobile />
       <div class="mt-4 border-t border-border pt-4">
-        <Button href="/contact-us" class="w-full">
+        <Button href={contactHref} class="w-full">
           {business.free_estimate}
         </Button>
       </div>

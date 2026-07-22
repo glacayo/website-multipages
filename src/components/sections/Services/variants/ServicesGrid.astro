@@ -3,7 +3,7 @@
  * Variant `grid` — responsive card grid with images.
  */
 import type { ServicesData } from '../../../../data/types';
-import { getSite } from '../../../../data/loaders';
+import { getServicesPath, getSite } from '../../../../data/loaders';
 import { publishesServiceDetail } from '../../../../utils/routes';
 import SectionWrapper from '../../../ui/SectionWrapper.astro';
 import SectionHeader from '../../../ui/SectionHeader.astro';
@@ -18,6 +18,7 @@ interface Props {
 const { data } = Astro.props;
 const site = getSite();
 const showServiceDetail = publishesServiceDetail(site);
+const servicesPath = getServicesPath();
 ---
 
 <SectionWrapper background="dark" id="services">
@@ -69,7 +70,7 @@ const showServiceDetail = publishesServiceDetail(site);
   </div>
 
   <div class="text-center mt-10 md:mt-14" data-reveal>
-    <Button href="/services" variant="primary" size="lg">
+    <Button href={servicesPath} variant="primary" size="lg">
       View All Services
       <ArrowRight class="w-4 h-4" />
     </Button>
