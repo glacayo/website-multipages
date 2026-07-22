@@ -6,10 +6,11 @@ import ResponsiveImage from '../components/ui/ResponsiveImage.astro';
 import MissionVision from '../components/sections/MissionVision.astro';
 import About from '../components/sections/About.astro';
 import CTABar from '../components/sections/CTABar.astro';
-import { getBusiness, getSite } from '../data/loaders';
+import { getBusiness, getContactPath, getSite } from '../data/loaders';
 
 const business = getBusiness();
 const site = getSite();
+const contactHref = getContactPath();
 
 const stats = [
   {
@@ -100,7 +101,7 @@ const stats = [
           </div>
 
           <div class="mt-8" data-reveal data-reveal-delay="0.3">
-            <Button href="/contact-us" variant="primary" size="md">
+            <Button href={contactHref} variant="primary" size="md">
               Request an estimate
             </Button>
           </div>

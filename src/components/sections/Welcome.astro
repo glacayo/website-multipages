@@ -4,9 +4,10 @@
  */
 import Button from '../ui/Button.astro';
 import ResponsiveImage from '../ui/ResponsiveImage.astro';
-import { getBusiness } from '../../data/loaders';
+import { getAboutPath, getBusiness } from '../../data/loaders';
 
 const business = getBusiness();
+const aboutHref = getAboutPath();
 const yearsDigits = business.years_experience.replace(/[^\d]/g, '') || '10';
 
 const stats = [
@@ -97,9 +98,11 @@ const stats = [
         </div>
 
         <div class="mt-8" data-reveal data-reveal-delay="0.7">
-          <Button href="/about-us" variant="secondary" size="md">
-            Learn more about us
-          </Button>
+          {aboutHref !== '/#about' && (
+            <Button href={aboutHref} variant="secondary" size="md">
+              Learn more about us
+            </Button>
+          )}
         </div>
       </div>
     </div>

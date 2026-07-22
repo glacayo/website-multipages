@@ -2,7 +2,7 @@
 /**
  * Default header: sticky solid bar, logo left, nav center, CTA right.
  */
-import { getBusiness, getSite } from '../../../../data/loaders';
+import { getBusiness, getContactPath, getSite } from '../../../../data/loaders';
 import NavMenu from '../../NavMenu.astro';
 import Button from '../../../ui/Button.astro';
 import Menu from '@lucide/astro/icons/menu';
@@ -10,6 +10,7 @@ import X from '@lucide/astro/icons/x';
 
 const site = getSite();
 const business = getBusiness();
+const contactHref = getContactPath();
 ---
 
 <header
@@ -35,7 +36,7 @@ const business = getBusiness();
       </div>
 
       <div class="flex items-center gap-3">
-        <Button href="/contact-us" size="sm" class="hidden lg:inline-flex">
+        <Button href={contactHref} size="sm" class="hidden lg:inline-flex">
           {business.free_estimate}
         </Button>
 
@@ -70,7 +71,7 @@ const business = getBusiness();
     <div class="container-site py-4" x-on:click="if ($event.target.closest('a')) menuOpen = false">
       <NavMenu mobile />
       <div class="mt-4 border-t border-border pt-4">
-        <Button href="/contact-us" class="w-full">
+        <Button href={contactHref} class="w-full">
           {business.free_estimate}
         </Button>
       </div>

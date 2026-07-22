@@ -2,11 +2,12 @@
 /**
  * Compact footer: single-row brand, legal links, copyright.
  */
-import { getBusiness, getNavigation, getSite } from '../../../../data/loaders';
+import { getBusiness, getContactPath, getNavigation, getSite } from '../../../../data/loaders';
 
 const site = getSite();
 const business = getBusiness();
 const navigation = getNavigation();
+const contactHref = getContactPath();
 const year = new Date().getFullYear();
 ---
 
@@ -31,7 +32,7 @@ const year = new Date().getFullYear();
           </a>
         ))
       }
-      <a href="/contact-us" class="transition-colors hover:text-accent">Contact</a>
+      <a href={contactHref} class="transition-colors hover:text-accent">Contact</a>
     </div>
 
     <p class="text-sm text-muted">

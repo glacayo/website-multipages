@@ -21,7 +21,11 @@ import type {
   TestimonialsData,
 } from './types';
 
-import { filterNavigationForSite } from '../utils/routes';
+import {
+  filterNavigationForSite,
+  resolveInternalHref,
+  resolveInternalHrefOr,
+} from '../utils/navigation';
 
 import business from './business.json';
 import site from './site.json';
@@ -44,14 +48,29 @@ export function getSite(): Site {
   return site as Site;
 }
 
-/** Filtered clone: drop unpublished blog/service-detail links; never mutate JSON. */
+/** Filtered/rewritten clone for active site_type + features; never mutates JSON. */
 export function getNavigation(): Navigation {
   return filterNavigationForSite(navigation as Navigation, getSite());
 }
 
+/** Hero CTAs → published routes or feature-aware anchors. */
 export function getHero(): HeroData {
-  return hero as HeroData;
+  const s = getSite();
+  const data = hero as HeroData;
+  const fix = (cta?: { label: string; href: string }) =>
+    cta ? { ...cta, href: resolveInternalHref(cta.href, s) ?? resolveInternalHrefOr('/contact-us', s, '/') } : cta;
+  return {
+    ...data,
+    slides: data.slides.map((sl) => ({
+      ...sl, cta_primary: fix(sl.cta_primary)!,
+      cta_secondary: sl.cta_secondary ? fix(sl.cta_secondary) : sl.cta_secondary,
+    })),
+  };
 }
+
+export const getAboutPath = () => resolveInternalHrefOr('/about-us', getSite(), '/#about');
+export const getContactPath = () => resolveInternalHrefOr('/contact-us', getSite(), '/#contact');
+export const getServicesPath = () => resolveInternalHrefOr('/services', getSite(), '/#services');
 
 export function getServices(): ServicesData {
   return services as ServicesData;

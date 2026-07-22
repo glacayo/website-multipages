@@ -3,9 +3,10 @@
  * Site-wide call-to-action bar. Data from business.json only.
  */
 import Button from '../ui/Button.astro';
-import { getBusiness } from '../../data/loaders';
+import { getBusiness, getContactPath } from '../../data/loaders';
 
 const business = getBusiness();
+const contactHref = getContactPath();
 ---
 
 <section class="relative overflow-hidden bg-accent">
@@ -28,7 +29,7 @@ const business = getBusiness();
       </div>
 
       <Button
-        href="/contact-us"
+        href={contactHref}
         variant="primary"
         size="lg"
         class="bg-white text-accent hover:bg-light hover:text-accent whitespace-nowrap"

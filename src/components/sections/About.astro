@@ -4,12 +4,13 @@
  */
 import Button from '../ui/Button.astro';
 import ResponsiveImage from '../ui/ResponsiveImage.astro';
-import { getBusiness } from '../../data/loaders';
+import { getAboutPath, getBusiness } from '../../data/loaders';
 
 const business = getBusiness();
+const aboutHref = getAboutPath();
 ---
 
-<section class="relative overflow-hidden py-20 md:py-28">
+<section id="about" class="relative overflow-hidden py-20 md:py-28">
   <div class="absolute inset-0">
     <ResponsiveImage
       src="./images/about/workshop.jpg"
@@ -55,9 +56,11 @@ const business = getBusiness();
       </div>
 
       <div data-reveal data-reveal-delay="0.35">
-        <Button href="/about-us" variant="primary" size="md">
-          Learn more about us
-        </Button>
+        {aboutHref !== '/#about' && (
+          <Button href={aboutHref} variant="primary" size="md">
+            Learn more about us
+          </Button>
+        )}
       </div>
     </div>
   </div>
