@@ -76,11 +76,11 @@ Chain strategy: feature-branch-chain
 
 ## Phase 4a: Route Policy + Dynamic Gates (PR 4a)
 
-- [ ] 4a.1 Add additive `site.json.site_type` (`one-page | multipage | seo`) to `site.json` `_instructions`, `types.ts`, `validation.ts`, and `validate-data.cjs` mirror. **Invalid values FAIL validation.** Document read semantics: **missing key → effective `seo`** (backward compat).
-- [ ] 4a.2 Create `src/utils/routes.ts` with shared policy helpers and the precedence matrix: `site_type` is publication authority; `enable_blog` / `enable_landings` only narrow within SEO. Export helpers used by pages, sitemap, llm, and (later) nav/CTAs.
-- [ ] 4a.3 Gate dynamic routes via `getStaticPaths` returning `[]`: existing blog guards must compose with `site_type`; **add a new gate to `src/pages/services/[slug].astro`** (currently ungated).
-- [ ] 4a.4 Rewrite `sitemap.xml.ts` and `llm.txt.ts` to use the same helpers so unpublished routes never appear, and always-published **non-indexable/technical** routes (`/404`, `/thank-you`) are classified and **omitted** from sitemap/llm while remaining in `dist/`.
-- [ ] 4a.5 Verify multipage/one-page builds emit no blog or service-detail routes from dynamic generation; missing-`site_type` fixture behaves as seo. Keep under 400 lines.
+- [x] 4a.1 Add additive `site.json.site_type` (`one-page | multipage | seo`) to `site.json` `_instructions`, `types.ts`, `validation.ts`, and `validate-data.cjs` mirror. **Invalid values FAIL validation.** Document read semantics: **missing key → effective `seo`** (backward compat). *(PR 4a / #38)*
+- [x] 4a.2 Create `src/utils/routes.ts` with shared policy helpers and the precedence matrix: `site_type` is publication authority; `enable_blog` / `enable_landings` only narrow within SEO. Export helpers used by pages, sitemap, llm, and (later) nav/CTAs. *(PR 4a / #38)*
+- [x] 4a.3 Gate dynamic routes via `getStaticPaths` returning `[]`: existing blog guards must compose with `site_type`; **add a new gate to `src/pages/services/[slug].astro`** (currently ungated). *(PR 4a / #38)*
+- [x] 4a.4 Rewrite `sitemap.xml.ts` and `llm.txt.ts` to use the same helpers so unpublished routes never appear, and always-published **non-indexable/technical** routes (`/404`, `/thank-you`) are classified and **omitted** from sitemap/llm while remaining in `dist/`. *(PR 4a / #38)*
+- [x] 4a.5 Verify multipage/one-page builds emit no blog or service-detail routes from dynamic generation; missing-`site_type` fixture behaves as seo. Keep under 400 lines. *(PR 4a / #38; `test:routes`)*
 
 ## Phase 4b: Prune, Link Safety, Nav, CLI Type (PR 4b)
 
@@ -93,10 +93,10 @@ Chain strategy: feature-branch-chain
 
 ## Final Verification (per slice and at chain tip)
 
-- [ ] V.1 `pnpm run validate:data` exits `0`.
-- [ ] V.2 `pnpm run build` exits `0` (fails on out-of-palette colors; fails on **indexable** route parity or bad link/anchor violations).
-- [ ] V.3 `pnpm run test:cli` exits `0` (includes founded_year `""`, directories min(1), scaffold `multipage`).
-- [ ] V.4 Each chained PR (1, 2a, 2b, 2c, 3a, 3b, 4a, 4b) is under 400 changed lines or records an accepted `size:exception`.
-- [ ] V.5 Confirm `site_type` vs `enable_*` precedence with at least one multipage + flags-true fixture (blog/landings still unpublished; no dead links).
-- [ ] V.6 Confirm parity: `/404` and `/thank-you` remain in `dist/` but are absent from sitemap/llm without failing the audit; sitemap matches the indexable set only.
-- [ ] V.7 Confirm one-page + `enable_gallery: false` (or equivalent) emits no `/#gallery` (or other missing-section) hrefs and the link/anchor audit passes.
+- [x] V.1 `pnpm run validate:data` exits `0`. *(final verify on main 2026-07-22)*
+- [x] V.2 `pnpm run build` exits `0` (fails on out-of-palette colors; fails on **indexable** route parity or bad link/anchor violations). *(final verify on main; includes `lint:theme`, `test:routes`, `gate-routes`)*
+- [x] V.3 `pnpm run test:cli` exits `0` (includes founded_year `""`, directories min(1), scaffold `multipage`). *(final verify on main)*
+- [x] V.4 Each chained PR (1, 2a, 2b, 2c, 3a, 3b, 4a, 4b) is under 400 changed lines or records an accepted `size:exception`. *(merged #26/#28/#30/#32/#34/#36/#38/#40/#42/#44; all ≤399)*
+- [x] V.5 Confirm `site_type` vs `enable_*` precedence with at least one multipage + flags-true fixture (blog/landings still unpublished; no dead links). *(`test:routes` multipage+flags-true; build `gate-routes`)*
+- [x] V.6 Confirm parity: `/404` and `/thank-you` remain in `dist/` but are absent from sitemap/llm without failing the audit; sitemap matches the indexable set only. *(`test:routes` + `gate-routes` self-test + final build)*
+- [x] V.7 Confirm one-page + `enable_gallery: false` (or equivalent) emits no `/#gallery` (or other missing-section) hrefs and the link/anchor audit passes. *(`test:routes` null gallery href; build link/anchor audit)*
