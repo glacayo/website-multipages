@@ -35,10 +35,10 @@ No threat-matrix RED tasks: design marks the matrix N/A.
 
 ## Phase 2: PR2 Remaining Page Headers
 
-- [ ] 2.1 Migrate `src/pages/about-us.astro`, `src/pages/contact-us.astro`, and `src/pages/blog/index.astro` to `PageHeader size="standard"`.
-- [ ] 2.2 Migrate `src/pages/blog/[page].astro`; accept only the design-listed min-height/reveal drift.
-- [ ] 2.3 Migrate `src/pages/blog/[slug].astro` to `PageHeader size="post" reveal={false}` with `Home / Blog / {post headline}`.
-- [ ] 2.4 Verify PR2 with `pnpm run validate:data`, `pnpm run test:routes`, `pnpm run build`, and dist HTML header diffs.
+- [x] 2.1 Migrate `src/pages/about-us.astro`, `src/pages/contact-us.astro`, and `src/pages/blog/index.astro` to `PageHeader size="standard"`.
+- [x] 2.2 Migrate `src/pages/blog/[page].astro`; accept only the design-listed min-height/reveal drift.
+- [x] 2.3 Migrate `src/pages/blog/[slug].astro` to `PageHeader size="post" reveal={false}` with `Home / Blog / {post headline}`.
+- [x] 2.4 Verify PR2 with `pnpm run validate:data`, `pnpm run test:routes`, `pnpm run build`, and dist HTML header diffs.
 
 ## Phase 3: PR3 Section Absorption
 
