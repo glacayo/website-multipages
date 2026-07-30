@@ -1,0 +1,86 @@
+---
+/**
+ * Interior page hero: dark gradient + title + breadcrumb.
+ * Size values codify existing page treatments only — not new visual variants.
+ */
+import Breadcrumb from '../ui/Breadcrumb.astro';
+import type { Crumb } from '../ui/Breadcrumb.astro';
+
+export type PageHeaderSize = 'standard' | 'tall' | 'post';
+
+interface Props {
+  title: string;
+  crumbs: Crumb[];
+  /** Existing treatments only. Default matches about/contact/blog index. */
+  size?: PageHeaderSize;
+  /** When false, omit data-reveal (e.g. blog post LCP). Default true. */
+  reveal?: boolean;
+  class?: string;
+}
+
+const {
+  title,
+  crumbs,
+  size = 'standard',
+  reveal = true,
+  class: className = '',
+} = Astro.props;
+
+const gradientBySize: Record<PageHeaderSize, string> = {
+  standard: 'absolute inset-0 bg-gradient-to-br from-dark via-primary to-accent/70',
+  tall: 'absolute inset-0 bg-gradient-to-br from-dark via-primary to-accent/70',
+  post: 'absolute inset-0 bg-gradient-to-br from-dark via-primary to-accent/60',
+};
+
+const titleBySize: Record<PageHeaderSize, string> = {
+  standard: 'font-heading mb-4 text-3xl font-bold md:text-5xl',
+  tall: 'font-heading mb-4 text-3xl font-bold md:text-5xl lg:text-6xl',
+  post: 'font-heading mb-4 max-w-3xl text-2xl font-bold md:text-4xl lg:text-5xl',
+};
+
+const contentBySize: Record<PageHeaderSize, string> = {
+  standard:
+    'container-site relative z-10 flex min-h-[280px] flex-col items-center justify-center py-16 text-center text-white md:min-h-[340px]',
+  tall: 'relative z-10 container-site flex h-full flex-col items-center justify-center text-center text-white',
+  post: 'container-site relative z-10 flex min-h-[320px] flex-col items-center justify-center py-16 text-center text-white md:min-h-[400px]',
+};
+
+const gradientClass = gradientBySize[size];
+const titleClass = titleBySize[size];
+const contentClass = contentBySize[size];
+
+// tall pages historically reveal both h1 and crumb; standard/post only the h1 when enabled
+const showTitleReveal = reveal;
+const showCrumbReveal = reveal && size === 'tall';
+---
+
+{
+  size === 'tall' ? (
+    <section class:list={['relative', className]}>
+      <div class="relative h-[40vh] min-h-[300px] overflow-hidden bg-dark md:min-h-[380px]">
+        <div class={gradientClass} />
+        <div class={contentClass}>
+          <h1 class={titleClass} data-reveal={showTitleReveal ? '' : undefined}>
+            {title}
+          </h1>
+          <Breadcrumb
+            items={crumbs}
+            tone="dark"
+            data-reveal={showCrumbReveal ? '' : undefined}
+            data-reveal-delay={showCrumbReveal ? '0.1' : undefined}
+          />
+        </div>
+      </div>
+    </section>
+  ) : (
+    <section class:list={['relative overflow-hidden bg-dark', className]}>
+      <div class={gradientClass} />
+      <div class={contentClass}>
+        <h1 class={titleClass} data-reveal={showTitleReveal ? '' : undefined}>
+          {title}
+        </h1>
+        <Breadcrumb items={crumbs} tone="dark" />
+      </div>
+    </section>
+  )
+}

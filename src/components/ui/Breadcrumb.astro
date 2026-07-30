@@ -1,5 +1,8 @@
 ---
-interface Crumb {
+/**
+ * Breadcrumb trail. Default tone matches light surfaces; dark tone is for page heroes.
+ */
+export interface Crumb {
   label: string;
   href?: string;
 }
@@ -8,17 +11,28 @@ interface Props {
   items: Crumb[];
   class?: string;
   ariaLabel?: string;
+  /** Visual tone. Default `light` preserves existing light-surface output. */
+  tone?: 'light' | 'dark';
 }
 
 const {
   items,
   class: className = '',
   ariaLabel = 'Breadcrumb',
+  tone = 'light',
+  ...rest
 } = Astro.props;
+
+const isDark = tone === 'dark';
 ---
 
-<nav aria-label={ariaLabel} class:list={['text-sm', className]}>
-  <ol class="flex flex-wrap items-center gap-1.5 text-muted">
+<nav aria-label={ariaLabel} class:list={['text-sm', className]} {...rest}>
+  <ol
+    class:list={[
+      'flex flex-wrap items-center gap-1.5',
+      isDark ? 'text-white/70' : 'text-muted',
+    ]}
+  >
     {
       items.map((item, index) => {
         const isLast = index === items.length - 1;
@@ -32,13 +46,16 @@ const {
             {item.href && !isLast ? (
               <a
                 href={item.href}
-                class="hover:text-primary transition-colors duration-200"
+                class:list={[
+                  'transition-colors duration-200',
+                  isDark ? 'hover:text-accent' : 'hover:text-primary',
+                ]}
               >
                 {item.label}
               </a>
             ) : (
               <span
-                class:list={[isLast && 'text-dark font-medium']}
+                class:list={[isLast && (isDark ? 'text-accent' : 'text-dark font-medium')]}
                 aria-current={isLast ? 'page' : undefined}
               >
                 {item.label}
