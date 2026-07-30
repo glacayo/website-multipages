@@ -42,10 +42,10 @@ No threat-matrix RED tasks: design marks the matrix N/A.
 
 ## Phase 3: PR3 Section Absorption
 
-- [ ] 3.1 Create `src/components/sections/AboutStory.astro` for loader-driven story, stats, image, and CTA; no JSON shape changes.
-- [ ] 3.2 Create `src/components/sections/ContactDetails.astro` for loader-driven contact grid plus compact `ContactForm` usage.
-- [ ] 3.3 Thin `src/pages/about-us.astro` and `src/pages/contact-us.astro` to `BaseLayout` + `PageHeader` + sections; do not touch CLI/routes/data.
-- [ ] 3.4 Verify PR3 with `pnpm run validate:data`, `pnpm run test:routes`, `pnpm run build`, and about/contact dist HTML diffs; split if >400.
+- [x] 3.1 Create `src/components/sections/AboutStory.astro` for loader-driven story, stats, image, and CTA; no JSON shape changes.
+- [x] 3.2 Create `src/components/sections/ContactDetails.astro` for loader-driven contact grid plus compact `ContactForm` usage.
+- [x] 3.3 Thin `src/pages/about-us.astro` and `src/pages/contact-us.astro` to `BaseLayout` + `PageHeader` + sections; do not touch CLI/routes/data.
+- [x] 3.4 Verify PR3 with `pnpm run validate:data`, `pnpm run test:routes`, `pnpm run build`, and about/contact dist HTML diffs; split if >400.
 
 ## Phase 4: Final Verification
 

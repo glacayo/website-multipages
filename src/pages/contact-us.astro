@@ -1,15 +1,12 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import PageHeader from '../components/layout/PageHeader.astro';
-import ContactForm from '../components/sections/ContactForm/ContactForm.astro';
+import ContactDetails from '../components/sections/ContactDetails.astro';
 import CoveredAreas from '../components/sections/CoveredAreas/CoveredAreas.astro';
 import { getBusiness, getSite } from '../data/loaders';
 
 const business = getBusiness();
 const site = getSite();
-const primaryPhone = business.phones[0] ?? '';
-const primaryEmail = business.emails[0] ?? '';
-const hoursSummary = business.hours.map((h) => `${h.days}: ${h.time}`).join(' · ');
 ---
 
 <BaseLayout
@@ -24,77 +21,7 @@ const hoursSummary = business.hours.map((h) => `${h.days}: ${h.time}`).join(' ·
     size="standard"
   />
 
-  <section class="bg-white py-16 md:py-24">
-    <div class="container-site">
-      <div class="grid grid-cols-1 gap-12 lg:grid-cols-2 lg:gap-16">
-        <div>
-          <span
-            class="mb-3 inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.2em] text-accent"
-            data-reveal
-          >
-            <span class="h-[2px] w-8 bg-accent"></span>
-            Get in touch
-          </span>
-          <h2
-            class="font-heading mb-6 text-3xl font-bold text-dark md:text-4xl"
-            data-reveal
-            data-reveal-delay="0.1"
-          >
-            Let&rsquo;s talk about
-            <span class="text-primary"> your project</span>
-          </h2>
-          <p class="mb-8 leading-relaxed text-muted" data-reveal data-reveal-delay="0.15">
-            Reach out for a free, no-obligation estimate. Our team responds promptly and
-            serves {business.service_area}.
-          </p>
-
-          <div class="space-y-6" data-reveal data-reveal-delay="0.2">
-            <div>
-              <p class="mb-1 text-sm font-semibold text-dark">Address</p>
-              <p class="text-sm text-muted">{business.address.full}</p>
-            </div>
-            <div>
-              <p class="mb-1 text-sm font-semibold text-dark">Phone</p>
-              <a
-                href={`tel:${primaryPhone.replace(/\D/g, '')}`}
-                class="text-sm text-muted transition-colors hover:text-accent"
-              >
-                {primaryPhone}
-              </a>
-            </div>
-            <div>
-              <p class="mb-1 text-sm font-semibold text-dark">Email</p>
-              <a
-                href={`mailto:${primaryEmail}`}
-                class="text-sm text-muted transition-colors hover:text-accent"
-              >
-                {primaryEmail}
-              </a>
-            </div>
-            <div>
-              <p class="mb-1 text-sm font-semibold text-dark">Hours</p>
-              <p class="text-sm text-muted">{hoursSummary}</p>
-            </div>
-          </div>
-
-          <div
-            class="mt-8 grid grid-cols-1 gap-3 border-t border-border pt-8 sm:grid-cols-2"
-            data-reveal
-            data-reveal-delay="0.25"
-          >
-            <p class="text-sm text-muted">{business.free_estimate}</p>
-            <p class="text-sm text-muted">
-              Payments: {business.payment_methods.join(', ')}
-            </p>
-          </div>
-        </div>
-
-        <div data-reveal data-reveal-delay="0.15">
-          <ContactForm compact title="Send us a message" />
-        </div>
-      </div>
-    </div>
-  </section>
+  <ContactDetails />
 
   {site.features.enable_areas && <CoveredAreas />}
 </BaseLayout>
