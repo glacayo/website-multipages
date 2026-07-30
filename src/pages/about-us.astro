@@ -1,31 +1,14 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import PageHeader from '../components/layout/PageHeader.astro';
-import Button from '../components/ui/Button.astro';
-import ResponsiveImage from '../components/ui/ResponsiveImage.astro';
+import AboutStory from '../components/sections/AboutStory.astro';
 import MissionVision from '../components/sections/MissionVision.astro';
 import About from '../components/sections/About.astro';
 import CTABar from '../components/sections/CTABar.astro';
-import { getBusiness, getContactPath, getSite } from '../data/loaders';
+import { getBusiness, getSite } from '../data/loaders';
 
 const business = getBusiness();
 const site = getSite();
-const contactHref = getContactPath();
-
-const stats = [
-  {
-    value: business.years_experience,
-    label: 'Years experience',
-  },
-  {
-    value: String(business.services_offered.length),
-    label: 'Core services',
-  },
-  {
-    value: business.founded_year || '—',
-    label: 'Founded',
-  },
-];
 ---
 
 <BaseLayout
@@ -40,81 +23,7 @@ const stats = [
     size="standard"
   />
 
-  <section class="overflow-hidden bg-white py-16 md:py-24">
-    <div class="container-site">
-      <div class="grid grid-cols-1 items-center gap-12 lg:grid-cols-2 lg:gap-16">
-        <div>
-          <span
-            class="mb-3 inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.2em] text-accent"
-            data-reveal
-          >
-            <span class="h-[2px] w-8 bg-accent"></span>
-            Our story
-          </span>
-          <h2
-            class="font-heading mb-6 text-3xl font-bold text-dark md:text-4xl"
-            data-reveal
-            data-reveal-delay="0.1"
-          >
-            {business.years_experience} of
-            <span class="text-primary"> building excellence</span>
-          </h2>
-          <div
-            class="space-y-4 text-base leading-relaxed text-muted"
-            data-reveal
-            data-reveal-delay="0.15"
-          >
-            <p>
-              {business.name}
-              {business.legal_name ? ` (${business.legal_name})` : ''} is a local contractor
-              specializing in {business.type_of_services.toLowerCase()}.
-            </p>
-            <p>{business.tagline}</p>
-            <p>
-              {business.license}. {business.insurance} We proudly serve
-              {` ${business.service_area}`}.
-            </p>
-          </div>
-
-          <div
-            class="mt-8 grid grid-cols-3 gap-3 border-t border-border pt-8"
-            data-reveal
-            data-reveal-delay="0.25"
-          >
-            {
-              stats.map((stat) => (
-                <div class="rounded-xl border border-border px-2 py-4 text-center">
-                  <span class="font-heading block text-2xl font-bold text-primary md:text-3xl">
-                    {stat.value}
-                  </span>
-                  <span class="mt-1 block text-xs text-muted">{stat.label}</span>
-                </div>
-              ))
-            }
-          </div>
-
-          <div class="mt-8" data-reveal data-reveal-delay="0.3">
-            <Button href={contactHref} variant="primary" size="md">
-              Request an estimate
-            </Button>
-          </div>
-        </div>
-
-        <div class="relative mx-auto max-w-md lg:mx-0 lg:max-w-none" data-reveal data-reveal-delay="0.15">
-          <div class="overflow-hidden rounded-2xl shadow-xl">
-            <ResponsiveImage
-              src="./images/about/workshop.jpg"
-              alt={`${business.name} craftsmanship`}
-              width={900}
-              height={700}
-              class="h-[350px] w-full object-cover md:h-[450px] lg:h-[520px]"
-            />
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
+  <AboutStory />
   <MissionVision />
   <About />
   <CTABar />
