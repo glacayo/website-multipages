@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHeader from '../components/layout/PageHeader.astro';
 import CTABar from '../components/sections/CTABar.astro';
 import Gallery from '../components/sections/Gallery/Gallery.astro';
 import { getBusiness, getSite, getGallery } from '../data/loaders';
@@ -15,26 +16,11 @@ const galleryData = getGallery();
   path="/gallery"
   pageType="gallery"
 >
-  <section class="relative">
-    <div class="relative h-[40vh] min-h-[300px] md:min-h-[380px] overflow-hidden bg-dark">
-      <div class="absolute inset-0 bg-gradient-to-br from-dark via-primary to-accent/70"></div>
-      <div class="relative z-10 container-site h-full flex flex-col items-center justify-center text-center text-white">
-        <h1 class="font-heading text-3xl md:text-5xl lg:text-6xl font-bold mb-4" data-reveal>
-          {galleryData.section_title}
-        </h1>
-        <nav
-          class="flex items-center justify-center gap-2 text-sm text-white/70"
-          aria-label="Breadcrumb"
-          data-reveal
-          data-reveal-delay="0.1"
-        >
-          <a href="/" class="hover:text-accent transition-colors">Home</a>
-          <span aria-hidden="true">/</span>
-          <span class="text-accent">Gallery</span>
-        </nav>
-      </div>
-    </div>
-  </section>
+  <PageHeader
+    title={galleryData.section_title}
+    crumbs={[{ label: 'Home', href: '/' }, { label: 'Gallery' }]}
+    size="tall"
+  />
 
   <Gallery />
 
