@@ -49,5 +49,5 @@ No threat-matrix RED tasks: design marks the matrix N/A.
 
 ## Phase 4: Final Verification
 
-- [ ] 4.1 Audit no new visual variants, no CLI/package-manager edits, no `src/data/*`, loader, Zod, or route-policy changes.
-- [ ] 4.2 Run final SDD verify for `page-shell-refactor` and create `openspec/changes/page-shell-refactor/verify-report.md`.
+- [x] 4.1 Audit no new visual variants, no CLI/package-manager edits, no `src/data/*`, loader, Zod, or route-policy changes.
+- [x] 4.2 Run final SDD verify for `page-shell-refactor` and create `openspec/changes/page-shell-refactor/verify-report.md`.
