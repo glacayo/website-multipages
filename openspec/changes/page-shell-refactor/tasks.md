@@ -28,10 +28,10 @@ No threat-matrix RED tasks: design marks the matrix N/A.
 
 ## Phase 1: PR1 Shared Shell and First Pages
 
-- [x] 1.1 Create `src/components/layout/PageHeader.astro` with `title`, `crumbs`, `size`, `reveal`, and `class`; codify existing sizes only.
-- [x] 1.2 Modify `src/components/ui/Breadcrumb.astro` to export `Crumb` and add default `tone="light"` plus dark tone classes.
-- [x] 1.3 Replace inline hero/breadcrumb in `src/pages/services.astro` and `src/pages/gallery.astro` with `PageHeader size="tall"`.
-- [x] 1.4 Verify PR1 with `pnpm run validate:data`, `pnpm run test:routes`, `pnpm run build`, and pre/post dist HTML spot diffs.
+- [ ] 1.1 Create `src/components/layout/PageHeader.astro` with `title`, `crumbs`, `size`, `reveal`, and `class`; codify existing sizes only.
+- [ ] 1.2 Modify `src/components/ui/Breadcrumb.astro` to export `Crumb` and add default `tone="light"` plus dark tone classes.
+- [ ] 1.3 Replace inline hero/breadcrumb in `src/pages/services.astro` and `src/pages/gallery.astro` with `PageHeader size="tall"`.
+- [ ] 1.4 Verify PR1 with `pnpm run validate:data`, `pnpm run test:routes`, `pnpm run build`, and pre/post dist HTML spot diffs.
 
 ## Phase 2: PR2 Remaining Page Headers
 
