@@ -13,7 +13,8 @@
  * 7. CREATE_CONTRACTOR_SITE_ANSWERS_JSON real CLI spawn (copy+replace, skip setup)
  * 8. Root workspace isolation vs tools/smart-image capsule (scope, sharp/zod, dist/)
  * 9. Smart-image wrapper/lifecycle (argv safety, Windows bin, setup/check, no hooks)
- * 10. Temp-target --yes scaffold (install/validate/build) unless SKIP_CLI_E2E=1
+ * 10. Scaffold deny/gitignore/required retention (isDeniedName, check-ignore, copyTemplate)
+ * 11. Temp-target --yes scaffold (install/validate/build) unless SKIP_CLI_E2E=1
  */
 
 import { spawnSync } from 'node:child_process';
@@ -52,7 +53,11 @@ import {
 import { isSameOrInside, validateTarget, TargetValidationError } from '../src/validate-target.mjs';
 import {
   DEFAULT_TEMPLATE_REF,
+  REQUIRED_AFTER_COPY,
+  assertRequiredCopied,
+  copyTemplate,
   findLocalTemplateRoot,
+  isDeniedName,
 } from '../src/copy-template.mjs';
 import {
   isVersionAtLeast,
@@ -1413,10 +1418,219 @@ async function main() {
     }
   });
 
+  // --- image-tooling scaffold / git isolation (Unit 3) ---
+  await test('isDeniedName covers every deny entry, rules, and near-miss negatives', () => {
+    const denyDirs = [
+      'node_modules',
+      'dist',
+      '.astro',
+      '.git',
+      '.codegraph',
+      'docs_trash',
+      'openspec',
+      'logs',
+      'packages',
+      '.atl',
+      'CUSTOMER-IMAGES',
+      '.img-ia',
+    ];
+    const denyFiles = ['package-lock.json'];
+    for (const name of denyDirs) {
+      assert(isDeniedName(name) === true, `deny dir ${name}`);
+    }
+    for (const name of denyFiles) {
+      assert(isDeniedName(name) === true, `deny file ${name}`);
+    }
+    assert(isDeniedName('debug.log') === true, '*.log rule');
+    assert(isDeniedName('app.log') === true, '*.log rule (app.log)');
+    assert(isDeniedName('.env') === true, '.env* rule');
+    assert(isDeniedName('.env.local') === true, '.env* rule (.env.local)');
+    assert(isDeniedName('.env.production') === true, '.env* rule (.env.production)');
+    // Near-miss / unrelated basenames must stay allowed
+    assert(isDeniedName('CUSTOMER-IMAGES.md') === false, 'CUSTOMER-IMAGES.md near-miss');
+    assert(isDeniedName('my-CUSTOMER-IMAGES') === false, 'my-CUSTOMER-IMAGES near-miss');
+    assert(isDeniedName('tools') === false, 'tools must never be denied');
+    assert(isDeniedName('smart-image') === false, 'smart-image basename allowed');
+    assert(isDeniedName('_out') === false, 'bare _out must never be denied');
+    assert(isDeniedName('README.sh') === false, 'README.sh alone is not denied');
+  });
+
+  await test('git check-ignore is root-relative for state and capsule node_modules only', () => {
+    assert(REPO_ROOT, 'expected local template root');
+    /**
+     * @param {string} rel
+     * @returns {boolean} true when git treats path as ignored
+     */
+    function isIgnored(rel) {
+      const r = spawnSync('git', ['check-ignore', '-q', '--', rel], {
+        cwd: REPO_ROOT,
+        encoding: 'utf8',
+        shell: false,
+        windowsHide: true,
+      });
+      if (r.error) throw r.error;
+      return r.status === 0;
+    }
+
+    // Directory patterns use trailing slash; also prove bare dir names when they exist.
+    assert(isIgnored('CUSTOMER-IMAGES/') === true, 'root CUSTOMER-IMAGES/ ignored');
+    assert(isIgnored('.img-ia/') === true, 'root .img-ia/ ignored');
+    assert(isIgnored('tools/smart-image/node_modules') === true, 'capsule node_modules ignored');
+    assert(isIgnored('tools/smart-image/node_modules/') === true, 'capsule node_modules/ ignored');
+
+    const probeCi = path.join(REPO_ROOT, 'CUSTOMER-IMAGES');
+    const probeImg = path.join(REPO_ROOT, '.img-ia');
+    /** @type {string[]} */
+    const probes = [];
+    try {
+      if (!fs.existsSync(probeCi)) {
+        fs.mkdirSync(probeCi, { recursive: true });
+        probes.push(probeCi);
+      }
+      if (!fs.existsSync(probeImg)) {
+        fs.mkdirSync(probeImg, { recursive: true });
+        probes.push(probeImg);
+      }
+      assert(isIgnored('CUSTOMER-IMAGES') === true, 'root CUSTOMER-IMAGES dir ignored');
+      assert(isIgnored('.img-ia') === true, 'root .img-ia dir ignored');
+      assert(isIgnored('CUSTOMER-IMAGES/secret.jpg') === true, 'root CUSTOMER-IMAGES child ignored');
+      assert(isIgnored('.img-ia/_out/x.png') === true, 'root .img-ia child ignored');
+    } finally {
+      for (const p of probes) {
+        try {
+          fs.rmSync(p, { recursive: true, force: true });
+        } catch {
+          // ignore
+        }
+      }
+    }
+
+    // Nested lookalikes remain trackable (root-anchored / patterns only).
+    // Avoid bare trailing-slash probes here: CRLF blank gitignore lines can
+    // confuse check-ignore's directory-only matching on some Windows git builds.
+    assert(isIgnored('src/CUSTOMER-IMAGES') === false, 'nested CUSTOMER-IMAGES trackable');
+    assert(isIgnored('src/CUSTOMER-IMAGES/photo.jpg') === false, 'nested CUSTOMER-IMAGES file trackable');
+    assert(isIgnored('docs/.img-ia') === false, 'nested .img-ia trackable');
+    assert(isIgnored('docs/.img-ia/readme') === false, 'nested .img-ia child trackable');
+    assert(isIgnored('packages/create-contractor-site/.img-ia') === false, 'nested package .img-ia trackable');
+
+    // Capsule source / manifest / lock / wrapper remain trackable
+    for (const rel of [
+      'tools/smart-image/package.json',
+      'tools/smart-image/pnpm-workspace.yaml',
+      'tools/smart-image/pnpm-lock.yaml',
+      'tools/smart-image/run.mjs',
+      'tools/smart-image/check.mjs',
+    ]) {
+      assert(isIgnored(rel) === false, `${rel} must remain trackable`);
+    }
+  });
+
+  await test('copyTemplate excludes denied parents, keeps unrelated _out, required misses loud', () => {
+    const src = fs.mkdtempSync(path.join(os.tmpdir(), 'ccs-deny-src-'));
+    const dest = fs.mkdtempSync(path.join(os.tmpdir(), 'ccs-deny-dst-'));
+    try {
+      // Minimal template-shaped tree
+      fs.writeFileSync(path.join(src, 'keep.txt'), 'safe');
+      fs.mkdirSync(path.join(src, 'CUSTOMER-IMAGES'), { recursive: true });
+      fs.writeFileSync(path.join(src, 'CUSTOMER-IMAGES', 'secret.jpg'), 'NOCOPY');
+      fs.mkdirSync(path.join(src, '.img-ia', '_out'), { recursive: true });
+      fs.writeFileSync(path.join(src, '.img-ia', 'README.sh'), '#!/bin/sh\necho leak\n');
+      fs.writeFileSync(path.join(src, '.img-ia', '_out', 'candidate.png'), 'NOCOPY');
+      fs.mkdirSync(path.join(src, '_out'), { recursive: true });
+      fs.writeFileSync(path.join(src, '_out', 'client-keep.txt'), 'KEEP');
+      fs.mkdirSync(path.join(src, 'tools', 'smart-image'), { recursive: true });
+      fs.writeFileSync(path.join(src, 'tools', 'smart-image', 'run.mjs'), '// wrapper');
+
+      const { skipped } = copyTemplate(src, dest);
+      const skippedNorm = skipped.map((s) => s.replaceAll('\\', '/'));
+
+      assert(fs.existsSync(path.join(dest, 'keep.txt')), 'unrelated file copies');
+      assert(fs.existsSync(path.join(dest, '_out', 'client-keep.txt')), 'unrelated _out copies');
+      assert(fs.existsSync(path.join(dest, 'tools', 'smart-image', 'run.mjs')), 'tools/smart-image retained');
+      assert(!fs.existsSync(path.join(dest, 'CUSTOMER-IMAGES')), 'CUSTOMER-IMAGES excluded');
+      assert(!fs.existsSync(path.join(dest, '.img-ia')), '.img-ia excluded (parent deny)');
+      assert(
+        !fs.existsSync(path.join(dest, '.img-ia', 'README.sh')),
+        '.img-ia/README.sh absent — no recurse into denied parent',
+      );
+      assert(
+        !fs.existsSync(path.join(dest, '.img-ia', '_out', 'candidate.png')),
+        '.img-ia/_out bytes never copied',
+      );
+      assert(skippedNorm.includes('CUSTOMER-IMAGES'), 'skipped lists CUSTOMER-IMAGES');
+      assert(skippedNorm.includes('.img-ia'), 'skipped lists .img-ia');
+      assert(!skippedNorm.some((s) => s === '_out' || s.startsWith('_out/')), '_out not skipped');
+
+      // assertRequiredCopied: every required capsule/wrapper/skill path missing is reported
+      const stubRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'ccs-req-'));
+      try {
+        for (const rel of REQUIRED_AFTER_COPY) {
+          const full = path.join(stubRoot, ...rel.split('/'));
+          const looksFile = path.extname(rel) !== '' || rel.endsWith('package.json');
+          if (looksFile) {
+            fs.mkdirSync(path.dirname(full), { recursive: true });
+            fs.writeFileSync(full, 'x');
+          } else {
+            fs.mkdirSync(full, { recursive: true });
+          }
+        }
+        assert(assertRequiredCopied(stubRoot).length === 0, 'full stub must pass required check');
+
+        const requiredMustExist = [
+          'tools/smart-image/package.json',
+          'tools/smart-image/pnpm-workspace.yaml',
+          'tools/smart-image/pnpm-lock.yaml',
+          'tools/smart-image/run.mjs',
+          'tools/smart-image/check.mjs',
+          '.agents/skills/smart-image-cli/SKILL.md',
+        ];
+        for (const rel of requiredMustExist) {
+          assert(
+            REQUIRED_AFTER_COPY.includes(rel),
+            `REQUIRED_AFTER_COPY must list ${rel}`,
+          );
+        }
+
+        for (const rel of requiredMustExist) {
+          const full = path.join(stubRoot, ...rel.split('/'));
+          fs.rmSync(full, { force: true });
+          const missing = assertRequiredCopied(stubRoot);
+          assert(missing.includes(rel), `missing must report ${rel}, got ${missing.join(',')}`);
+          // restore for next iteration
+          fs.mkdirSync(path.dirname(full), { recursive: true });
+          fs.writeFileSync(full, 'x');
+        }
+      } finally {
+        fs.rmSync(stubRoot, { recursive: true, force: true });
+      }
+    } finally {
+      fs.rmSync(src, { recursive: true, force: true });
+      fs.rmSync(dest, { recursive: true, force: true });
+    }
+  });
+
   const skipE2E = process.env.SKIP_CLI_E2E === '1';
   if (skipE2E) {
     console.log('\n  ↷ SKIP_CLI_E2E=1 — skipping temp-target full scaffold');
   } else {
+    /** @type {string[]} */
+    const e2eSeeds = [];
+    if (REPO_ROOT) {
+      const seedCi = path.join(REPO_ROOT, 'CUSTOMER-IMAGES');
+      const seedImgIaRoot = path.join(REPO_ROOT, '.img-ia');
+      if (!fs.existsSync(seedCi)) {
+        fs.mkdirSync(seedCi, { recursive: true });
+        fs.writeFileSync(path.join(seedCi, 'e2e-secret.jpg'), 'NOCOPY');
+        e2eSeeds.push(seedCi);
+      }
+      if (!fs.existsSync(seedImgIaRoot)) {
+        fs.mkdirSync(path.join(seedImgIaRoot, '_out'), { recursive: true });
+        fs.writeFileSync(path.join(seedImgIaRoot, '_out', 'e2e-candidate.png'), 'NOCOPY');
+        e2eSeeds.push(seedImgIaRoot);
+      }
+    }
+    try {
     await test('temp-target --yes scaffold install/validate/build/git', () => {
       assert(REPO_ROOT, 'expected local template root for E2E');
       const target = fs.mkdtempSync(path.join(os.tmpdir(), 'ccs-e2e-'));
@@ -1446,6 +1660,21 @@ async function main() {
         !fs.existsSync(path.join(targetDir, 'packages')),
         'packages/ must not be copied',
       );
+      assert(!fs.existsSync(path.join(targetDir, 'CUSTOMER-IMAGES')), 'CUSTOMER-IMAGES excluded');
+      assert(!fs.existsSync(path.join(targetDir, '.img-ia')), '.img-ia excluded');
+      assert(fs.existsSync(path.join(targetDir, 'tools', 'smart-image', 'package.json')), 'capsule manifest');
+      assert(fs.existsSync(path.join(targetDir, 'tools', 'smart-image', 'pnpm-workspace.yaml')), 'capsule workspace');
+      assert(fs.existsSync(path.join(targetDir, 'tools', 'smart-image', 'pnpm-lock.yaml')), 'capsule lock');
+      assert(fs.existsSync(path.join(targetDir, 'tools', 'smart-image', 'run.mjs')), 'wrapper run.mjs');
+      assert(fs.existsSync(path.join(targetDir, 'tools', 'smart-image', 'check.mjs')), 'wrapper check.mjs');
+      assert(
+        fs.existsSync(path.join(targetDir, '.agents', 'skills', 'smart-image-cli', 'SKILL.md')),
+        'skill retained',
+      );
+      const tgtPkg = JSON.parse(fs.readFileSync(path.join(targetDir, 'package.json'), 'utf8'));
+      for (const k of ['images:check', 'images:setup', 'images:run']) {
+        assert(typeof tgtPkg.scripts?.[k] === 'string', `scaffold scripts must include ${k}`);
+      }
 
       const business = JSON.parse(
         fs.readFileSync(path.join(targetDir, 'src/data/business.json'), 'utf8'),
@@ -1506,6 +1735,15 @@ async function main() {
         console.warn(`    (could not fully remove ${targetDir})`);
       }
     });
+    } finally {
+      for (const p of e2eSeeds) {
+        try {
+          fs.rmSync(p, { recursive: true, force: true });
+        } catch {
+          // ignore seed cleanup failures
+        }
+      }
+    }
   }
 
   console.log(`\n${passed} passed, ${failed} failed`);

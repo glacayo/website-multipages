@@ -40,11 +40,11 @@ Chain strategy: stacked-to-main
 
 ## Phase 3: Scaffold and Git Isolation (PR 3)
 
-- [ ] 3.1 RED — Directly test `isDeniedName` for every deny entry, `*.log`, `.env*`, plus `CUSTOMER-IMAGES.md`/`my-CUSTOMER-IMAGES`/`tools`/`_out` negatives; test `.img-ia/README.sh` is absent.
-- [ ] 3.2 RED — Test `git check-ignore`: root `CUSTOMER-IMAGES`/`.img-ia` and capsule `node_modules` true; nested lookalikes and capsule source/lock/manifest/wrapper false.
-- [ ] 3.3 RED — Test `copyTemplate`/`assertRequiredCopied`: denied parents copy no bytes, unrelated `_out` copies, and deleting any required capsule/wrapper/skill path reports a non-success miss.
-- [ ] 3.4 GREEN — Create `.agents/skills/smart-image-cli/SKILL.md`; update `copy-template.mjs` and `.gitignore`; deny only `CUSTOMER-IMAGES`/`.img-ia` (never bare `_out`), retain `tools`, and require capsule, wrapper, skill, and scripts.
-- [ ] 3.5 GREEN — Extend the existing scaffold E2E in `smoke-test.mjs` to assert state exclusion, capsule/wrapper/skill retention, and all `images:*` scripts.
+- [x] 3.1 RED — Directly test `isDeniedName` for every deny entry, `*.log`, `.env*`, plus `CUSTOMER-IMAGES.md`/`my-CUSTOMER-IMAGES`/`tools`/`_out` negatives; test `.img-ia/README.sh` is absent.
+- [x] 3.2 RED — Test `git check-ignore`: root `CUSTOMER-IMAGES`/`.img-ia` and capsule `node_modules` true; nested lookalikes and capsule source/lock/manifest/wrapper false.
+- [x] 3.3 RED — Test `copyTemplate`/`assertRequiredCopied`: denied parents copy no bytes, unrelated `_out` copies, and deleting any required capsule/wrapper/skill path reports a non-success miss.
+- [x] 3.4 GREEN — Create `.agents/skills/smart-image-cli/SKILL.md`; update `copy-template.mjs` and `.gitignore`; deny only `CUSTOMER-IMAGES`/`.img-ia` (never bare `_out`), retain `tools`, and require capsule, wrapper, skill, and scripts.
+- [x] 3.5 GREEN — Extend the existing scaffold E2E in `smoke-test.mjs` to assert state exclusion, capsule/wrapper/skill retention, and all `images:*` scripts.
 
 ## Phase 4: Documentation and Final Verification (PR 4)
 
