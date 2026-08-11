@@ -32,11 +32,11 @@ Chain strategy: stacked-to-main
 
 ## Phase 2: Invocation and Lifecycle (PR 2)
 
-- [ ] 2.1 RED — Test shell metacharacters (`--json; rm -rf /`, `$(...)`, `&&`) through `images:run`; require literal argv, exit 3, and no side-effect file.
-- [ ] 2.2 RED — Test Windows isolated execution: direct `smart-img doctor --json` is empty while the wrapper produces parseable JSON.
-- [ ] 2.3 RED — Test no `images:` reachability from install/build/validate/CI and root `build` success without the capsule.
-- [ ] 2.4 RED — Test missing capsule, deleted/truncated lock, and offline setup: non-zero remediation; missing provider key is warning/readiness detail, while provider-required work fails explicitly with no fallback.
-- [ ] 2.5 GREEN — Create `tools/smart-image/run.mjs` and `check.mjs`; add root `images:check/setup/run` scripts, with setup using frozen lockfile and run using argv-array forwarding, truthful exit propagation, readiness warnings, and no fallback. Retain `runCli` until a future pinned CLI fix independently proves the Windows issue resolved.
+- [x] 2.1 RED — Test shell metacharacters (`--json; rm -rf /`, `$(...)`, `&&`) through `images:run`; require literal argv, exit 3, and no side-effect file.
+- [x] 2.2 RED — Test Windows isolated execution: direct `smart-img doctor --json` is empty while the wrapper produces parseable JSON.
+- [x] 2.3 RED — Test no `images:` reachability from install/build/validate/CI and root `build` success without the capsule.
+- [x] 2.4 RED — Test missing capsule, deleted/truncated lock, and offline setup: non-zero remediation; missing provider key is warning/readiness detail, while provider-required work fails explicitly with no fallback.
+- [x] 2.5 GREEN — Create `tools/smart-image/run.mjs` and `check.mjs`; add root `images:check/setup/run` scripts, with setup using frozen lockfile and run using argv-array forwarding, truthful exit propagation, readiness warnings, and no fallback. Retain `runCli` until a future pinned CLI fix independently proves the Windows issue resolved.
 
 ## Phase 3: Scaffold and Git Isolation (PR 3)
 
