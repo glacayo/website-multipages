@@ -11,7 +11,8 @@
  * 6. Service-area name parse/dedupe (Chesapeake duplicate-slug case) + areas rebuild
  *    without leaking stale template county/ZIP metadata into new areas
  * 7. CREATE_CONTRACTOR_SITE_ANSWERS_JSON real CLI spawn (copy+replace, skip setup)
- * 8. Temp-target --yes scaffold (install/validate/build) unless SKIP_CLI_E2E=1
+ * 8. Root workspace isolation vs tools/smart-image capsule (scope, sharp/zod, dist/)
+ * 9. Temp-target --yes scaffold (install/validate/build) unless SKIP_CLI_E2E=1
  */
 
 import { spawnSync } from 'node:child_process';
@@ -52,7 +53,11 @@ import {
   DEFAULT_TEMPLATE_REF,
   findLocalTemplateRoot,
 } from '../src/copy-template.mjs';
-import { isVersionAtLeast, resolveCommandPath } from '../src/run-command.mjs';
+import {
+  isVersionAtLeast,
+  resolveCommandPath,
+  runCommand,
+} from '../src/run-command.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CLI = path.resolve(__dirname, '../bin/create-contractor-site.mjs');
@@ -1103,6 +1108,91 @@ async function main() {
     );
 
     fs.rmSync(tmp, { recursive: true, force: true });
+  });
+
+  // --- image-tooling capsule isolation (Unit 1) ---
+  await test('root workspace stays two projects and excludes tools/*', () => {
+    assert(REPO_ROOT, 'expected local template root');
+    const wsPath = path.join(REPO_ROOT, 'pnpm-workspace.yaml');
+    const wsText = fs.readFileSync(wsPath, 'utf8');
+    assert(/\n\s*-\s*\.\s*$/m.test(wsText) || /packages:\s*\n\s*-\s*\./.test(wsText),
+      'root workspace must include "."');
+    assert(/-\s*packages\/\*/.test(wsText), 'root workspace must include packages/*');
+    assert(!/tools\//.test(wsText), 'root workspace must not absorb tools/*');
+    assert(
+      !/better-sqlite3/.test(wsText),
+      'root pnpm-workspace.yaml must not declare allowBuilds.better-sqlite3',
+    );
+
+    const list = runCommand('pnpm', ['list', '-r', '--depth', '-1'], {
+      cwd: REPO_ROOT,
+      stdio: 'pipe',
+    });
+    // pnpm prints one name@version line per workspace package
+    const names = (list.stdout || '').match(/^[^\s].*@\d/gm) || [];
+    assert(
+      names.length === 2,
+      `expected exactly 2 root workspace projects, got ${names.length}: ${names.join(', ')}`,
+    );
+    assert(
+      !/smart-image/i.test(list.stdout || ''),
+      'root workspace listing must not include smart-image capsule',
+    );
+  });
+
+  await test('root sharp/zod ranges stay unchanged with no overrides', () => {
+    assert(REPO_ROOT, 'expected local template root');
+    const pkg = readJson(path.join(REPO_ROOT, 'package.json'));
+    const sharp = pkg.devDependencies?.sharp ?? pkg.dependencies?.sharp;
+    const zod = pkg.devDependencies?.zod ?? pkg.dependencies?.zod;
+    assert(sharp === '^0.34.5', `root sharp range must stay ^0.34.5, got ${sharp}`);
+    assert(zod === '^4.1.5', `root zod range must stay ^4.1.5, got ${zod}`);
+    assert(pkg.overrides == null, 'root package.json must not declare overrides');
+    assert(
+      pkg.pnpm?.overrides == null,
+      'root package.json must not declare pnpm.overrides',
+    );
+    assert(
+      !pkg.dependencies?.['smart-image-cli'] && !pkg.devDependencies?.['smart-image-cli'],
+      'root package.json must not depend on smart-image-cli',
+    );
+  });
+
+  await test('dist holds zero capsule or smart-image-cli references', () => {
+    assert(REPO_ROOT, 'expected local template root');
+    const distDir = path.join(REPO_ROOT, 'dist');
+    if (!fs.existsSync(distDir)) {
+      console.log('    (dist/ absent — skip content scan; build harness covers post-build)');
+      return;
+    }
+    /** @type {string[]} */
+    const hits = [];
+    const needles = ['smart-image-cli', 'better-sqlite3', 'tools/smart-image', 'tools\\smart-image'];
+    /**
+     * @param {string} dir
+     */
+    function walk(dir) {
+      for (const ent of fs.readdirSync(dir, { withFileTypes: true })) {
+        const full = path.join(dir, ent.name);
+        if (ent.isDirectory()) {
+          walk(full);
+          continue;
+        }
+        // Skip large binary assets; scan text-ish build outputs only.
+        if (!/\.(html|js|mjs|cjs|css|json|txt|xml|svg|map)$/i.test(ent.name)) continue;
+        let text;
+        try {
+          text = fs.readFileSync(full, 'utf8');
+        } catch {
+          continue;
+        }
+        for (const n of needles) {
+          if (text.includes(n)) hits.push(`${path.relative(distDir, full)}:${n}`);
+        }
+      }
+    }
+    walk(distDir);
+    assert(hits.length === 0, `dist/ must not reference capsule/CLI: ${hits.slice(0, 10).join(', ')}`);
   });
 
   const skipE2E = process.env.SKIP_CLI_E2E === '1';

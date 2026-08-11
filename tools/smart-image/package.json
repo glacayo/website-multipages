@@ -1,0 +1,14 @@
+{
+  "name": "smart-image-capsule",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Isolated pnpm capsule for smart-image-cli (not part of the root workspace)",
+  "packageManager": "pnpm@11.18.0",
+  "dependencies": {
+    "smart-image-cli": "0.3.0"
+  },
+  "engines": {
+    "node": ">=22.13.0",
+    "pnpm": ">=11.1.2"
+  }
+}
