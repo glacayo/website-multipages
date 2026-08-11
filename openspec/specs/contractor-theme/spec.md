@@ -140,7 +140,7 @@ After build (including post-build prune), a **parity audit** MUST compare the **
 
 ### 2.6 Capability: `agent-developer-docs`
 
-**Requirement: Accurate Reuse Documentation.** `README.md`, `AGENTS.md`, and `SKILL.md` MUST document the pnpm-only rule, the 12-file JSON contract, the variant system, and `pnpm run build` as the pre-finish check, with no npm/npx instructions. They MUST additionally state that `business.json` and `site.json` are the authoritative client identity, and that any remaining masonry/hardscape placeholder content, assets, blog posts, and services present after a scaffold are normal seed content to rewrite — NOT a conflict or an error.
+**Requirement: Accurate Reuse Documentation.** `README.md`, `AGENTS.md`, and `SKILL.md` MUST document the pnpm-only rule, the 12-file JSON contract, the variant system, and `pnpm run build` as the pre-finish check, with no npm/npx instructions. They MUST additionally state that `business.json` and `site.json` are the authoritative client identity, and that remaining masonry/hardscape placeholder content, assets, blog posts, and services after a scaffold are normal seed content to rewrite — NOT a conflict. They MUST also document that `images:*` commands are optional, explicit-invocation-only tooling that install/build/validate/CI never run, and that an agent MUST read `.agents/skills/smart-image-cli/SKILL.md` before running any `images:*` command.
 
 #### Scenario: Agent treats leftover seed content as rewritable
 - GIVEN an agent has scaffolded a client site whose trade is not masonry
@@ -154,7 +154,41 @@ After build (including post-build prune), a **parity audit** MUST compare the **
 - THEN it edits only `business.json.services_offered`, `services.json`, and optionally `landings.json`
 - AND it runs `pnpm run build` before finishing, using only pnpm commands
 
-### 2.7 Capability: `cli-scaffold`
+#### Scenario: Agent reads the image-tooling skill before invoking images:*
+- GIVEN a scaffold includes the capsule and `.agents/skills/smart-image-cli/SKILL.md`
+- WHEN an agent needs to source images
+- THEN it MUST read that skill file before running any `images:*` command
+- AND it MUST NOT invoke `images:*` from install/build/validate/CI
+
+### 2.7 Capability: `image-tooling-scaffold`
+
+**Requirement: Scaffold Excludes Image-Tooling State While Retaining the Capsule and Skill.** `DENY_DIR_NAMES` in `copy-template.mjs` MUST include `CUSTOMER-IMAGES` and `.img-ia` (basename match, any depth), MUST NOT add a bare `_out` (already excluded via the `.img-ia` parent, since `walk` never recurses into denied entries), and MUST NOT deny `tools` or `tools/smart-image`. `REQUIRED_AFTER_COPY` MUST include the `tools/smart-image/` manifest, workspace config, and lockfile, the checked-in wrapper path, and `.agents/skills/smart-image-cli/SKILL.md`; `assertRequiredCopied` MUST report any missing path. The scaffolded `package.json` MUST expose `images:check`, `images:setup`, and `images:run`. `isDeniedName` MUST carry direct unit coverage for every deny entry plus the `*.log`/`.env*` rules.
+
+#### Scenario: Image-tooling state excluded, capsule and skill retained
+- GIVEN a working copy has `CUSTOMER-IMAGES/`, `.img-ia/` (nested `_out/`), and `tools/smart-image/` with its manifest, workspace config, and lockfile
+- WHEN `create-contractor-site` scaffolds a target
+- THEN `CUSTOMER-IMAGES` and `.img-ia` are skipped with no byte copied, while `tools/smart-image/`, the wrapper, and `.agents/skills/smart-image-cli/SKILL.md` are present
+- AND the target's `package.json` exposes all three `images:*` scripts
+
+#### Scenario: Unrelated _out still copies; a missing required path fails loudly
+- GIVEN a client-added `_out` exists outside `.img-ia/`, or a required capsule/skill path is absent from the source tree
+- WHEN `copyTemplate` and `assertRequiredCopied` run
+- THEN the unrelated `_out` IS copied, since no bare `_out` entry exists in `DENY_DIR_NAMES`
+- AND a missing required path is reported, and the scaffold command MUST NOT report success
+
+#### Scenario: Direct denylist unit coverage exists
+- GIVEN a unit test imports `isDeniedName` directly
+- WHEN it asserts every `DENY_DIR_NAMES`/`DENY_FILE_NAMES` entry plus a `*.log` and a `.env*`-prefixed name
+- THEN every assertion is `true`, and `tools` asserts `false`
+
+#### Scenario: E2E smoke path covers deny and retention together
+- GIVEN the existing `temp-target --yes scaffold` E2E test already asserts `openspec`/`packages` absent from scaffold output
+- WHEN the smoke test is updated for this change
+- THEN it MUST also assert `CUSTOMER-IMAGES` and `.img-ia` are absent
+- AND it MUST assert `tools/smart-image/`, the wrapper, and skill file are present too
+
+### 2.8 Capability: `cli-scaffold`
+
 
 **Requirement: Expanded CLI Contractor Intake.** The `create-contractor-site` CLI MUST prompt for and apply value-only replacement of the full business-critical field set: payment methods, business hours, free-estimate wording, years of experience, license text, insurance statement, social links, and directory links. `founded_year` MUST remain optional and secondary (never a required prompt). When the operator skips `founded_year`, the CLI MUST **preserve the top-level `founded_year` key** and write an empty string `""` — it MUST NOT remove the key.
 
@@ -189,7 +223,7 @@ The interactive prompts, the `--yes` sample-answer path, and the `CREATE_CONTRAC
 - AND `enable_directories` MAY be `false` so UI does not render badges
 - AND `pnpm run validate:data` exits `0`
 
-### 2.8 Capability: `theme-palette-enforcement`
+### 2.9 Capability: `theme-palette-enforcement`
 
 **Requirement: Theme Palette as Visual Source of Truth.** `site.json.theme` MUST be the single source of truth for the template's visual palette. Additive theme keys MAY be introduced. Google Fonts MUST be loaded from the configured `body_font` and `heading_font`. Every color used by template components MUST resolve from a palette token. A build-time guard MUST fail the build when an out-of-palette color literal is used, and the guard MUST be reachable through `pnpm run build`.
 
@@ -219,7 +253,7 @@ A full color-audit inventory of offenders MUST complete **before** the lint is e
 - THEN emitted CSS variables MUST use `#f8fafc` for light (or the then-current `site.json` value)
 - AND `site.json.theme.light` MUST NOT be rewritten to a different hex solely to match prior CSS drift
 
-### 2.9 Capability: `website-type-gating`
+### 2.10 Capability: `website-type-gating`
 
 **Requirement: Website Type Selection and Route Gating.** The CLI MUST ask the operator to choose a website type: One page, Multipage, or SEO. The selection MUST be persisted as additive `site.json.site_type` (`one-page` | `multipage` | `seo`) and MUST gate route publication WITHOUT deleting page source files.
 
@@ -287,7 +321,7 @@ Regardless of type, the build MUST always publish `thank-you`, `sitemap.xml`, `r
 - WHEN route policy is evaluated
 - THEN the effective type MUST be `seo`
 
-### 2.10 Capability: `link-cta-safety`
+### 2.11 Capability: `link-cta-safety`
 
 **Requirement: Internal Link and CTA Publication Safety.** All internal links and CTAs — including but not limited to `navigation.json` header/footer/mobile/legal entries, hero primary/secondary CTAs, service card detail links, section buttons, and component-hardcoded internal hrefs — MUST resolve to a route that is published for the active `site_type` (and subordinate flags), or to an in-page anchor on a published page **whose target element/section is actually present in the emitted HTML**.
 
