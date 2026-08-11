@@ -1,6 +1,7 @@
 {
   "name": "create-contractor-site",
   "version": "2.2.0",
+  "packageManager": "pnpm@11.18.0",
   "description": "Scaffold a client contractor website from the placeholder multipage template",
   "type": "module",
   "bin": {
@@ -29,13 +30,13 @@
   },
   "homepage": "https://github.com/glacayo/website-multipages/tree/main/packages/create-contractor-site",
   "engines": {
-    "node": ">=22.12.0",
+    "node": ">=22.13.0",
     "pnpm": ">=11.1.2"
   },
   "devEngines": {
     "packageManager": {
       "name": "pnpm",
-      "version": ">=11.1.2",
+      "version": "11.18.0",
       "onFail": "error"
     }
   }

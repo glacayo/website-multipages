@@ -34,7 +34,7 @@ The CLI:
 
 **After scaffold:** treat `business.json` and `site.json` as the **authoritative client identity**. Any remaining masonry/hardscape services, blog posts, gallery/hero copy, and demo assets are **expected seed content** — rewrite them for the real trade. Do not treat those leftovers as a conflict or error. Keep replacing values/copy/assets only; preserve JSON shape and `_instructions`. Keep real client PII out of this shared template base.
 
-**Required tools:** Node.js 22+, pnpm >= 11.1.2, git.
+**Required tools:** Node.js >= 22.13, pnpm 11.18.0, git.
 
 Package-runner compatibility (`pnpm create`, etc.) may invoke the binary, but **the CLI itself always uses pnpm internally**. Do not use `npm install` or `npx` as the project workflow.
 
@@ -110,8 +110,8 @@ Output mode is **static**. Package manager is **pnpm only** — npm/npx are forb
 
 ## Requirements
 
-- Node.js **v22+**
-- pnpm **>= 11.1.2**
+- Node.js **>= 22.13**
+- pnpm **11.18.0**
 
 ## Install and build
 
