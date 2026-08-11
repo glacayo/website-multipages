@@ -17,6 +17,9 @@ const DENY_DIR_NAMES = new Set([
   // CLI package + internal agent tooling — not part of a client site
   'packages',
   '.atl',
+  // Image-tooling runtime state only (exact basename; never bare _out or tools)
+  'CUSTOMER-IMAGES',
+  '.img-ia',
 ]);
 
 const DENY_FILE_NAMES = new Set(['package-lock.json']);
@@ -267,6 +270,13 @@ export const REQUIRED_AFTER_COPY = [
   'scripts/enforce-package-manager.cjs',
   'src/assets/images',
   'src/data/business.json',
+  // Smart-image capsule + agent skill (must scaffold with every client site)
+  'tools/smart-image/package.json',
+  'tools/smart-image/pnpm-workspace.yaml',
+  'tools/smart-image/pnpm-lock.yaml',
+  'tools/smart-image/run.mjs',
+  'tools/smart-image/check.mjs',
+  '.agents/skills/smart-image-cli/SKILL.md',
 ];
 
 /**
