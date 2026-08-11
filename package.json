@@ -19,7 +19,10 @@
     "lint:theme": "node ./scripts/lint-theme.cjs",
     "test:theme": "node --experimental-strip-types ./scripts/test-theme.mjs && node ./scripts/lint-theme.cjs --self-test",
     "test:routes": "node --experimental-strip-types ./scripts/test-routes.mjs && node ./scripts/gate-routes.cjs --self-test",
-    "test:cli": "node ./packages/create-contractor-site/scripts/smoke-test.mjs"
+    "test:cli": "node ./packages/create-contractor-site/scripts/smoke-test.mjs",
+    "images:check": "node ./tools/smart-image/check.mjs",
+    "images:setup": "pnpm install --frozen-lockfile --dir tools/smart-image",
+    "images:run": "node ./tools/smart-image/run.mjs"
   },
   "keywords": [
     "astro",

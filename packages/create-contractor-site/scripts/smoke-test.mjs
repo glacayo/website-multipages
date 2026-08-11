@@ -12,7 +12,8 @@
  *    without leaking stale template county/ZIP metadata into new areas
  * 7. CREATE_CONTRACTOR_SITE_ANSWERS_JSON real CLI spawn (copy+replace, skip setup)
  * 8. Root workspace isolation vs tools/smart-image capsule (scope, sharp/zod, dist/)
- * 9. Temp-target --yes scaffold (install/validate/build) unless SKIP_CLI_E2E=1
+ * 9. Smart-image wrapper/lifecycle (argv safety, Windows bin, setup/check, no hooks)
+ * 10. Temp-target --yes scaffold (install/validate/build) unless SKIP_CLI_E2E=1
  */
 
 import { spawnSync } from 'node:child_process';
@@ -1193,6 +1194,223 @@ async function main() {
     }
     walk(distDir);
     assert(hits.length === 0, `dist/ must not reference capsule/CLI: ${hits.slice(0, 10).join(', ')}`);
+  });
+
+  // --- image-tooling wrapper + lifecycle (Unit 2) ---
+  const capDir = REPO_ROOT ? path.join(REPO_ROOT, 'tools', 'smart-image') : '';
+  const runJs = capDir ? path.join(capDir, 'run.mjs') : '';
+  const checkJs = capDir ? path.join(capDir, 'check.mjs') : '';
+
+  /** @param {string} v */
+  const qCmd = (v) =>
+    v === '' ? '""' : /[\s"&<>|^%!]/.test(v) ? `"${String(v).replace(/"/g, '""')}"` : v;
+
+  /**
+   * @param {string} cmd
+   * @param {string[]} args
+   * @param {{ env?: NodeJS.ProcessEnv, cwd?: string }} [o]
+   */
+  function spawnArgv(cmd, args, o = {}) {
+    let c = cmd;
+    let a = [...args];
+    let verbatim = false;
+    if (process.platform === 'win32' && /\.(cmd|bat)$/i.test(cmd)) {
+      c = process.env.ComSpec || 'cmd.exe';
+      a = ['/d', '/s', '/c', `"${[cmd, ...args].map(qCmd).join(' ')}"`];
+      verbatim = true;
+    }
+    return spawnSync(c, a, {
+      encoding: 'utf8',
+      cwd: o.cwd || REPO_ROOT || process.cwd(),
+      env: { ...process.env, ...(o.env || {}) },
+      shell: false,
+      windowsHide: true,
+      windowsVerbatimArguments: verbatim,
+    });
+  }
+
+  /** @param {string[]} args @param {{ env?: NodeJS.ProcessEnv, cwd?: string }} [o] */
+  function runPnpm(args, o = {}) {
+    const bin = resolveCommandPath('pnpm');
+    assert(Boolean(bin), 'pnpm required');
+    return spawnArgv(/** @type {string} */ (bin), args, o);
+  }
+  /** @param {string[]} args @param {{ env?: NodeJS.ProcessEnv }} [o] */
+  const imgRun = (args, o = {}) =>
+    spawnSync(process.execPath, [runJs, ...args], {
+      encoding: 'utf8',
+      cwd: REPO_ROOT,
+      env: { ...process.env, ...(o.env || {}) },
+      shell: false,
+      windowsHide: true,
+    });
+  /** @param {{ env?: NodeJS.ProcessEnv }} [o] */
+  const imgCheck = (o = {}) =>
+    spawnSync(process.execPath, [checkJs], {
+      encoding: 'utf8',
+      cwd: REPO_ROOT,
+      env: { ...process.env, ...(o.env || {}) },
+      shell: false,
+      windowsHide: true,
+    });
+  /** @param {import('node:child_process').SpawnSyncReturns<string>} r */
+  const out = (r) => `${r.stdout || ''}\n${r.stderr || ''}`;
+
+  await test('images:run passes shell metacharacters as literal argv (exit 3, no side effects)', () => {
+    assert(REPO_ROOT && fs.existsSync(runJs), 'run.mjs required');
+    const marker = path.join(os.tmpdir(), `si-side-${process.pid}.txt`);
+    if (fs.existsSync(marker)) fs.rmSync(marker, { force: true });
+    for (const payload of [
+      '--json; rm -rf /',
+      `$(echo pwned > "${marker}")`,
+      `&& echo pwned > "${marker}"`,
+    ]) {
+      for (const r of [runPnpm(['run', 'images:run', '--', payload]), imgRun([payload])]) {
+        assert(r.status === 3, `exit 3 expected, got ${r.status}: ${out(r).slice(0, 300)}`);
+        assert(/invalid_input|unknown|error/i.test(out(r)), `invalid_input for ${payload}`);
+      }
+      assert(!fs.existsSync(marker), `no side-effect file for ${payload}`);
+    }
+  });
+
+  await test('Windows smart-img bin is silent while wrapper emits parseable doctor JSON', () => {
+    assert(REPO_ROOT && fs.existsSync(runJs), 'run.mjs required');
+    const binCmd = path.join(capDir, 'node_modules', '.bin', 'smart-img.CMD');
+    assert(
+      fs.existsSync(binCmd) || fs.existsSync(path.join(capDir, 'node_modules', '.bin', 'smart-img')),
+      'smart-img bin required',
+    );
+    if (process.platform === 'win32' && fs.existsSync(binCmd)) {
+      const bin = spawnArgv(binCmd, ['doctor', '--json']);
+      assert(
+        `${bin.stdout || ''}${bin.stderr || ''}`.trim().length === 0,
+        `bin must be silent, got ${out(bin).slice(0, 200)}`,
+      );
+    }
+    for (const wrap of [runPnpm(['run', 'images:run', '--', 'doctor', '--json']), imgRun(['doctor', '--json'])]) {
+      assert(wrap.status === 0, `wrapper exit 0, got ${wrap.status}: ${wrap.stderr}`);
+      const parsed = JSON.parse((wrap.stdout || '').trim());
+      assert(parsed.command === 'doctor' || parsed.ok === true, 'doctor JSON');
+      assert(Array.isArray(parsed.details?.checks) || parsed.status === 'success', 'doctor checks');
+    }
+  });
+
+  await test('images:* never hooked from install/build/validate/CI; scripts exist', () => {
+    assert(REPO_ROOT, 'repo root');
+    const pkg = readJson(path.join(REPO_ROOT, 'package.json'));
+    const s = pkg.scripts || {};
+    assert(/frozen-lockfile/.test(s['images:setup'] || '') && /tools\/smart-image/.test(s['images:setup'] || ''));
+    assert(/tools\/smart-image\/run\.mjs/.test(s['images:run'] || ''));
+    assert(/tools\/smart-image\/check\.mjs/.test(s['images:check'] || ''));
+    for (const k of ['preinstall', 'postinstall', 'prepare', 'prepublishOnly', 'build', 'validate:data', 'ci:install']) {
+      assert(!/images:/.test(s[k] || ''), `${k} must not reference images:`);
+    }
+    const ci = path.join(REPO_ROOT, '.github');
+    if (fs.existsSync(ci)) {
+      /** @param {string} d */
+      const walk = (d) => {
+        for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+          const f = path.join(d, e.name);
+          if (e.isDirectory()) walk(f);
+          else if (/\.ya?ml$/i.test(e.name)) {
+            assert(!/images:(check|setup|run)/.test(fs.readFileSync(f, 'utf8')), `CI ${f}`);
+          }
+        }
+      };
+      walk(ci);
+    }
+  });
+
+  await test('missing capsule / corrupt lock / offline setup remediate; provider is warning', () => {
+    assert(REPO_ROOT && fs.existsSync(checkJs) && fs.existsSync(capDir), 'capsule required');
+    for (const p of [
+      path.join(REPO_ROOT, 'tools', 'smart-image-MISSING', 'check.mjs'),
+      path.join(REPO_ROOT, 'tools', 'smart-image-MISSING', 'run.mjs'),
+    ]) {
+      const r = spawnSync(process.execPath, [p], { encoding: 'utf8', shell: false, windowsHide: true });
+      assert(r.error || r.status !== 0, `missing path must fail: ${p}`);
+    }
+
+    const tmpCap = fs.mkdtempSync(path.join(os.tmpdir(), 'si-cap-'));
+    const emptyStore = fs.mkdtempSync(path.join(os.tmpdir(), 'si-store-'));
+    try {
+      for (const f of ['package.json', 'pnpm-workspace.yaml', 'pnpm-lock.yaml', 'check.mjs', 'run.mjs']) {
+        fs.copyFileSync(path.join(capDir, f), path.join(tmpCap, f));
+      }
+      const noNm = spawnSync(process.execPath, [path.join(tmpCap, 'check.mjs')], {
+        encoding: 'utf8',
+        shell: false,
+        windowsHide: true,
+      });
+      assert(noNm.status === 1 && /images:setup|not ready|not installed/i.test(out(noNm)));
+      const noRun = spawnSync(process.execPath, [path.join(tmpCap, 'run.mjs'), 'doctor', '--json'], {
+        encoding: 'utf8',
+        shell: false,
+        windowsHide: true,
+      });
+      assert(noRun.status === 1 && /images:setup/i.test(out(noRun)));
+      const offline = runPnpm(
+        ['install', '--frozen-lockfile', '--dir', tmpCap, '--offline', '--store-dir', emptyStore],
+      );
+      assert(offline.status !== 0 && /ERR_|error|failed|offline|not found|ENOENT/i.test(out(offline)));
+    } finally {
+      fs.rmSync(tmpCap, { recursive: true, force: true });
+      fs.rmSync(emptyStore, { recursive: true, force: true });
+    }
+
+    const lockPath = path.join(capDir, 'pnpm-lock.yaml');
+    const lockOrig = fs.readFileSync(lockPath);
+    try {
+      fs.writeFileSync(lockPath, 'this: is: not: valid: lockfile\n');
+      const setup = runPnpm(['run', 'images:setup']);
+      assert(setup.status !== 0 && /ERR_|error|failed|lock/i.test(out(setup)));
+      const bad = imgCheck();
+      assert(bad.status === 1 && /corrupt|lockfile|not ready|Remediation|images:setup/i.test(out(bad)));
+    } finally {
+      fs.writeFileSync(lockPath, lockOrig);
+    }
+
+    const healthy = imgCheck();
+    assert(healthy.status === 0 && /ready/i.test(healthy.stdout || ''));
+
+    const emptyCfg = fs.mkdtempSync(path.join(os.tmpdir(), 'si-cfg-'));
+    try {
+      const env = {
+        ...process.env,
+        APPDATA: emptyCfg,
+        XDG_CONFIG_HOME: emptyCfg,
+        HOME: emptyCfg,
+        USERPROFILE: emptyCfg,
+      };
+      const warn = imgCheck({ env });
+      assert(warn.status === 0 && /ready/i.test(warn.stdout || ''));
+      assert(/warning:.*provider/i.test(warn.stderr || ''), warn.stderr);
+      const pick = imgRun(
+        [
+          'pick',
+          REPO_ROOT,
+          '--source',
+          'pixabay',
+          '--category',
+          'exterior',
+          '--orientation',
+          'landscape',
+          '--width',
+          '800',
+          '--height',
+          '600',
+          '--json',
+        ],
+        { env },
+      );
+      assert(pick.status !== 0, `provider pick must fail, got ${pick.status}`);
+      assert(
+        pick.status === 4 || /provider|api.?key|pixabay|failed|error/i.test(out(pick)),
+        out(pick).slice(0, 300),
+      );
+    } finally {
+      fs.rmSync(emptyCfg, { recursive: true, force: true });
+    }
   });
 
   const skipE2E = process.env.SKIP_CLI_E2E === '1';
