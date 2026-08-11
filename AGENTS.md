@@ -162,7 +162,7 @@ Sections select visuals via optional `variant` keys (section JSON) or `header_va
 Content images live in `src/assets/images/` and are referenced from JSON as `./images/...`.
 Untransformed public assets (logo, favicon, OG default) live in `public/`.
 
-Optional provenance tooling (`images:*`) may produce **candidates** under `.img-ia/_out/`. Promoting a candidate into `src/assets/images/` is always a **manual human step**. Never auto-copy candidates or rewrite JSON image paths from tooling output. See §8.
+Optional provenance tooling (`images:*`) produces **consumable candidates** under `<image-root>/_out/`. `.img-ia/` is internal state, not the consumable output directory. The active coding agent autonomously selects a compliant candidate, copies it from `<image-root>/_out/` into `src/assets/images/`, and updates only values + alt text in the relevant 12 JSON files — it does not wait for human promotion approval, does not persist attribution metadata, and does not render public credits. See §8.
 
 ### Why this matters
 
@@ -196,7 +196,7 @@ Read:
 - update Zod/validation when shapes change
 - do not hardcode phones, emails, addresses, or service copy in components — read loaders
 - do not hook `images:*` into install, build, `validate:data`, or CI
-- do not promote `.img-ia/_out/` candidates automatically
+- do not promote candidates from `.img-ia/` (internal state); the agent copies from `<image-root>/_out/` and updates JSON values + alt text only
 
 ### Before finishing
 
@@ -254,7 +254,8 @@ Do not:
 - hardcode client business data into `.astro` components
 - call the upstream `smart-img` bin, or invoke `images:*` from install/build/`validate:data`/CI
 - silently fall back to another provider/source/copy path when image tooling fails
-- auto-promote `.img-ia/_out/` into `src/assets/images/` or rewrite the 12 JSON files for attribution/fulfillment
+- promote a poor match when no candidate satisfies a slot — refine constraints/query or explicitly report the slot blocked
+- auto-promote from `.img-ia/` (internal state) into `src/assets/images/`; the agent copies from `<image-root>/_out/` and updates JSON values + alt text only
 
 ## 7. Short checklist
 
@@ -303,7 +304,7 @@ pnpm run images:run -- doctor --json   # wrapper → real CLI; truthful exit cod
 | Provider missing | Readiness **warning** only; provider-required work fails explicitly (no silent skip) |
 | Credentials | Outside repo only — never in Git, `dist/`, or scaffold |
 | State boundaries | `.img-ia/`, root `CUSTOMER-IMAGES/` — not versioned, not scaffolded, not in `dist/` |
-| Promotion | Human copies approved files into `src/assets/images/`; never automatic |
-| Out of scope | Autonomous fulfillment, JSON rewriting, attribution rendering |
+| Promotion | Active agent copies from `<image-root>/_out/` into `src/assets/images/` and updates JSON values + alt text; never waits for human approval |
+| Out of scope | Persisting attribution metadata or rendering public credits |
 
 Detailed decision gates and output contract: `.agents/skills/smart-image-cli/SKILL.md`.

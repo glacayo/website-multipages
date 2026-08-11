@@ -36,6 +36,7 @@ Load this skill before any `images:*` command and when fulfilling website image 
 | Need semantic ranking | Use `--semantic ai` only with a verified vision provider; never silently downgrade |
 | Provider missing | Treat as readiness warning; provider-required commands fail explicitly |
 | Output satisfies the slot | Agent copies from `<image-root>/_out/`, updates JSON and `alt`, then verifies the site |
+| No output satisfies the slot | Refine constraints/query or report the slot blocked; never promote a poor match |
 | Failure / non-zero exit | Surface remediation; do not source or copy images as fallback |
 
 ## Execution Steps
@@ -44,7 +45,7 @@ Load this skill before any `images:*` command and when fulfilling website image 
 2. Read this skill end-to-end; run `pnpm run images:check` and, if needed, `pnpm run images:setup`, then check again.
 3. Analyze the narrow local root (normally `./CUSTOMER-IMAGES`) with `--dry-run` first; run the real analysis only after the preview is coherent.
 4. Run `pnpm run images:run -- <literal argv>` to pick or optimize against the slot requirements. Use local ranking by default; request AI ranking explicitly when useful.
-5. Select the best compliant result and copy it from `<image-root>/_out/` into the appropriate `src/assets/images/` subdirectory. Do not wait for human promotion approval.
+5. Select the best compliant result and copy it from `<image-root>/_out/` into the appropriate `src/assets/images/` subdirectory. Do not wait for human promotion approval. If no result satisfies the slot, refine the query/constraints or report the slot blocked without promoting an image.
 6. Update only the corresponding values in the relevant `src/data/*.json` files, including the final `./images/...` path and accurate alt text. Do not add attribution fields or UI.
 7. Run `pnpm run validate:data` and `pnpm run build`; fix contract/path failures without changing JSON shape.
 

@@ -158,7 +158,7 @@ pnpm run images:run -- doctor --json
 - **Credentials:** outside the repo only (`~/.config/smart-image-cli/` or env) — never committed.
 - **Provider missing:** check may **warn**; provider-required commands fail explicitly (no silent provider swap).
 - **Git / scaffold / `dist/`:** root `CUSTOMER-IMAGES/` and `.img-ia/` stay out; capsule sources stay in; no credential/state bytes in output.
-- **Promotion:** candidates under `.img-ia/_out/` require a **manual human** copy into `src/assets/images/`. No automatic promotion, JSON rewriting, fulfillment, or attribution pipeline.
+- **Promotion:** `.img-ia/` is internal state; `<image-root>/_out/` is the consumable output. The active coding agent autonomously selects a compliant candidate, copies it from `<image-root>/_out/` into `src/assets/images/`, and updates only values + alt text in the relevant 12 JSON files — no human promotion step. No attribution metadata is persisted or rendered.
 - **Seed demo images** under `src/assets/images/` remain rewritable seed content (see identity rules above) — unrelated to capsule state.
 
 Full agent contract: [`.agents/skills/smart-image-cli/SKILL.md`](./.agents/skills/smart-image-cli/SKILL.md). Non-negotiables: [`AGENTS.md`](./AGENTS.md).
