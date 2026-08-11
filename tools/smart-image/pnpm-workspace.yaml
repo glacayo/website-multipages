@@ -1,0 +1,10 @@
+packages:
+  - .
+
+allowBuilds:
+  better-sqlite3: false
+
+verifyDepsBeforeRun: false
+
+minimumReleaseAgeExclude:
+  - smart-image-cli@0.3.0

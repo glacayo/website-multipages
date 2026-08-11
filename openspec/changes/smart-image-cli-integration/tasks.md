@@ -27,8 +27,8 @@ Chain strategy: stacked-to-main
 
 ## Phase 1: Capsule Foundation (PR 1)
 
-- [ ] 1.1 RED — Extend `packages/create-contractor-site/scripts/smoke-test.mjs` to prove root workspace scope, unchanged root sharp/zod ranges/no overrides, and zero `dist/` capsule references.
-- [ ] 1.2 GREEN — Create `tools/smart-image/package.json`, its `pnpm-workspace.yaml` (`allowBuilds.better-sqlite3: false`, `verifyDepsBeforeRun: false`), and exact locked `smart-image-cli@0.3.0`/transitives; leave root workspace, lock, `.npmrc`, and `src/**` unchanged.
+- [x] 1.1 RED — Extend `packages/create-contractor-site/scripts/smoke-test.mjs` to prove root workspace scope, unchanged root sharp/zod ranges/no overrides, and zero `dist/` capsule references.
+- [x] 1.2 GREEN — Create `tools/smart-image/package.json`, its `pnpm-workspace.yaml` (`allowBuilds.better-sqlite3: false`, `verifyDepsBeforeRun: false`), and exact locked `smart-image-cli@0.3.0`/transitives; leave root workspace, lock, `.npmrc`, and `src/**` unchanged.
 
 ## Phase 2: Invocation and Lifecycle (PR 2)
 
