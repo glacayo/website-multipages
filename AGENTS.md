@@ -162,6 +162,8 @@ Sections select visuals via optional `variant` keys (section JSON) or `header_va
 Content images live in `src/assets/images/` and are referenced from JSON as `./images/...`.
 Untransformed public assets (logo, favicon, OG default) live in `public/`.
 
+Optional provenance tooling (`images:*`) may produce **candidates** under `.img-ia/_out/`. Promoting a candidate into `src/assets/images/` is always a **manual human step**. Never auto-copy candidates or rewrite JSON image paths from tooling output. See §8.
+
 ### Why this matters
 
 UI expects contract-defined keys. Changing wording is easy; changing shape is risky.
@@ -184,6 +186,7 @@ Read:
 - the relevant page/component
 - the relevant `src/data/*.json` file
 - `src/data/types.ts` when touching data shape
+- `.agents/skills/smart-image-cli/SKILL.md` **before any** `images:*` command (mandatory gate)
 
 ### During changes
 
@@ -192,6 +195,8 @@ Read:
 - prefer additive contract changes over shape-breaking ones
 - update Zod/validation when shapes change
 - do not hardcode phones, emails, addresses, or service copy in components — read loaders
+- do not hook `images:*` into install, build, `validate:data`, or CI
+- do not promote `.img-ia/_out/` candidates automatically
 
 ### Before finishing
 
@@ -200,7 +205,7 @@ pnpm run validate:data
 pnpm run build
 ```
 
-`pnpm run build` already runs the package-manager guard, data validation, `astro check`, and `astro build`.
+`pnpm run build` already runs the package-manager guard, data validation, `astro check`, and `astro build`. It never runs image tooling.
 
 ## 5. Security obligations
 
@@ -231,6 +236,12 @@ Preferred sequence:
 
 Template content must remain placeholder/lorem-style. Real client data belongs in a client repo.
 
+### 5.6 Image-tooling secrets and state
+
+- Provider credentials live **outside the repo** only (`~/.config/smart-image-cli/` / platform equivalent, or env). Never commit keys, caches, or CLI config into Git, `dist/`, or scaffold output.
+- Ignore and scaffold-deny root `CUSTOMER-IMAGES/` (working originals) and `.img-ia/` (state, caches, `_out` candidates). Capsule `tools/smart-image/node_modules/` is also ignored.
+- Capsule sources under `tools/smart-image/` stay checked in; root lockfile / workspace / `.npmrc` stay separate from the capsule graph.
+
 ## 6. High-risk anti-patterns
 
 Do not:
@@ -241,6 +252,9 @@ Do not:
 - reintroduce v1 monolith files (`content.json`, `blogs.json`) as the contract
 - rename/remove structured JSON fields because they “look unused”
 - hardcode client business data into `.astro` components
+- call the upstream `smart-img` bin, or invoke `images:*` from install/build/`validate:data`/CI
+- silently fall back to another provider/source/copy path when image tooling fails
+- auto-promote `.img-ia/_out/` into `src/assets/images/` or rewrite the 12 JSON files for attribution/fulfillment
 
 ## 7. Short checklist
 
@@ -257,5 +271,39 @@ Before submitting changes, confirm:
 - [ ] variants still fall back safely
 - [ ] `pnpm run validate:data` passes
 - [ ] `pnpm run build` passes
+- [ ] if `images:*` was used: skill was read first; no auto-promotion; credentials/state stay out of Git/`dist`/scaffold
 
 If any fail, fix them before finishing.
+
+## 8. Optional image tooling (explicit only)
+
+**Answer first:** `images:*` is optional, human/agent-invoked tooling. Install, `validate:data`, build, and CI **never** run it. Root dependency graph stays separate from the capsule at `tools/smart-image/`.
+
+### Mandatory skill gate
+
+Before **every** `images:check`, `images:setup`, or `images:run` invocation, read:
+
+`.agents/skills/smart-image-cli/SKILL.md`
+
+That skill is the runtime contract (wrapper-only path, readiness, no silent fallback, promotion rules). Do not invent alternate entry points.
+
+### Quick path
+
+```bash
+pnpm run images:check          # exit 0 ready | 1 + remediation (never downloads)
+pnpm run images:setup          # frozen capsule install; may need network; no fallback
+pnpm run images:run -- doctor --json   # wrapper → real CLI; truthful exit codes
+```
+
+| Topic | Rule |
+|-------|------|
+| Entry points | Only the three root scripts above (via pnpm) |
+| Capsule | `tools/smart-image/` — own manifest, workspace, lock; not in root workspace globs |
+| Setup / network | `images:setup` may require network; failure is explicit non-zero + remediation |
+| Provider missing | Readiness **warning** only; provider-required work fails explicitly (no silent skip) |
+| Credentials | Outside repo only — never in Git, `dist/`, or scaffold |
+| State boundaries | `.img-ia/`, root `CUSTOMER-IMAGES/` — not versioned, not scaffolded, not in `dist/` |
+| Promotion | Human copies approved files into `src/assets/images/`; never automatic |
+| Out of scope | Autonomous fulfillment, JSON rewriting, attribution rendering |
+
+Detailed decision gates and output contract: `.agents/skills/smart-image-cli/SKILL.md`.

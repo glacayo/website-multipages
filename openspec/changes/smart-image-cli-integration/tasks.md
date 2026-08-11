@@ -48,5 +48,5 @@ Chain strategy: stacked-to-main
 
 ## Phase 4: Documentation and Final Verification (PR 4)
 
-- [ ] 4.1 GREEN — Update `AGENTS.md`, `README.md`, and `SKILL.md` with pnpm-only boundaries, readiness/credential behavior, manual promotion, seed-content rules, and the mandatory skill gate.
-- [ ] 4.2 VERIFY — Run `pnpm run test:cli`, `pnpm run validate:data`, and `pnpm run build`; assert no JSON-contract/root enforcement changes and no automatic promotion from `.img-ia/_out/`.
+- [x] 4.1 GREEN — Update `AGENTS.md`, `README.md`, and `SKILL.md` with pnpm-only boundaries, readiness/credential behavior, manual promotion, seed-content rules, and the mandatory skill gate.
+- [x] 4.2 VERIFY — Run `pnpm run test:cli`, `pnpm run validate:data`, and `pnpm run build`; assert no JSON-contract/root enforcement changes and no automatic promotion from `.img-ia/_out/`.
