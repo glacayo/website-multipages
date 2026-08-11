@@ -34,6 +34,8 @@ Spin up a multi-page contractor marketing site that is:
 5. **Content images** in `src/assets/images/`; public untransformed assets in `public/`
 6. **Authoritative identity after scaffold** — `business.json` + `site.json`
 7. **Seed content is rewritable** — leftover masonry/hardscape demo is expected, not a conflict
+8. **Image tooling is opt-in** — install / `validate:data` / build / CI never run `images:*`; root deps stay separate from `tools/smart-image/`
+9. **Mandatory skill before `images:*`** — read `.agents/skills/smart-image-cli/SKILL.md` before every `images:check` / `images:setup` / `images:run`
 
 ## Authoritative identity vs seed content
 
@@ -151,6 +153,7 @@ Also:
 3. Replace demo images/assets while keeping JSON image path shape (`./images/...`)
 4. Preserve JSON shape + `_instructions` everywhere
 5. Run `pnpm run validate:data` and `pnpm run build` before finishing
+6. If using optional image tooling: read `.agents/skills/smart-image-cli/SKILL.md` first; never auto-promote `.img-ia/_out/`
 
 ### How to add a service
 
@@ -232,8 +235,27 @@ scripts/               # enforce-package-manager, validate-data
 | `pnpm install --frozen-lockfile` | Deterministic install |
 | `pnpm run dev` | Local dev server |
 | `pnpm run validate:data` | Validate 12 JSON files |
-| `pnpm run build` | Guard + validate + `astro check` + build |
+| `pnpm run build` | Guard + validate + `astro check` + build (never runs `images:*`) |
 | `pnpm run preview` | Preview `dist/` |
+| `pnpm run images:check` | Optional capsule readiness (never downloads) |
+| `pnpm run images:setup` | Optional capsule install (`--frozen-lockfile --dir tools/smart-image`; may need network) |
+| `pnpm run images:run -- <args>` | Optional real CLI via checked-in wrapper only |
+
+### Optional image tooling (agents)
+
+**Read first:** [`.agents/skills/smart-image-cli/SKILL.md`](./.agents/skills/smart-image-cli/SKILL.md) — mandatory before any `images:*` command.
+
+| Topic | Decision |
+|-------|----------|
+| Capsule | `tools/smart-image/` — isolated pnpm workspace; not in root install graph |
+| Wrapper | Use root scripts only; never the upstream `smart-img` bin |
+| Provider | Missing key = readiness **warning**; provider-required work fails explicitly — no silent fallback |
+| Credentials | Outside repo only (`~/.config/smart-image-cli/` or env) |
+| State | `.img-ia/` and root `CUSTOMER-IMAGES/` — gitignored, scaffold-denied, not in `dist/` |
+| Promotion | Human copies into `src/assets/images/`; never automatic |
+| Out of scope | Autonomous fulfillment, JSON rewriting, attribution rendering |
+
+Happy path: `images:check` → (if needed) `images:setup` → `images:run -- doctor --json`. Details and output contract live in the skill above.
 
 ## What NOT to do
 
@@ -248,6 +270,10 @@ scripts/               # enforce-package-manager, validate-data
 - Do **not** put content images only in `public/` (use `src/assets/images/`)
 - Do **not** skip `pnpm run build` after nontrivial edits
 - Do **not** strip guard files (`AGENTS.md`, `.npmrc`, `scripts/enforce-package-manager.cjs`, `pnpm-workspace.yaml`)
+- Do **not** run `images:*` without reading `.agents/skills/smart-image-cli/SKILL.md` first
+- Do **not** hook `images:*` into install, build, `validate:data`, or CI
+- Do **not** auto-promote `.img-ia/_out/` candidates or rewrite JSON for tooling output
+- Do **not** commit credentials, `.img-ia/`, or root `CUSTOMER-IMAGES/`
 
 ## Deploy
 

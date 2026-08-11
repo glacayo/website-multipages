@@ -131,6 +131,38 @@ npm run
 npx
 ```
 
+Install, `validate:data`, `build`, and CI never run image tooling. Root lockfile/workspace stay separate from the optional capsule below.
+
+## Optional image tooling
+
+**Opt-in only.** Provenance-aware image helpers live in an isolated capsule at `tools/smart-image/` (`smart-image-cli@0.3.0`). They are not part of the site dependency graph or deploy path.
+
+### Quick path
+
+```bash
+pnpm run images:check
+# if exit 1 → remediation, then:
+pnpm run images:setup          # frozen-lockfile install in the capsule; may need network
+pnpm run images:run -- doctor --json
+```
+
+| Command | Role |
+|---------|------|
+| `images:check` | Readiness probe (exit 0 ready / 1 + remediation). Never writes or downloads. |
+| `images:setup` | Capsule install only. Explicit failure if network/package missing — no fallback. |
+| `images:run -- <args>` | Checked-in wrapper → real CLI. Truthful exit codes; never call the upstream `smart-img` bin. |
+
+### Boundaries (summary)
+
+- **Agents:** read [`.agents/skills/smart-image-cli/SKILL.md`](./.agents/skills/smart-image-cli/SKILL.md) before every `images:*` command.
+- **Credentials:** outside the repo only (`~/.config/smart-image-cli/` or env) — never committed.
+- **Provider missing:** check may **warn**; provider-required commands fail explicitly (no silent provider swap).
+- **Git / scaffold / `dist/`:** root `CUSTOMER-IMAGES/` and `.img-ia/` stay out; capsule sources stay in; no credential/state bytes in output.
+- **Promotion:** candidates under `.img-ia/_out/` require a **manual human** copy into `src/assets/images/`. No automatic promotion, JSON rewriting, fulfillment, or attribution pipeline.
+- **Seed demo images** under `src/assets/images/` remain rewritable seed content (see identity rules above) — unrelated to capsule state.
+
+Full agent contract: [`.agents/skills/smart-image-cli/SKILL.md`](./.agents/skills/smart-image-cli/SKILL.md). Non-negotiables: [`AGENTS.md`](./AGENTS.md).
+
 ## JSON data contract (12 files)
 
 Client customization happens only through these files under `src/data/`:
@@ -244,6 +276,7 @@ For generated client sites:
 3. Preserve JSON shape and `_instructions` while replacing values/copy/assets
 4. Do not hardcode client business data into components
 5. Keep the shared template base neutral — real client PII only in client repos
+6. Before any `images:*` command, read `.agents/skills/smart-image-cli/SKILL.md` (scaffolds retain the skill + capsule)
 
 Before finishing nontrivial work:
 
