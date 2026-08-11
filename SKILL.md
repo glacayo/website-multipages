@@ -153,7 +153,7 @@ Also:
 3. Replace demo images/assets while keeping JSON image path shape (`./images/...`)
 4. Preserve JSON shape + `_instructions` everywhere
 5. Run `pnpm run validate:data` and `pnpm run build` before finishing
-6. If using optional image tooling: read `.agents/skills/smart-image-cli/SKILL.md` first; never auto-promote `.img-ia/_out/`
+6. If using optional image tooling: read `.agents/skills/smart-image-cli/SKILL.md` first; never auto-promote from `.img-ia/` (internal state) — copy from `<image-root>/_out/`
 
 ### How to add a service
 
@@ -251,9 +251,9 @@ scripts/               # enforce-package-manager, validate-data
 | Wrapper | Use root scripts only; never the upstream `smart-img` bin |
 | Provider | Missing key = readiness **warning**; provider-required work fails explicitly — no silent fallback |
 | Credentials | Outside repo only (`~/.config/smart-image-cli/` or env) |
-| State | `.img-ia/` and root `CUSTOMER-IMAGES/` — gitignored, scaffold-denied, not in `dist/` |
-| Promotion | Human copies into `src/assets/images/`; never automatic |
-| Out of scope | Autonomous fulfillment, JSON rewriting, attribution rendering |
+| State | `.img-ia/` (internal state) and root `CUSTOMER-IMAGES/` — gitignored, scaffold-denied, not in `dist/`; `<image-root>/_out/` is the consumable output |
+| Promotion | Active agent copies from `<image-root>/_out/` into `src/assets/images/` and updates JSON values + alt text; never waits for human approval |
+| Out of scope | Persisting attribution metadata or rendering public credits |
 
 Happy path: `images:check` → (if needed) `images:setup` → `images:run -- doctor --json`. Details and output contract live in the skill above.
 
@@ -272,7 +272,7 @@ Happy path: `images:check` → (if needed) `images:setup` → `images:run -- doc
 - Do **not** strip guard files (`AGENTS.md`, `.npmrc`, `scripts/enforce-package-manager.cjs`, `pnpm-workspace.yaml`)
 - Do **not** run `images:*` without reading `.agents/skills/smart-image-cli/SKILL.md` first
 - Do **not** hook `images:*` into install, build, `validate:data`, or CI
-- Do **not** auto-promote `.img-ia/_out/` candidates or rewrite JSON for tooling output
+- Do **not** auto-promote from `.img-ia/` (internal state); copy from `<image-root>/_out/` and update JSON values + alt text only
 - Do **not** commit credentials, `.img-ia/`, or root `CUSTOMER-IMAGES/`
 
 ## Deploy
