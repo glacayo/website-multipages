@@ -6,7 +6,7 @@
  * 1. Missing target argument
  * 2. Existing non-empty target
  * 3. Target equal to / inside template root
- * 4. Published DEFAULT_TEMPLATE_REF / CREATE_CONTRACTOR_TEMPLATE_REF contract (v2.2.0)
+ * 4. Published DEFAULT_TEMPLATE_REF / CREATE_CONTRACTOR_TEMPLATE_REF contract (v2.3.0)
  * 5. Duplicate service input normalization + slug uniqueness + business/services alignment
  * 6. Service-area name parse/dedupe (Chesapeake duplicate-slug case) + areas rebuild
  *    without leaking stale template county/ZIP metadata into new areas
@@ -156,25 +156,25 @@ async function main() {
   });
 
   await test(
-    'DEFAULT_TEMPLATE_REF / CREATE_CONTRACTOR_TEMPLATE_REF published contract is v2.2.0',
+    'DEFAULT_TEMPLATE_REF / CREATE_CONTRACTOR_TEMPLATE_REF published contract is v2.3.0',
     () => {
       const copySrcPath = path.join(PKG_ROOT, 'src', 'copy-template.mjs');
       const copySrc = fs.readFileSync(copySrcPath, 'utf8');
       // Pin the source fallback so a silent ref bump cannot ship without updating this test.
       assert(
-        /CREATE_CONTRACTOR_TEMPLATE_REF\s*\|\|\s*['"]v2\.2\.0['"]/.test(copySrc),
-        'copy-template.mjs DEFAULT_TEMPLATE_REF fallback must be v2.2.0',
+        /CREATE_CONTRACTOR_TEMPLATE_REF\s*\|\|\s*['"]v2\.3\.0['"]/.test(copySrc),
+        'copy-template.mjs DEFAULT_TEMPLATE_REF fallback must be v2.3.0',
       );
       const expected =
-        process.env.CREATE_CONTRACTOR_TEMPLATE_REF || 'v2.2.0';
+        process.env.CREATE_CONTRACTOR_TEMPLATE_REF || 'v2.3.0';
       assert(
         DEFAULT_TEMPLATE_REF === expected,
-        `DEFAULT_TEMPLATE_REF must equal CREATE_CONTRACTOR_TEMPLATE_REF or v2.2.0 (got ${DEFAULT_TEMPLATE_REF})`,
+        `DEFAULT_TEMPLATE_REF must equal CREATE_CONTRACTOR_TEMPLATE_REF or v2.3.0 (got ${DEFAULT_TEMPLATE_REF})`,
       );
       if (!process.env.CREATE_CONTRACTOR_TEMPLATE_REF) {
         assert(
-          DEFAULT_TEMPLATE_REF === 'v2.2.0',
-          `published default template ref must be v2.2.0 (got ${DEFAULT_TEMPLATE_REF})`,
+          DEFAULT_TEMPLATE_REF === 'v2.3.0',
+          `published default template ref must be v2.3.0 (got ${DEFAULT_TEMPLATE_REF})`,
         );
       }
 
@@ -186,8 +186,8 @@ async function main() {
         'help must document CREATE_CONTRACTOR_TEMPLATE_REF',
       );
       assert(
-        /v2\.2\.0/.test(helpOut),
-        'help must document default template ref v2.2.0',
+        /v2\.3\.0/.test(helpOut),
+        'help must document default template ref v2.3.0',
       );
     },
   );
