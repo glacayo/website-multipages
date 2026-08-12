@@ -30,7 +30,7 @@ export const DEFAULT_TEMPLATE_REPO =
   'https://github.com/glacayo/website-multipages.git';
 
 export const DEFAULT_TEMPLATE_REF =
-  process.env.CREATE_CONTRACTOR_TEMPLATE_REF || 'v2.2.0';
+  process.env.CREATE_CONTRACTOR_TEMPLATE_REF || 'v2.3.0';
 
 /**
  * @param {string} name basename

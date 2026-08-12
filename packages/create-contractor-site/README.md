@@ -2,16 +2,18 @@
 
 Scaffold a client contractor website from the [website-multipages](https://github.com/glacayo/website-multipages) Astro template.
 
-**Package version:** `2.2.0` · **Default template ref:** `v2.2.0` (`CREATE_CONTRACTOR_TEMPLATE_REF`)
+**Package version:** `2.3.0` · **Default template ref:** `v2.3.0` (`CREATE_CONTRACTOR_TEMPLATE_REF`)
 
 The CLI validates the target, copies the template, replaces placeholder values in `src/data/*.json`, installs with **pnpm**, validates data, builds, and initializes git **only after** success.
 
-## What's new in 2.2.0
+## What's new in 2.3.0
 
-- **`siteType`** — choose `one-page`, `multipage`, or `seo` (aliases accepted). Written to `site.json.site_type`. Default for new scaffolds: `multipage`.
-- **Expanded intake** — payment methods, hours, free-estimate wording, years of experience, license, insurance, social links, and directories (interactive, `--yes` defaults, or `CREATE_CONTRACTOR_SITE_ANSWERS_JSON`).
-- **Template clone default** — published fallback uses git ref **`v2.2.0`** unless you set `CREATE_CONTRACTOR_TEMPLATE_ROOT` or `CREATE_CONTRACTOR_TEMPLATE_REF`.
-- After scaffold, treat `business.json` + `site.json` as authoritative identity; leftover demo trade content is expected seed material to rewrite.
+- **Page-shell reuse** — shared page header shell extracted across about/contact/remaining pages, reducing duplicated layout markup.
+- **Isolated smart-image capsule** — optional image helpers live in a separate pnpm workspace at `tools/smart-image/`, outside the root dependency graph; root lockfile/workspace stay separate.
+- **Scaffold/state protections** — `CUSTOMER-IMAGES/` and `.img-ia/` are gitignored and scaffold-denied; capsule `node_modules/` stays ignored; no credential/state bytes reach `dist/`.
+- **Agent-owned image fulfillment** — `images:check` / `images:setup` / `images:run` wrappers; the active agent autonomously copies compliant candidates from `<image-root>/_out/` into `src/assets/images/` and updates JSON values + alt text (no human promotion step).
+- **pnpm/Corepack compatibility fix** — pnpm pinned for Corepack compatibility so `pnpm install` is deterministic across environments.
+- **Template clone default** — published fallback uses git ref **`v2.3.0`** unless you set `CREATE_CONTRACTOR_TEMPLATE_ROOT` or `CREATE_CONTRACTOR_TEMPLATE_REF`.
 
 Full release notes: repository root [`CHANGELOG.md`](../../CHANGELOG.md).
 
@@ -88,7 +90,7 @@ See the template root `AGENTS.md`, `SKILL.md`, and `README.md` for the full agen
 | `CREATE_CONTRACTOR_SITE_ANSWERS_JSON` | JSON object with client answers for scripted/non-interactive scaffolds |
 | `CREATE_CONTRACTOR_TEMPLATE_ROOT` | Path to a local template checkout (preferred for monorepo/dev) |
 | `CREATE_CONTRACTOR_TEMPLATE_REPO` | Git URL for the published fallback clone (default: this template repo) |
-| `CREATE_CONTRACTOR_TEMPLATE_REF` | Git branch/tag/ref to clone (default: `v2.2.0`) |
+| `CREATE_CONTRACTOR_TEMPLATE_REF` | Git branch/tag/ref to clone (default: `v2.3.0`) |
 
 Template source precedence: `CREATE_CONTRACTOR_TEMPLATE_ROOT` → local monorepo discovery → temporary clone of repo @ ref.
 
