@@ -12,7 +12,8 @@
  *    without leaking stale template county/ZIP metadata into new areas
  * 7. CREATE_CONTRACTOR_SITE_ANSWERS_JSON real CLI spawn (copy+replace, skip setup)
  * 8. Root workspace isolation vs tools/smart-image capsule (scope, sharp/zod, dist/)
- * 9. Smart-image wrapper/lifecycle (argv safety, Windows bin, setup/check, no hooks)
+ * 9. Smart-image wrapper/lifecycle (argv safety, Windows bin, setup/check, no hooks);
+ *    capsule-runtime cases skip with SKIP_CAPSULE_TESTS=1, static policy checks always run
  * 10. Scaffold deny/gitignore/required retention (isDeniedName, check-ignore, copyTemplate)
  * 11. Temp-target --yes scaffold (install/validate/build) unless SKIP_CLI_E2E=1
  */
@@ -87,6 +88,22 @@ async function test(name, fn) {
     console.error(`  ✗ ${name}`);
     console.error(`    ${err instanceof Error ? err.message : err}`);
   }
+}
+
+/**
+ * Capsule-runtime tests need the optional `tools/smart-image` capsule install
+ * and its provider environment. They run by default and opt out with
+ * SKIP_CAPSULE_TESTS=1 for capsule-less CI runs. Static wrapper/policy checks
+ * deliberately use `test` instead, so they always run.
+ * @param {string} name
+ * @param {() => void | Promise<void>} fn
+ */
+async function capsuleTest(name, fn) {
+  if (process.env.SKIP_CAPSULE_TESTS === '1') {
+    console.log(`  ↷ SKIP_CAPSULE_TESTS=1 — skipping capsule runtime: ${name}`);
+    return;
+  }
+  await test(name, fn);
 }
 
 /**
@@ -1261,7 +1278,7 @@ async function main() {
   /** @param {import('node:child_process').SpawnSyncReturns<string>} r */
   const out = (r) => `${r.stdout || ''}\n${r.stderr || ''}`;
 
-  await test('images:run passes shell metacharacters as literal argv (exit 3, no side effects)', () => {
+  await capsuleTest('images:run passes shell metacharacters as literal argv (exit 3, no side effects)', () => {
     assert(REPO_ROOT && fs.existsSync(runJs), 'run.mjs required');
     const marker = path.join(os.tmpdir(), `si-side-${process.pid}.txt`);
     if (fs.existsSync(marker)) fs.rmSync(marker, { force: true });
@@ -1278,7 +1295,7 @@ async function main() {
     }
   });
 
-  await test('Windows smart-img bin is silent while wrapper emits parseable doctor JSON', () => {
+  await capsuleTest('Windows smart-img bin is silent while wrapper emits parseable doctor JSON', () => {
     assert(REPO_ROOT && fs.existsSync(runJs), 'run.mjs required');
     const binCmd = path.join(capDir, 'node_modules', '.bin', 'smart-img.CMD');
     assert(
@@ -1366,7 +1383,7 @@ async function main() {
     }
   });
 
-  await test('missing capsule / corrupt lock / offline setup remediate; provider is warning', () => {
+  await capsuleTest('missing capsule / corrupt lock / offline setup remediate; provider is warning', () => {
     assert(REPO_ROOT && fs.existsSync(checkJs) && fs.existsSync(capDir), 'capsule required');
     for (const p of [
       path.join(REPO_ROOT, 'tools', 'smart-image-MISSING', 'check.mjs'),
