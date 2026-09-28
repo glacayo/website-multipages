@@ -1151,8 +1151,8 @@ async function main() {
     const pkg = readJson(path.join(REPO_ROOT, 'package.json'));
     const sharp = pkg.devDependencies?.sharp ?? pkg.dependencies?.sharp;
     const zod = pkg.devDependencies?.zod ?? pkg.dependencies?.zod;
-    assert(sharp === '^0.34.5', `root sharp range must stay ^0.34.5, got ${sharp}`);
-    assert(zod === '^4.1.5', `root zod range must stay ^4.1.5, got ${zod}`);
+    assert(sharp === '^0.35.4', `root sharp range must stay ^0.35.4, got ${sharp}`);
+    assert(zod === '^4.4.3', `root zod range must stay ^4.4.3, got ${zod}`);
     assert(pkg.overrides == null, 'root package.json must not declare overrides');
     assert(
       pkg.pnpm?.overrides == null,
@@ -1292,11 +1292,51 @@ async function main() {
         `bin must be silent, got ${out(bin).slice(0, 200)}`,
       );
     }
+    // `doctor` exits 0 on a fully healthy config, or 5 when the only failing
+    // check is optional provider credentials being absent. Any other failure
+    // (corrupt config, unreachable endpoint, missing native dependency) must
+    // still fail this test: only the missing-credentials shape is tolerated.
     for (const wrap of [runPnpm(['run', 'images:run', '--', 'doctor', '--json']), imgRun(['doctor', '--json'])]) {
-      assert(wrap.status === 0, `wrapper exit 0, got ${wrap.status}: ${wrap.stderr}`);
-      const parsed = JSON.parse((wrap.stdout || '').trim());
+      // pnpm appends its own `[ELIFECYCLE] ...` line to stdout on a non-zero
+      // exit, so extract the single doctor JSON object instead of parsing all
+      // of stdout.
+      const stdout = (wrap.stdout || '').trim();
+      const jsonStart = stdout.indexOf('{');
+      const jsonEnd = stdout.lastIndexOf('}');
+      assert(jsonStart !== -1 && jsonEnd > jsonStart, `doctor must emit JSON, got: ${out(wrap).slice(0, 200)}`);
+      const jsonText = stdout.slice(jsonStart, jsonEnd + 1);
+      let parsed;
+      try {
+        parsed = JSON.parse(jsonText);
+      } catch (err) {
+        throw new Error(
+          `doctor JSON must parse, got: ${jsonText.slice(0, 200)} (${err instanceof Error ? err.message : err})`,
+        );
+      }
       assert(parsed.command === 'doctor' || parsed.ok === true, 'doctor JSON');
-      assert(Array.isArray(parsed.details?.checks) || parsed.status === 'success', 'doctor checks');
+      const checks = parsed.details?.checks;
+      assert(Array.isArray(checks), 'doctor checks');
+      const failing = checks.filter((c) => c.ok !== true);
+      if (wrap.status === 0) {
+        assert(parsed.ok === true && parsed.status === 'success', `healthy doctor JSON, got ${parsed.status}`);
+        assert(failing.length === 0, `healthy doctor has failing checks: ${failing.map((c) => c.name).join(', ')}`);
+        continue;
+      }
+      assert(
+        wrap.status === 5,
+        `wrapper must exit 0 (healthy) or 5 (provider credentials absent), got ${wrap.status}: ${wrap.stderr}`,
+      );
+      assert(
+        parsed.ok === false && parsed.status === 'failed' && parsed.reason === 'doctor_failed',
+        'failed doctor JSON',
+      );
+      assert(
+        failing.length === 1 && failing[0].name === 'provider-config' && failing[0].message == null,
+        `exit 5 must mean only optional provider credentials are absent, got failing checks: ${failing
+          .map((c) => c.name)
+          .join(', ')}`,
+      );
+      assert(failing[0].details != null, 'provider-config failure must expose non-secret config details');
     }
   });
 
