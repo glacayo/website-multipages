@@ -1532,7 +1532,13 @@ async function main() {
     // Directory patterns use trailing slash; also prove bare dir names when they exist.
     assert(isIgnored('CUSTOMER-IMAGES/') === true, 'root CUSTOMER-IMAGES/ ignored');
     assert(isIgnored('.img-ia/') === true, 'root .img-ia/ ignored');
-    assert(isIgnored('tools/smart-image/node_modules') === true, 'capsule node_modules ignored');
+    // Bare (no trailing slash) matching is directory-only, so Git can only treat the
+    // path as ignored when it actually exists. The capsule's optional node_modules is
+    // deliberately absent in fresh CI; the trailing-slash assertion below stays
+    // unconditional because Git honors the explicit directory marker without a stat.
+    if (fs.existsSync(path.join(REPO_ROOT, 'tools', 'smart-image', 'node_modules'))) {
+      assert(isIgnored('tools/smart-image/node_modules') === true, 'capsule node_modules ignored');
+    }
     assert(isIgnored('tools/smart-image/node_modules/') === true, 'capsule node_modules/ ignored');
 
     const probeCi = path.join(REPO_ROOT, 'CUSTOMER-IMAGES');
