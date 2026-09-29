@@ -252,6 +252,16 @@ publish = "dist"
 
 Node 22 and pnpm frozen lockfile are set in build environment.
 
+## Releasing
+
+`create-contractor-site` releases are **manual and token-free**, driven by
+[`.github/workflows/publish.yml`](./.github/workflows/publish.yml) through npm
+trusted publishing (OIDC). No local `npm login` or npm token is ever used, and
+the template root stays `private: true` so only the CLI package can be published.
+
+Runbook — one-time npm trusted-publisher binding, ordering, and failure
+recovery: [`docs/releasing.md`](./docs/releasing.md).
+
 ## pnpm enforcement
 
 Enforced by:

@@ -49,6 +49,11 @@ jobs:
       - name: Build
         run: pnpm run build
 
+      # Release workflow safety self-tests: the publish guards must stay green
+      # before any release machinery can run. Node built-ins only, no deps.
+      - name: Release guard self-tests
+        run: node --test .github/scripts/test-release-guards.mjs
+
       # Full core suite including the temp-target scaffold E2E. Capsule runtime
       # tests are gated out because the optional capsule is not installed in CI;
       # the default local run still exercises the complete suite.
