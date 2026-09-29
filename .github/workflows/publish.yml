@@ -1,0 +1,238 @@
+name: Publish (trusted publishing)
+
+# Guarded, token-free npm release for create-contractor-site.
+#
+# Manual only: a maintainer dispatches this from `main` with an existing stable
+# annotated tag (vX.Y.Z). npm auth uses OIDC trusted publishing only: no npm
+# token is configured, and a guard fails the run if one is present. The CLI
+# package is published by pnpm natively with a provenance attestation, and the
+# GitHub release is only created after the registry confirms the exact version.
+#
+# Binding (one-time, npmjs.com): owner glacayo, repository website-multipages,
+# workflow publish.yml, environment npm, direct publish allowed. See docs/releasing.md.
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing stable annotated release tag to publish (vX.Y.Z)'
+        required: true
+        type: string
+
+# Least privilege by default; each job widens only what it strictly needs.
+permissions:
+  contents: read
+
+# Serialize per tag and never cancel a run that may already have published.
+concurrency:
+  group: publish-${{ inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: Validate release candidate
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    permissions:
+      contents: read
+    env:
+      # Bind the user-controlled input to env; it is never interpolated into shell text.
+      RELEASE_TAG: ${{ inputs.tag }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          persist-credentials: false
+
+      - name: Require dispatch from main
+        run: |
+          if [ "${GITHUB_REF}" != "refs/heads/main" ]; then
+            echo "publish.yml must be dispatched from main (got ${GITHUB_REF})." >&2
+            exit 1
+          fi
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          version: '11.18.0'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24'
+
+      # The publish guards are part of the trust boundary; prove them green
+      # before any release step runs. Node built-ins only, no dependencies needed.
+      - name: Release guard self-tests
+        run: node --test .github/scripts/test-release-guards.mjs
+
+      # Exact stable annotated tag; tag commit == origin/main == workflow HEAD;
+      # root and CLI manifest versions and DEFAULT_TEMPLATE_REF all equal the tag.
+      - name: Verify tag and version identity
+        run: node .github/scripts/verify-release.mjs identity --tag "$RELEASE_TAG"
+
+      # Preflight: only a clean 404 passes. Any other status stops the release.
+      - name: Verify version is unpublished (404 only)
+        run: node .github/scripts/verify-release.mjs registry --tag "$RELEASE_TAG" --expect absent
+
+      - name: Install dependencies (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm run build
+
+      # Capsule-free core suite; the optional capsule is never installed in CI.
+      - name: Core CLI smoke (no capsule runtime)
+        run: SKIP_CAPSULE_TESTS=1 SKIP_CLI_E2E=1 pnpm run test:cli
+
+      # Pack exactly what would be uploaded, without touching the registry.
+      - name: CLI package dry-run (no publish)
+        run: pnpm --dir packages/create-contractor-site publish --dry-run --access public
+
+  publish:
+    name: Publish to npm (OIDC)
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # GitHub-hosted environment bound as the npm trusted publisher; the
+    # id-token grant is what lets npm exchange an OIDC token for publish rights.
+    environment: npm
+    permissions:
+      contents: read
+      id-token: write
+    # The exact commit validated immediately before publish, handed to the
+    # release job so it can prove the remote tag has not moved since.
+    outputs:
+      validated_sha: ${{ steps.validated.outputs.sha }}
+    env:
+      RELEASE_TAG: ${{ inputs.tag }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          persist-credentials: false
+
+      - name: Require dispatch from main
+        run: |
+          if [ "${GITHUB_REF}" != "refs/heads/main" ]; then
+            echo "publish.yml must be dispatched from main (got ${GITHUB_REF})." >&2
+            exit 1
+          fi
+
+      # Trusted publishing must never silently fall back to a stored token.
+      - name: Refuse token-based npm auth
+        run: |
+          for name in NODE_AUTH_TOKEN NPM_TOKEN; do
+            if printenv "$name" >/dev/null 2>&1; then
+              echo "Refusing to publish: $name is set. Trusted publishing is token-free." >&2
+              exit 1
+            fi
+          done
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          version: '11.18.0'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24'
+
+      # Re-check drift and identity immediately before the irreversible step:
+      # main may have moved since validation.
+      - name: Recheck drift and identity
+        run: |
+          node .github/scripts/verify-release.mjs drift --tag "$RELEASE_TAG"
+          node .github/scripts/verify-release.mjs identity --tag "$RELEASE_TAG"
+
+      # Freeze the exact commit that passed the re-check and is about to be
+      # published; the release job requires the remote tag to still point here.
+      # Assign first so a failing guard fails the step under `set -e`.
+      - name: Capture publish-validated commit
+        id: validated
+        run: |
+          validated_sha="$(node .github/scripts/verify-release.mjs commit --tag "$RELEASE_TAG")"
+          echo "sha=${validated_sha}" >> "$GITHUB_OUTPUT"
+
+      # Re-check the exact version's absence in the same shell step as the
+      # irreversible publish, so no other step can open a TOCTOU gap between
+      # the check and the upload. Fail-closed: any non-404 aborts before publish.
+      - name: Publish with provenance
+        run: |
+          node .github/scripts/verify-release.mjs registry --tag "$RELEASE_TAG" --expect absent
+          pnpm --dir packages/create-contractor-site publish --provenance --access public
+
+      # Never create the GitHub release on an unconfirmed publish. Bounded
+      # retries cover registry propagation; failure stops here for manual review.
+      - name: Confirm published version in registry
+        run: |
+          for attempt in 1 2 3 4 5; do
+            if node .github/scripts/verify-release.mjs registry --tag "$RELEASE_TAG" --expect present; then
+              exit 0
+            fi
+            echo "registry not yet updated (attempt ${attempt}); retrying…"
+            sleep 10
+          done
+          echo "Registry confirmation failed. Do NOT re-run publish; verify npm manually." >&2
+          exit 1
+
+  release:
+    name: Create GitHub release
+    needs: publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Widen only for the release object, and only after registry confirmation.
+    permissions:
+      contents: write
+    env:
+      RELEASE_TAG: ${{ inputs.tag }}
+      VALIDATED_SHA: ${{ needs.publish.outputs.validated_sha }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      # Needed only to re-fetch and compare the tag; this job never pushes.
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          persist-credentials: false
+
+      # TOCTOU guard: a pushed tag can move after npm publish. Re-fetch the
+      # remote annotated tag and require it to equal the publish-validated
+      # commit immediately before the GitHub release is created. A tag
+      # protection ruleset is defense in depth, not a substitute for this check.
+      - name: Verify tag has not moved since publish
+        run: node .github/scripts/verify-release.mjs release-tag --tag "$RELEASE_TAG" --expect-commit "$VALIDATED_SHA"
+
+      # Bounded retry for transient gh failures only, and only after an
+      # authenticated release absence check proves nothing exists. Get-by-tag
+      # (`gh release view`) returns published releases only, so a 404 there
+      # never proves absence; an API/rate-limit error would otherwise trigger
+      # another create attempt over an existing draft or release. The helper
+      # walks every page of List releases, which includes drafts, and fails
+      # closed on any auth/network/redirect/HTTP error, malformed body, or
+      # incomplete pagination. A found release or an inconclusive listing stops
+      # the run for manual inspection; never overwrite or retry blind.
+      - name: Create GitHub release for the published tag (bounded retry)
+        run: |
+          set -euo pipefail
+          notes="Published create-contractor-site ${RELEASE_TAG} to npm with provenance. See CHANGELOG.md."
+          for attempt in 1 2 3 4 5; do
+            if gh release create "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --verify-tag --title "$RELEASE_TAG" --notes "$notes"; then
+              echo "release $RELEASE_TAG created"
+              exit 0
+            fi
+            if node .github/scripts/verify-release.mjs release-absent --tag "$RELEASE_TAG"; then
+              echo "gh release create failed (attempt ${attempt}); release absence proven, retrying…" >&2
+              sleep 10
+            else
+              echo "Could not prove $RELEASE_TAG is absent (existing release/draft or inconclusive GitHub API). Stop and inspect manually; never overwrite." >&2
+              exit 1
+            fi
+          done
+          echo "Release creation failed after 5 attempts; verify manually and never retry blindly." >&2
+          exit 1
