@@ -4,6 +4,56 @@ All notable changes to the contractor multipages template and `create-contractor
 
 The format is release-note style. Versions follow the monorepo package version (`package.json` and `packages/create-contractor-site/package.json`).
 
+## [2.3.1] — 2026-09-29
+
+### Highlights
+
+- Supported dependency refresh (Astro 7.3.x / Sharp 0.35.x) with updated CLI smoke coverage.
+- Hosted pnpm CI plus guarded, token-free npm trusted publishing infrastructure prepared for `create-contractor-site`.
+
+### Changed / Improved
+
+- Template and CLI package version **2.3.1**.
+- Default published template clone ref: `CREATE_CONTRACTOR_TEMPLATE_REF` → **`v2.3.1`** (override still supported).
+- **Supported Astro upgrade** — root `astro` range moved to `^7.3.2` with compatible `@lucide/astro` (`~1.31.0`), `@tailwindcss/vite` (`^4.3.3`), `alpinejs` (`^3.16.1`), `tailwindcss` (`^4.3.3`), `@astrojs/check` (`^0.9.10`), `sharp` (`^0.35.4`), and `zod` (`^4.4.3`) refresh; `pnpm-lock.yaml` and the CLI smoke suite were updated together.
+- **pnpm CI** — `.github/workflows/ci.yml` runs a frozen-lockfile install, `pnpm run build`, the release-guard self-tests, and the capsule-free core CLI smoke on pull requests and `main`; the template root stays `private: true`.
+- **Trusted publishing infrastructure** — manual `main`-only `.github/workflows/publish.yml` with release identity/registry guards (`verify-release.mjs`, `test-release-guards.mjs`) and a `docs/releasing.md` runbook; the workflow refuses stored npm tokens and is wired for OIDC trusted publishing with provenance.
+- **Capsule-free CLI smoke** — `SKIP_CAPSULE_TESTS=1` keeps the core suite runnable without the optional `tools/smart-image/` capsule, and the smoke suite tolerates an absent capsule directory.
+
+### Fixed
+
+- **Optional capsule directory** — CI smoke no longer fails when `tools/smart-image/` is not installed.
+
+### Validation
+
+**Scaffolded client sites / day-to-day template use** — run:
+
+```bash
+pnpm run build
+```
+
+`pnpm run build` already runs package-manager guard, data validation, theme lint/tests, route tests, Astro check/build, and the route gate. It never runs `images:*`.
+
+**Template-root maintainers only** (CLI package smoke; not for scaffolded client repos):
+
+```bash
+pnpm run test:cli
+SKIP_CAPSULE_TESTS=1 SKIP_CLI_E2E=1 pnpm run test:cli
+```
+
+**Release machinery self-tests**:
+
+```bash
+node --test .github/scripts/test-release-guards.mjs
+```
+
+### Notes for maintainers
+
+- Do not commit, tag, or publish until this release is verified on a clean tree.
+- npm trusted-publisher binding and the 2FA/trusted-publishing policy are maintainer-supplied and were not independently authenticated here; a real OIDC/provenance exchange remains untested.
+- Tag the git release as `v2.3.1` so the CLI published fallback clone matches the default ref.
+- Publish `create-contractor-site@2.3.1` from `packages/create-contractor-site` when ready (pnpm only).
+
 ## [2.3.0] — 2026-08-11
 
 ### Highlights
