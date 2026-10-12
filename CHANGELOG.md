@@ -4,6 +4,12 @@ All notable changes to the contractor multipages template and `create-contractor
 
 The format is release-note style. Versions follow the monorepo package version (`package.json` and `packages/create-contractor-site/package.json`).
 
+## [Unreleased]
+
+### Changed / Improved
+
+- **Bounded registry confirmation** — the publish workflow's post-publish shell retry loop is replaced by a single `verify-release.mjs registry --expect present --wait` call. It probes the exact canonical version URL and retries only transient visibility conditions (`404`, `429`, `5xx`, network/timeout) with bounded exponential backoff (10s base, doubling to a 60s ceiling) inside a fixed ~5 minute budget, never starting or sleeping for a probe that could not finish in time. Redirects, malformed/missing metadata, identity mismatches, and every other status still fail closed immediately. Publish stays a single irreversible command with its adjacent absence re-check, and non-wait behavior is unchanged.
+
 ## [2.3.1] — 2026-09-29
 
 ### Highlights

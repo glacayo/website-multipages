@@ -21,8 +21,11 @@
  * `redirect: 'error'`), malformed or missing metadata always fail closed, while
  * network and timeout causes stay retryable. A bounded confirmation loop
  * (`confirmRegistryVersion`) retries only those causes within a fixed budget
- * and never sleeps after giving up. Probe evidence is sanitized before it
- * reaches logs. It never publishes and never writes to the repository.
+ * and never sleeps after giving up. Only `registry --expect present --wait`
+ * uses that loop: an absent check and a non-wait present check stay
+ * single-probe and fail closed, and `--wait` with `--expect absent` is
+ * rejected before any probe. Probe evidence is sanitized before it reaches
+ * logs. It never publishes and never writes to the repository.
  */
 
 import { execFileSync } from 'node:child_process';
@@ -917,9 +920,30 @@ async function runRegistry(args) {
   if (!version) fail(`tag "${tag}" is not an exact stable semver tag (expected vX.Y.Z).`);
   const expected = args.expect === 'present' || args.expect === 'absent' ? args.expect : null;
   if (!expected) fail('registry requires --expect absent|present.');
+  const wait = args.wait === true;
+  if (wait && expected !== 'present') {
+    fail('registry --wait is only supported with --expect present.');
+  }
   const repoRoot = path.resolve(typeof args['repo-root'] === 'string' ? args['repo-root'] : process.cwd());
   const pkgName = readJson(path.join(repoRoot, 'packages/create-contractor-site/package.json')).name;
   const url = registryVersionUrl({ registry: DEFAULT_REGISTRY, package: pkgName, version });
+
+  // `--wait` owns its own bounded retry/backoff policy; absent and non-wait
+  // present keep the original single-probe, fail-closed behavior.
+  if (wait) {
+    const confirmation = await confirmRegistryVersion({
+      url,
+      expectedName: pkgName,
+      expectedVersion: version,
+      onRetry: ({ attempt, delay, reason }) => {
+        console.log(`registry not yet confirmed (attempt ${attempt}: ${reason}); retrying in ${Math.round(delay / 1000)}s`);
+      },
+    });
+    if (!confirmation.ok) fail(`${pkgName}@${version} ${confirmation.reason}.`);
+    console.log(`registry OK: ${pkgName}@${version} ${confirmation.reason}`);
+    return 0;
+  }
+
   const probe = await probeRegistry(url);
   const result = classifyRegistryStatus({ expected, status: probe.status });
   if (!result.ok) {

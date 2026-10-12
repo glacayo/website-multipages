@@ -1270,6 +1270,89 @@ test('publish.yml re-checks registry absence in the same shell step immediately 
   assert.doesNotMatch(source, /continue-on-error/, 'a failing guard must stop the run, never continue');
 });
 
+test('publish.yml confirms the published version with one bounded --wait invocation', () => {
+  const source = fs.readFileSync(WORKFLOW, 'utf8');
+
+  // Exactly one irreversible publish command, still guarded adjacently.
+  const publishCommand = 'pnpm --dir packages/create-contractor-site publish --provenance --access public';
+  assert.equal(source.split(publishCommand).length - 1, 1, 'the workflow must keep exactly one irreversible publish command');
+  assert.match(
+    source,
+    /verify-release\.mjs registry --tag "\$RELEASE_TAG" --expect absent\n\s+pnpm --dir packages\/create-contractor-site publish/,
+    'the absence re-check must stay immediately before publish',
+  );
+
+  // The confirmation step is one helper invocation; the helper owns backoff.
+  const confirmInvocation =
+    'node .github/scripts/verify-release.mjs registry --tag "$RELEASE_TAG" --expect present --wait';
+  assert.equal(
+    source.split(confirmInvocation).length - 1,
+    1,
+    'the post-publish confirmation must call the bounded helper exactly once',
+  );
+
+  const confirmBlock = source.slice(
+    source.indexOf('- name: Confirm published version in registry'),
+    source.indexOf('\n  release:'),
+  );
+  assert.ok(confirmBlock.includes(confirmInvocation), 'the confirmation step must invoke the --wait helper');
+  assert.doesNotMatch(confirmBlock, /\bfor attempt\b/, 'the shell retry loop must be replaced by the bounded helper');
+  assert.doesNotMatch(confirmBlock, /\bsleep\b/, 'no shell backoff may remain in the confirmation step');
+
+  // --wait is a present-only affordance: it must never appear on the absence path.
+  assert.doesNotMatch(source, /--expect absent --wait/, '--wait must not be combined with an absence check');
+});
+
+/**
+ * Runs the verify-release CLI offline and captures a fail-closed exit so an
+ * argument-contract regression can be asserted on status, stdout, and stderr.
+ *
+ * @param {string[]} args
+ * @returns {{ status: number, stdout: string, stderr: string }}
+ */
+function runVerifyCli(args) {
+  const script = path.join(__dirname, 'verify-release.mjs');
+  try {
+    const stdout = execFileSync(process.execPath, [script, ...args], {
+      cwd: os.tmpdir(),
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    return { status: 0, stdout, stderr: '' };
+  } catch (error) {
+    return {
+      status: typeof error.status === 'number' ? error.status : -1,
+      stdout: error.stdout ? String(error.stdout) : '',
+      stderr: error.stderr ? String(error.stderr) : '',
+    };
+  }
+}
+
+test('registry --wait with --expect absent is rejected fail-closed before any probe', () => {
+  const result = runVerifyCli(['registry', '--tag', 'v2.3.1', '--expect', 'absent', '--wait']);
+  assert.equal(result.status, 1, '--wait with an absence check must exit non-zero');
+  assert.match(
+    result.stderr,
+    /registry --wait is only supported with --expect present/,
+    'the failure must name the present-only restriction',
+  );
+  assert.equal(result.stdout, '', 'a rejected argument must not print a success line');
+});
+
+test('registry --wait without --expect keeps the existing --expect requirement', () => {
+  const result = runVerifyCli(['registry', '--tag', 'v2.3.1', '--wait']);
+  assert.equal(result.status, 1, 'a missing --expect must exit non-zero');
+  assert.match(result.stderr, /registry requires --expect absent\|present/, 'the --expect requirement must be unchanged');
+  assert.equal(result.stdout, '', 'a rejected argument must not print a success line');
+});
+
+test('registry rejects a malformed tag before the --wait path is entered', () => {
+  const result = runVerifyCli(['registry', '--tag', 'latest', '--expect', 'present', '--wait']);
+  assert.equal(result.status, 1, 'a malformed tag must exit non-zero');
+  assert.match(result.stderr, /is not an exact stable semver tag/, 'the tag guard must run before --wait');
+  assert.equal(result.stdout, '', 'a rejected argument must not print a success line');
+});
+
 test('verify-release CLI reports a git failure as a fail-closed non-zero exit', () => {
   const script = path.join(__dirname, 'verify-release.mjs');
   // Run outside any git worktree so the first `git fetch` fails deterministically.
