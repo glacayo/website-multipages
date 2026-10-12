@@ -15,8 +15,12 @@
  * Fails closed: an unexpected registry status, an inconclusive GitHub release
  * listing, or a git error exits non-zero.
  * A registry 200 is trusted only when its body names the exact version; the
- * probe never follows a redirect. It never publishes and never writes to the
- * repository.
+ * probe never follows a redirect. A status-0 (inconclusive) probe carries an
+ * additive `kind` cause so a caller can tell a transient failure from a
+ * fail-closed trust violation: redirects (including a fetch rejected by
+ * `redirect: 'error'`), malformed or missing metadata always fail closed, while
+ * network and timeout causes stay retryable. Probe evidence is sanitized before
+ * it reaches logs. It never publishes and never writes to the repository.
  */
 
 import { execFileSync } from 'node:child_process';
@@ -29,6 +33,20 @@ const STABLE_TAG_RE = /^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
 const FULL_SHA_RE = /^[0-9a-f]{40}$/;
 export const DEFAULT_REGISTRY = 'https://registry.npmjs.org';
 export const REGISTRY_TIMEOUT_MS = 10_000;
+
+/**
+ * Additive classification of a status-0 probe result. A `0` status means the
+ * probe was inconclusive, but the *cause* decides whether the failure is
+ * transient or a fail-closed trust violation: a network or timeout failure can
+ * clear on its own, while a redirect or a malformed body must never be treated
+ * as retryable and retried into a false success.
+ */
+export const PROBE_KIND = Object.freeze({
+  NETWORK: 'network',
+  TIMEOUT: 'timeout',
+  REDIRECT: 'redirect',
+  MALFORMED: 'malformed',
+});
 
 /**
  * @param {unknown} value
@@ -129,6 +147,81 @@ export function registryVersionUrl({ registry = DEFAULT_REGISTRY, package: pkgNa
   return `${registry.replace(/\/+$/, '')}/${pkgName}/${version}`;
 }
 
+/** Conservative redirect evidence for a rejected fetch, matched case-insensitively. */
+const REDIRECT_EVIDENCE_RE = /\bredirect(?:ed|ion|s)?\b/i;
+/** Bounded cause-chain depth so a cyclic or pathological error can never hang a probe. */
+const MAX_ERROR_CAUSE_DEPTH = 5;
+
+/**
+ * Collects the `name`/`message` evidence from a thrown value and its `cause`
+ * chain, bounded in depth and cycle-safe. Only evidence the runtime actually
+ * exposes is used, so a classification is never invented from an unproven
+ * assumption about the error.
+ *
+ * @param {unknown} error
+ * @returns {string[]}
+ */
+function fetchErrorEvidence(error) {
+  const seen = new Set();
+  const evidence = [];
+  let current = error;
+  for (let depth = 0; depth < MAX_ERROR_CAUSE_DEPTH; depth += 1) {
+    if (current === null || typeof current !== 'object' || seen.has(current)) break;
+    seen.add(current);
+    if (typeof current.name === 'string') evidence.push(current.name);
+    if (typeof current.message === 'string') evidence.push(current.message);
+    current = current.cause;
+  }
+  return evidence;
+}
+
+/**
+ * Sanitizes probe evidence before it reaches logs or workflow output: collapses
+ * control characters and whitespace, redacts URL userinfo, and caps the length
+ * so a hostile or pathological error message can never inject output or leak
+ * credentials.
+ *
+ * @param {unknown} value
+ * @param {number} [maxLength]
+ * @returns {string}
+ */
+function sanitizeProbeEvidence(value, maxLength = 200) {
+  const text = typeof value === 'string' ? value : String(value);
+  const collapsed = text.replace(/[\u0000-\u001f\u007f]+/g, ' ').replace(/\s+/g, ' ').trim();
+  const redacted = collapsed.replace(/\/\/[^/\s@]+@/g, '//[redacted]@');
+  return redacted.length > maxLength ? `${redacted.slice(0, maxLength)}...` : redacted;
+}
+
+/**
+ * Classifies a rejected fetch into a probe kind plus a sanitized error.
+ *
+ * `redirect: 'error'` makes native fetch reject with `TypeError: fetch failed`
+ * whose `cause` ("unexpected redirect") is the only redirect evidence
+ * available, so the cause chain is inspected for a redirect pattern. That
+ * rejection is a fail-closed trust violation (`PROBE_KIND.REDIRECT`) that must
+ * never be retried into a false success, while genuine network failures and
+ * `TimeoutError`/`AbortError` stay retryable.
+ *
+ * @param {unknown} error
+ * @returns {{ kind: string, error: string }}
+ */
+export function classifyProbeFetchError(error) {
+  const evidence = fetchErrorEvidence(error);
+  const primary =
+    error !== null && typeof error === 'object' && typeof error.message === 'string' ? error.message : String(error);
+  if (evidence.includes('TimeoutError') || evidence.includes('AbortError')) {
+    return { kind: PROBE_KIND.TIMEOUT, error: sanitizeProbeEvidence(primary) };
+  }
+  const redirect = evidence.find((text) => REDIRECT_EVIDENCE_RE.test(text));
+  if (redirect !== undefined) {
+    return {
+      kind: PROBE_KIND.REDIRECT,
+      error: `registry probe was rejected because the request redirected (${sanitizeProbeEvidence(redirect)})`,
+    };
+  }
+  return { kind: PROBE_KIND.NETWORK, error: sanitizeProbeEvidence(primary) };
+}
+
 /**
  * Probes the exact canonical registry version URL.
  *
@@ -140,9 +233,14 @@ export function registryVersionUrl({ registry = DEFAULT_REGISTRY, package: pkgNa
  * A hung connection is bounded by an unref'd 10s AbortSignal timeout and is
  * reported the same fail-closed way.
  *
+ * A rejection is classified from the caught error itself: a fetch rejected by
+ * `redirect: 'error'` is reported as `PROBE_KIND.REDIRECT` (fail closed, never
+ * retried by a confirmation caller), while a genuine network failure or a
+ * `TimeoutError`/`AbortError` stays `PROBE_KIND.NETWORK`/`PROBE_KIND.TIMEOUT`.
+ *
  * @param {string} url canonical registry version URL
  * @param {typeof fetch} [fetchImpl]
- * @returns {Promise<{ status: number, metadata?: { name: string, version: string }, error?: string }>}
+ * @returns {Promise<{ status: number, kind?: string, metadata?: { name: string, version: string }, error?: string }>}
  */
 export async function probeRegistry(url, fetchImpl = fetch) {
   let response;
@@ -153,22 +251,31 @@ export async function probeRegistry(url, fetchImpl = fetch) {
       signal: AbortSignal.timeout(REGISTRY_TIMEOUT_MS),
     });
   } catch (error) {
-    return { status: 0, error: error instanceof Error ? error.message : String(error) };
+    const { kind, error: message } = classifyProbeFetchError(error);
+    return { status: 0, kind, error: message };
   }
   if (typeof response.url === 'string' && response.url !== '' && response.url !== url) {
-    return { status: 0, error: `registry redirected to a non-canonical URL: ${response.url}` };
+    return {
+      status: 0,
+      kind: PROBE_KIND.REDIRECT,
+      error: `registry redirected to a non-canonical URL: ${sanitizeProbeEvidence(response.url)}`,
+    };
   }
   if (response.status !== 200) return { status: response.status };
   let body;
   try {
     body = await response.json();
   } catch (error) {
-    return { status: 0, error: `registry 200 body was not valid JSON: ${error instanceof Error ? error.message : error}` };
+    return {
+      status: 0,
+      kind: PROBE_KIND.MALFORMED,
+      error: `registry 200 body was not valid JSON: ${sanitizeProbeEvidence(error instanceof Error ? error.message : error)}`,
+    };
   }
   const name = body && typeof body.name === 'string' ? body.name : '';
   const version = body && typeof body.version === 'string' ? body.version : '';
   if (!name || !version) {
-    return { status: 0, error: 'registry 200 body had no name/version metadata' };
+    return { status: 0, kind: PROBE_KIND.MALFORMED, error: 'registry 200 body had no name/version metadata' };
   }
   return { status: 200, metadata: { name, version } };
 }
