@@ -48,7 +48,7 @@ npm rejects the publish. See the official
 | Job | Permissions | Purpose |
 |-----|-------------|---------|
 | `validate` | `contents: read` | Guard self-tests, tag/identity/version checks, canonical-404 preflight, frozen install, build, capsule-free core smoke, CLI package dry-run |
-| `publish` | `contents: read`, `id-token: write` | Re-check drift + unpublished version, capture the validated commit SHA, then `pnpm publish --provenance --access public` |
+| `publish` | `contents: read`, `id-token: write` | Re-check drift + unpublished version, capture the validated commit SHA, run `pnpm publish --provenance --access public`, then confirm the version with the bounded `registry --expect present --wait` helper |
 | `release` | `contents: write` | Re-fetch the annotated tag and require it to equal the publish-validated SHA, then `gh release create` |
 
 The publish command is `pnpm --dir packages/create-contractor-site publish
@@ -79,7 +79,7 @@ reviewers to the `npm` environment if you also want a human gate before publish.
 | `validate` any step | Nothing published | Fix the cause and dispatch a new run |
 | `publish` before the publish step | Nothing published | Investigate the report; re-run only if the version is still absent |
 | `publish` at the publish step | Unknown | Check npm; **never blind-republish** an existing version |
-| after publish, registry confirm fails | npm may hold the version | Do **not** re-run publish; verify npm manually and create the GitHub release by hand if the version is present |
+| after publish, the bounded registry confirmation fails | npm may hold the version | Do **not** re-run publish; verify npm manually and create the GitHub release by hand if the version is present |
 | `release` fails with **no** release present | npm is already live | Re-check the remote tag against the publish-validated commit, then create the release by hand: `gh release create vX.Y.Z --verify-tag --title vX.Y.Z --notes "…"` |
 | `release` fails and the authenticated release listing finds an **existing draft or published** release | npm is already live; a release object exists | Stop. Never delete, overwrite, or blind-retry it; finish that existing release by hand (below) |
 | `release` fails and the authenticated release listing is **inconclusive** (API/auth/network/rate-limit/pagination error) | npm is already live; GitHub release state unknown | Stop and inspect manually with an authenticated [List releases](https://docs.github.com/en/rest/releases/releases#list-releases) call, which includes **drafts**. `gh release view vX.Y.Z` shows a published release only, so its `404` proves nothing. An API failure never proves absence; do not retry blind |
@@ -91,6 +91,17 @@ the run, so a published version can never be silently overwritten. The probe
 never follows a redirect, and after publish the version counts as confirmed only
 when the registry returns a `200` whose `name` and `version` metadata match the
 expected package — a redirect or a bare `200` is never treated as success.
+
+After publish, `registry --expect present --wait` owns the confirmation retry
+policy. It retries only transient visibility conditions — the `404` npm can
+return while propagation catches up, `429`, `5xx`, and network/timeout failures
+— with bounded exponential backoff (10s base, doubling to a 60s ceiling) inside
+a fixed ~5 minute budget. It never starts a probe, or sleeps, when that probe
+could not still finish inside the budget, so the run always ends on a bounded
+decision rather than a trailing wait. Everything else fails closed immediately
+without a retry: a redirect/non-canonical URL, malformed or missing
+`name`/`version` metadata, an identity mismatch, and any other `4xx`/`3xx`/unknown
+status. A failed confirmation still means **do not re-run publish**.
 
 ### Recovering an existing draft or partially created release
 
