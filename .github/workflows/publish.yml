@@ -166,19 +166,14 @@ jobs:
           node .github/scripts/verify-release.mjs registry --tag "$RELEASE_TAG" --expect absent
           pnpm --dir packages/create-contractor-site publish --provenance --access public
 
-      # Never create the GitHub release on an unconfirmed publish. Bounded
-      # retries cover registry propagation; failure stops here for manual review.
+      # Never create the GitHub release on an unconfirmed publish. A single
+      # bounded confirmation call owns the retry/backoff policy (see
+      # verify-release.mjs): it retries only transient visibility failures
+      # (404/429/5xx/network) inside a fixed budget and fails closed on
+      # redirects, malformed/missing metadata, identity mismatches, and every
+      # other status. Failure stops here for manual review; never re-run publish.
       - name: Confirm published version in registry
-        run: |
-          for attempt in 1 2 3 4 5; do
-            if node .github/scripts/verify-release.mjs registry --tag "$RELEASE_TAG" --expect present; then
-              exit 0
-            fi
-            echo "registry not yet updated (attempt ${attempt}); retrying…"
-            sleep 10
-          done
-          echo "Registry confirmation failed. Do NOT re-run publish; verify npm manually." >&2
-          exit 1
+        run: node .github/scripts/verify-release.mjs registry --tag "$RELEASE_TAG" --expect present --wait
 
   release:
     name: Create GitHub release
