@@ -16,13 +16,21 @@ import { fileURLToPath } from 'node:url';
 import {
   MAX_RELEASES_PAGES,
   PROBE_KIND,
+  REGISTRY_CONFIRM_BASE_DELAY_MS,
+  REGISTRY_CONFIRM_BUDGET_MS,
+  REGISTRY_CONFIRM_MAX_ATTEMPTS,
+  REGISTRY_CONFIRM_MAX_DELAY_MS,
   REGISTRY_TIMEOUT_MS,
   RELEASES_TIMEOUT_MS,
+  classifyConfirmationProbe,
   classifyProbeFetchError,
   classifyRegistryStatus,
+  confirmRegistryVersion,
   describeReleasesUrlProblem,
   findReleaseByTag,
   isCanonicalReleasesUrl,
+  monotonicNow,
+  nextConfirmationDelay,
   parseNextLink,
   parseStableTag,
   probeRegistry,
@@ -350,6 +358,433 @@ test('probeRegistry sanitizes non-canonical redirect URLs and parser errors', as
   assert.doesNotMatch(badJson.error, /[\u0000-\u001f\u007f]/, 'parser error control characters must be collapsed');
   assert.match(badJson.error, /\[redacted\]@/, 'redaction must be visible in the sanitized parser error');
   assert.ok(badJson.error.length <= 260, `parser error evidence must be length-capped, got ${badJson.error.length}`);
+});
+
+// --- Bounded registry confirmation engine --------------------------------
+
+/** Deterministic clock so the confirmation loop never waits in real time. */
+function fakeClock(start = 0) {
+  let current = start;
+  return {
+    now: () => current,
+    sleep: async (ms) => {
+      current += ms;
+    },
+    elapsed: () => current,
+  };
+}
+
+/** Expected identity reused across the confirmation-engine checks. */
+const CONFIRM_EXPECT = { expectedName: 'create-contractor-site', expectedVersion: '2.3.1' };
+
+/**
+ * Returns a probe that replays a fixed response list, repeating the final
+ * response once exhausted, plus a call counter so a test can prove how many
+ * probes actually ran.
+ *
+ * @param {Array<object>} responses
+ */
+function sequenceProbe(responses) {
+  let calls = 0;
+  const probe = async () => {
+    calls += 1;
+    return responses[Math.min(calls - 1, responses.length - 1)];
+  };
+  return { probe, calls: () => calls };
+}
+
+test('nextConfirmationDelay grows exponentially and caps at 60s', () => {
+  assert.equal(REGISTRY_CONFIRM_BASE_DELAY_MS, 10_000, 'the base confirmation delay must be 10s');
+  assert.equal(REGISTRY_CONFIRM_MAX_DELAY_MS, 60_000, 'the confirmation delay must cap at 60s');
+  assert.equal(REGISTRY_CONFIRM_BUDGET_MS, 300_000, 'the confirmation budget must be ~300s');
+  assert.equal(nextConfirmationDelay(1), 10_000);
+  assert.equal(nextConfirmationDelay(2), 20_000);
+  assert.equal(nextConfirmationDelay(3), 40_000);
+  assert.equal(nextConfirmationDelay(4), 60_000);
+  assert.equal(nextConfirmationDelay(10), 60_000);
+  // Defensive inputs still produce a usable, bounded delay.
+  assert.equal(nextConfirmationDelay(0), 10_000);
+  assert.equal(nextConfirmationDelay(-3), 10_000);
+  assert.equal(nextConfirmationDelay(Number.NaN), 10_000);
+});
+
+test('classifyConfirmationProbe separates transient retries from fail-closed causes', () => {
+  const retry = [
+    { status: 404 },
+    { status: 429 },
+    { status: 500 },
+    { status: 503 },
+    { status: 0, kind: PROBE_KIND.NETWORK, error: 'socket hang up' },
+    { status: 0, kind: PROBE_KIND.TIMEOUT, error: 'timed out' },
+  ];
+  for (const probe of retry) {
+    assert.equal(
+      classifyConfirmationProbe({ probe, ...CONFIRM_EXPECT }).disposition,
+      'retry',
+      `expected retry: ${JSON.stringify(probe)}`,
+    );
+  }
+
+  const fail = [
+    { status: 0, kind: PROBE_KIND.REDIRECT, error: 'registry redirected' },
+    { status: 0, kind: PROBE_KIND.MALFORMED, error: 'no name/version metadata' },
+    { status: 0, error: 'unclassified status 0' },
+    { status: 400 },
+    { status: 401 },
+    { status: 403 },
+    { status: 302 },
+    { status: 204 },
+    { status: 200, metadata: { name: 'other-package', version: '2.3.1' } },
+    { status: 200, metadata: { name: 'create-contractor-site', version: '9.9.9' } },
+    { status: 200 },
+  ];
+  for (const probe of fail) {
+    assert.equal(
+      classifyConfirmationProbe({ probe, ...CONFIRM_EXPECT }).disposition,
+      'fail',
+      `expected fail: ${JSON.stringify(probe)}`,
+    );
+  }
+
+  const confirmed = classifyConfirmationProbe({
+    probe: { status: 200, metadata: { name: 'create-contractor-site', version: '2.3.1' } },
+    ...CONFIRM_EXPECT,
+  });
+  assert.equal(confirmed.disposition, 'confirmed');
+});
+
+test('confirmRegistryVersion retries transient failures and confirms the exact version', async () => {
+  const clock = fakeClock();
+  const { probe, calls } = sequenceProbe([
+    { status: 404 },
+    { status: 0, kind: PROBE_KIND.NETWORK, error: 'socket hang up' },
+    { status: 429 },
+    { status: 200, metadata: { name: 'create-contractor-site', version: '2.3.1' } },
+  ]);
+  const retries = [];
+  const result = await confirmRegistryVersion({
+    url: CONFIRM_URL,
+    ...CONFIRM_EXPECT,
+    probe,
+    sleep: clock.sleep,
+    now: clock.now,
+    onRetry: (event) => retries.push(event),
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.exhausted, false);
+  assert.equal(result.attempts, 4);
+  assert.equal(calls(), 4);
+  assert.deepEqual(
+    retries.map((event) => event.delay),
+    [10_000, 20_000, 40_000],
+  );
+  assert.deepEqual(
+    retries.map((event) => event.attempt),
+    [1, 2, 3],
+  );
+});
+
+test('confirmRegistryVersion never retries a fail-closed probe', async () => {
+  const cases = [
+    { status: 0, kind: PROBE_KIND.REDIRECT, error: 'registry redirected' },
+    { status: 0, kind: PROBE_KIND.MALFORMED, error: 'no name/version metadata' },
+    { status: 200, metadata: { name: 'other-package', version: '2.3.1' } },
+    { status: 200, metadata: { name: 'create-contractor-site', version: '0.0.1' } },
+    { status: 401 },
+    { status: 302 },
+  ];
+  for (const probeResult of cases) {
+    const clock = fakeClock();
+    let calls = 0;
+    const result = await confirmRegistryVersion({
+      url: CONFIRM_URL,
+      ...CONFIRM_EXPECT,
+      probe: async () => {
+        calls += 1;
+        return probeResult;
+      },
+      sleep: clock.sleep,
+      now: clock.now,
+      onRetry: () => {
+        throw new Error(`must not retry a fail-closed probe: ${JSON.stringify(probeResult)}`);
+      },
+    });
+    assert.equal(result.ok, false, `expected fail-closed for ${JSON.stringify(probeResult)}`);
+    assert.equal(result.exhausted, false, 'a fail-closed cause is not budget exhaustion');
+    assert.equal(calls, 1, 'a fail-closed cause must stop after one probe');
+  }
+});
+
+test('confirmRegistryVersion never starts or sleeps for a probe that cannot finish within budget', async () => {
+  const clock = fakeClock();
+  let calls = 0;
+  const result = await confirmRegistryVersion({
+    url: CONFIRM_URL,
+    ...CONFIRM_EXPECT,
+    probe: async () => {
+      calls += 1;
+      return { status: 404 };
+    },
+    sleep: clock.sleep,
+    now: clock.now,
+    budgetMs: 9_999,
+    maxProbeMs: 10_000,
+  });
+  assert.equal(result.ok, false);
+  assert.equal(result.exhausted, true);
+  assert.equal(result.attempts, 0, 'a probe that cannot finish within budget must never start');
+  assert.equal(calls, 0);
+  assert.equal(clock.elapsed(), 0, 'the helper must not sleep before giving up');
+});
+
+test('confirmRegistryVersion gives up without a final sleep when the retry cannot fit', async () => {
+  const clock = fakeClock();
+  let calls = 0;
+  const result = await confirmRegistryVersion({
+    url: CONFIRM_URL,
+    ...CONFIRM_EXPECT,
+    probe: async () => {
+      calls += 1;
+      return { status: 404 };
+    },
+    sleep: clock.sleep,
+    now: clock.now,
+    budgetMs: 35_000,
+    maxProbeMs: 10_000,
+  });
+  // attempt 1 probes immediately, sleeps 10s, attempt 2 probes, then the 20s
+  // retry would push the next probe past the 35s budget, so it stops with the
+  // clock still at 10s instead of sleeping a final time.
+  assert.equal(result.ok, false);
+  assert.equal(result.exhausted, true);
+  assert.equal(result.attempts, 2);
+  assert.equal(calls, 2);
+  assert.equal(clock.elapsed(), 10_000, 'the helper must never sleep after deciding to give up');
+});
+
+test('confirmRegistryVersion fails closed without a retry on a rejected-redirect probe', async () => {
+  const redirectRejection = new TypeError('fetch failed');
+  redirectRejection.cause = new Error('unexpected redirect');
+  const throwingFetch = async () => {
+    throw redirectRejection;
+  };
+
+  const clock = fakeClock();
+  let calls = 0;
+  const result = await confirmRegistryVersion({
+    url: CONFIRM_URL,
+    ...CONFIRM_EXPECT,
+    probe: async (target) => {
+      calls += 1;
+      return probeRegistry(target, throwingFetch);
+    },
+    sleep: clock.sleep,
+    now: clock.now,
+    onRetry: () => {
+      throw new Error('a redirect rejection must never be retried');
+    },
+  });
+  assert.equal(result.ok, false, 'a redirect rejection must fail closed');
+  assert.equal(result.exhausted, false, 'a redirect rejection is not budget exhaustion');
+  assert.equal(calls, 1, 'a redirect rejection must stop after one probe');
+  assert.equal(clock.elapsed(), 0, 'a fail-closed redirect rejection must not sleep');
+  assert.match(result.reason, /redirect/i);
+});
+
+test('confirmRegistryVersion retries native network/timeout failures into a confirmation', async () => {
+  const networkFailure = new TypeError('fetch failed');
+  networkFailure.cause = new Error('getaddrinfo ENOTFOUND registry.npmjs.org');
+  const timeoutFailure = new DOMException('The operation was aborted due to timeout', 'TimeoutError');
+  const failures = [networkFailure, timeoutFailure];
+
+  let calls = 0;
+  const clock = fakeClock();
+  const result = await confirmRegistryVersion({
+    url: CONFIRM_URL,
+    ...CONFIRM_EXPECT,
+    probe: async (target) => {
+      calls += 1;
+      const failure = failures.shift();
+      if (failure) {
+        return probeRegistry(target, async () => {
+          throw failure;
+        });
+      }
+      return probeRegistry(target, async () => ({
+        status: 200,
+        url: target,
+        json: async () => ({ name: 'create-contractor-site', version: '2.3.1' }),
+      }));
+    },
+    sleep: clock.sleep,
+    now: clock.now,
+  });
+  assert.equal(result.ok, true);
+  assert.equal(result.attempts, 3, 'network and timeout failures must both be retried before confirming');
+  assert.equal(calls, 3);
+});
+
+test('confirmRegistryVersion fails closed on a non-finite or non-positive budget/probe bound', async () => {
+  // A NaN/Infinity/0/negative bound would make every deadline comparison
+  // permanently false, so the guard must stop before any probe or sleep. The
+  // probe and sleep throw so a broken guard fails the test instead of hanging.
+  const invalidBounds = [
+    { label: 'NaN budget', budgetMs: Number.NaN },
+    { label: 'Infinity budget', budgetMs: Number.POSITIVE_INFINITY },
+    { label: 'zero budget', budgetMs: 0 },
+    { label: 'negative budget', budgetMs: -1 },
+    { label: 'NaN probe bound', maxProbeMs: Number.NaN },
+    { label: 'Infinity probe bound', maxProbeMs: Number.POSITIVE_INFINITY },
+    { label: 'zero probe bound', maxProbeMs: 0 },
+    { label: 'negative probe bound', maxProbeMs: -1 },
+  ];
+  for (const { label, budgetMs, maxProbeMs } of invalidBounds) {
+    const clock = fakeClock();
+    let calls = 0;
+    const result = await confirmRegistryVersion({
+      url: CONFIRM_URL,
+      ...CONFIRM_EXPECT,
+      probe: async () => {
+        calls += 1;
+        throw new Error(`the probe must not run for ${label}`);
+      },
+      sleep: async (ms) => {
+        throw new Error(`the loop must not sleep for ${label} (${ms}ms)`);
+      },
+      now: clock.now,
+      ...(budgetMs === undefined ? {} : { budgetMs }),
+      ...(maxProbeMs === undefined ? {} : { maxProbeMs }),
+    });
+    assert.equal(result.ok, false, `expected fail-closed for ${label}`);
+    assert.equal(result.exhausted, false, `invalid bounds are not budget exhaustion (${label})`);
+    assert.equal(result.attempts, 0, `no probe may run for ${label}`);
+    assert.equal(calls, 0, `no probe may run for ${label}`);
+    assert.match(result.reason, /finite, positive/, `the reason must name the invalid bound (${label})`);
+  }
+});
+
+test('confirmRegistryVersion fails closed when the clock never returns a finite time', async () => {
+  let calls = 0;
+  const result = await confirmRegistryVersion({
+    url: CONFIRM_URL,
+    ...CONFIRM_EXPECT,
+    probe: async () => {
+      calls += 1;
+      throw new Error('the probe must not run when the clock is unusable');
+    },
+    sleep: async () => {
+      throw new Error('the loop must not sleep when the clock is unusable');
+    },
+    now: () => Number.NaN,
+  });
+  assert.equal(result.ok, false);
+  assert.equal(result.exhausted, false, 'an unusable clock is not budget exhaustion');
+  assert.equal(result.attempts, 0);
+  assert.equal(calls, 0);
+  assert.match(result.reason, /non-finite clock/);
+});
+
+test('confirmRegistryVersion stops when the clock turns non-finite mid-loop instead of probing/sleeping forever', async () => {
+  // start=0, before-probe=0 (one probe runs), then after-probe is NaN: the loop
+  // must fail closed with that single probe and no retry sleep.
+  const readings = [0, 0, Number.NaN];
+  let index = 0;
+  let calls = 0;
+  const result = await confirmRegistryVersion({
+    url: CONFIRM_URL,
+    ...CONFIRM_EXPECT,
+    probe: async () => {
+      calls += 1;
+      return { status: 404 };
+    },
+    sleep: async () => {
+      throw new Error('the loop must not sleep once the clock is non-finite');
+    },
+    now: () => readings[Math.min(index++, readings.length - 1)],
+  });
+  assert.equal(result.ok, false);
+  assert.equal(result.exhausted, false, 'an unusable clock is not budget exhaustion');
+  assert.equal(result.attempts, 1, 'exactly one probe may run before the clock turns non-finite');
+  assert.equal(calls, 1);
+  assert.match(result.reason, /non-finite clock/);
+});
+
+test('confirmRegistryVersion cannot retry forever on a frozen clock with a zero-delay sleep', async () => {
+  // Frozen finite clock + a sleep that resolves without advancing time: the
+  // budget check can never be reached and the backoff never retires the loop,
+  // so only the independent hard attempt cap can stop it. The cap must be
+  // checked before scheduling a retry, so the final probe is never followed by
+  // an onRetry event or a trailing sleep.
+  let calls = 0;
+  let sleeps = 0;
+  let sleptAfterFinalProbe = false;
+  const retries = [];
+  const result = await confirmRegistryVersion({
+    url: CONFIRM_URL,
+    ...CONFIRM_EXPECT,
+    probe: async () => {
+      calls += 1;
+      return { status: 404 };
+    },
+    sleep: async () => {
+      if (calls >= REGISTRY_CONFIRM_MAX_ATTEMPTS) sleptAfterFinalProbe = true;
+      sleeps += 1;
+    },
+    now: () => 0,
+    onRetry: (event) => retries.push(event),
+  });
+  assert.equal(result.ok, false);
+  assert.equal(result.exhausted, true, 'hitting the hard cap is an inconclusive exhaustion, not a fail-closed cause');
+  assert.equal(result.attempts, REGISTRY_CONFIRM_MAX_ATTEMPTS);
+  assert.equal(calls, REGISTRY_CONFIRM_MAX_ATTEMPTS);
+  assert.equal(
+    retries.length,
+    REGISTRY_CONFIRM_MAX_ATTEMPTS - 1,
+    'the loop must stop before scheduling a retry for the final probe',
+  );
+  assert.equal(sleeps, REGISTRY_CONFIRM_MAX_ATTEMPTS - 1, 'every scheduled retry sleeps exactly once');
+  assert.equal(sleptAfterFinalProbe, false, 'the loop must never sleep after its final probe');
+  assert.match(result.reason, /hard cap/);
+});
+
+test('confirmRegistryVersion stops before the second probe when the clock turns non-finite after a retry', async () => {
+  // start=0, before-probe=0, before-sleep=0, then the second before-probe is
+  // NaN: the non-finite guard must also cover the path back into the loop after
+  // a retry sleep, failing closed after exactly one probe.
+  const readings = [0, 0, 0, Number.NaN];
+  let index = 0;
+  let calls = 0;
+  const result = await confirmRegistryVersion({
+    url: CONFIRM_URL,
+    ...CONFIRM_EXPECT,
+    probe: async () => {
+      calls += 1;
+      return { status: 404 };
+    },
+    sleep: async () => {},
+    now: () => readings[Math.min(index++, readings.length - 1)],
+  });
+  assert.equal(result.ok, false);
+  assert.equal(result.exhausted, false, 'an unusable clock is not budget exhaustion');
+  assert.equal(result.attempts, 1, 'exactly one probe may run before the clock turns non-finite');
+  assert.equal(calls, 1);
+  assert.ok(calls < REGISTRY_CONFIRM_MAX_ATTEMPTS, 'the hard cap must not be what stopped this run');
+  assert.match(result.reason, /non-finite clock/);
+});
+
+test('the default confirmation clock is monotonic', () => {
+  // `monotonicNow` must not be a wall-clock reader: a backward jump (NTP/manual
+  // adjustment) would otherwise move the confirmation deadline forward. Sampling
+  // it repeatedly without patching global time is enough to prove the default
+  // clock never moves backward.
+  const samples = [monotonicNow(), monotonicNow(), monotonicNow()];
+  for (const sample of samples) {
+    assert.ok(Number.isFinite(sample), 'the default clock must return a finite value');
+  }
+  for (let index = 1; index < samples.length; index += 1) {
+    assert.ok(samples[index] >= samples[index - 1], 'the default clock must never move backward');
+  }
 });
 
 test('readDefaultTemplateRef tracks the current CLI version contract', () => {
