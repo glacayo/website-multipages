@@ -19,8 +19,10 @@
  * additive `kind` cause so a caller can tell a transient failure from a
  * fail-closed trust violation: redirects (including a fetch rejected by
  * `redirect: 'error'`), malformed or missing metadata always fail closed, while
- * network and timeout causes stay retryable. Probe evidence is sanitized before
- * it reaches logs. It never publishes and never writes to the repository.
+ * network and timeout causes stay retryable. A bounded confirmation loop
+ * (`confirmRegistryVersion`) retries only those causes within a fixed budget
+ * and never sleeps after giving up. Probe evidence is sanitized before it
+ * reaches logs. It never publishes and never writes to the repository.
  */
 
 import { execFileSync } from 'node:child_process';
@@ -47,6 +49,22 @@ export const PROBE_KIND = Object.freeze({
   REDIRECT: 'redirect',
   MALFORMED: 'malformed',
 });
+
+/** Total wall-clock budget for one bounded registry confirmation. */
+export const REGISTRY_CONFIRM_BUDGET_MS = 300_000;
+/** First retry delay after a not-yet-visible published version. */
+export const REGISTRY_CONFIRM_BASE_DELAY_MS = 10_000;
+/** Ceiling for the exponential retry delay. */
+export const REGISTRY_CONFIRM_MAX_DELAY_MS = 60_000;
+/**
+ * Conservative hard ceiling on the number of confirmation probes, independent
+ * of any injected clock or sleep. The default 300s budget with the 10s->60s
+ * backoff schedule needs at most ~7 probes, so this never constrains normal
+ * operation, but it guarantees termination when an injected `now` is frozen
+ * (never advances) and an injected `sleep` resolves without advancing time, so
+ * neither the budget nor the backoff can retire the loop.
+ */
+export const REGISTRY_CONFIRM_MAX_ATTEMPTS = 100;
 
 /**
  * @param {unknown} value
@@ -278,6 +296,200 @@ export async function probeRegistry(url, fetchImpl = fetch) {
     return { status: 0, kind: PROBE_KIND.MALFORMED, error: 'registry 200 body had no name/version metadata' };
   }
   return { status: 200, metadata: { name, version } };
+}
+
+/**
+ * Bounded exponential backoff for registry confirmation. `attempt` is the
+ * number of the attempt that just failed (1-based), so the first retry waits a
+ * single base delay, the delay doubles per attempt, and it never exceeds the
+ * cap.
+ *
+ * @param {number} attempt
+ * @returns {number} delay in milliseconds
+ */
+export function nextConfirmationDelay(attempt) {
+  const safeAttempt = Number.isFinite(attempt) && attempt >= 1 ? Math.floor(attempt) : 1;
+  const exponential = REGISTRY_CONFIRM_BASE_DELAY_MS * 2 ** (safeAttempt - 1);
+  return Math.min(REGISTRY_CONFIRM_MAX_DELAY_MS, exponential);
+}
+
+/**
+ * Decides what a single confirmation probe means:
+ *   confirmed — the exact expected name/version is live; success
+ *   retry     — a transient visibility condition (404/429/5xx/network/timeout)
+ *   fail      — a definitive, fail-closed failure that must never be retried
+ *               into a false success (redirect, malformed/missing metadata,
+ *               identity mismatch, other 4xx/3xx/unknown)
+ *
+ * @param {{ probe: { status?: number, kind?: string, metadata?: unknown, error?: string }, expectedName: string, expectedVersion: string }} input
+ * @returns {{ disposition: 'confirmed' | 'retry' | 'fail', reason: string }}
+ */
+export function classifyConfirmationProbe({ probe, expectedName, expectedVersion }) {
+  const status = probe && typeof probe.status === 'number' ? probe.status : 0;
+  if (status === 200) {
+    const metadata = verifyRegistryMetadata({ metadata: probe.metadata ?? null, expectedName, expectedVersion });
+    if (!metadata.ok) return { disposition: 'fail', reason: metadata.reason };
+    return { disposition: 'confirmed', reason: metadata.reason };
+  }
+  if (status === 0) {
+    const error = probe && probe.error ? probe.error : 'registry probe was inconclusive';
+    if (probe && (probe.kind === PROBE_KIND.NETWORK || probe.kind === PROBE_KIND.TIMEOUT)) {
+      return { disposition: 'retry', reason: error };
+    }
+    return { disposition: 'fail', reason: error };
+  }
+  if (status === 404 || status === 429 || (status >= 500 && status <= 599)) {
+    return { disposition: 'retry', reason: `registry check was transient (status ${status})` };
+  }
+  return { disposition: 'fail', reason: `registry confirmation failed closed (status ${status})` };
+}
+
+/** @param {number} ms */
+function defaultSleep(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+/**
+ * Monotonic default clock. `Date.now` tracks the wall clock, which can jump
+ * backward across an NTP or manual adjustment; a backward jump would move the
+ * confirmation deadline forward and let the bounded loop keep retrying.
+ * `performance.now()` is monotonic and process-relative, so the deadline can
+ * only be reached, never pushed away.
+ *
+ * @returns {number}
+ */
+export function monotonicNow() {
+  return performance.now();
+}
+
+/**
+ * A confirmation timing bound must be a finite, positive number of
+ * milliseconds. `NaN`, `Infinity`, `0`, and negatives each make a
+ * `now() + bound > deadline` comparison permanently false (or trivially true),
+ * which would let the confirmation loop probe and sleep without limit, so they
+ * are rejected before any probe runs. The documented defaults (300s budget, 10s
+ * probe) are finite and positive and stay valid.
+ *
+ * @param {unknown} value
+ * @returns {boolean}
+ */
+function isPositiveFiniteMs(value) {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0;
+}
+
+/**
+ * Fail-closed result for an unusable clock. A non-finite `now()` reading makes
+ * every deadline comparison permanently false, so the loop must stop instead of
+ * probing and sleeping forever.
+ *
+ * @param {number} attempts
+ * @returns {{ ok: false, attempts: number, exhausted: false, reason: string }}
+ */
+function invalidConfirmationClock(attempts) {
+  return {
+    ok: false,
+    attempts,
+    exhausted: false,
+    reason: 'registry confirmation now() returned a non-finite clock value; refusing to probe unbounded',
+  };
+}
+
+/**
+ * Bounded, injectable confirmation loop for a just-published version.
+ *
+ * Probes the exact version URL until the expected name/version is live,
+ * retrying only transient conditions, and abandons the wait as soon as another
+ * probe could no longer finish inside the budget. It never sleeps after giving
+ * up, so the last action is always a bounded decision instead of a trailing
+ * wait.
+ *
+ * Fails closed before any probe when `budgetMs`/`maxProbeMs` are not finite and
+ * positive or when `now()` ever returns a non-finite value, so no injected
+ * timing input can turn the bounded loop into an unbounded one. The default
+ * clock is monotonic (`performance.now()`), and a conservative hard attempt cap
+ * (`REGISTRY_CONFIRM_MAX_ATTEMPTS`) terminates the loop even if an injected
+ * clock is frozen and an injected sleep resolves without advancing time.
+ *
+ * @param {{
+ *   url: string,
+ *   expectedName: string,
+ *   expectedVersion: string,
+ *   probe?: (url: string) => Promise<{ status: number, kind?: string, metadata?: unknown, error?: string }>,
+ *   sleep?: (ms: number) => Promise<void>,
+ *   now?: () => number,
+ *   budgetMs?: number,
+ *   maxProbeMs?: number,
+ *   onRetry?: (event: { attempt: number, delay: number, reason: string }) => void,
+ * }} input
+ * @returns {Promise<{ ok: boolean, attempts: number, exhausted: boolean, reason: string }>}
+ */
+export async function confirmRegistryVersion({
+  url,
+  expectedName,
+  expectedVersion,
+  probe = probeRegistry,
+  sleep = defaultSleep,
+  now = monotonicNow,
+  budgetMs = REGISTRY_CONFIRM_BUDGET_MS,
+  maxProbeMs = REGISTRY_TIMEOUT_MS,
+  onRetry = () => {},
+}) {
+  if (!isPositiveFiniteMs(budgetMs) || !isPositiveFiniteMs(maxProbeMs)) {
+    return {
+      ok: false,
+      attempts: 0,
+      exhausted: false,
+      reason: 'registry confirmation requires a finite, positive budgetMs and maxProbeMs; refusing to probe unbounded',
+    };
+  }
+  const start = now();
+  if (!Number.isFinite(start)) return invalidConfirmationClock(0);
+  const deadline = start + budgetMs;
+  let attempts = 0;
+  for (;;) {
+    const beforeProbe = now();
+    if (!Number.isFinite(beforeProbe)) return invalidConfirmationClock(attempts);
+    if (beforeProbe + maxProbeMs > deadline) {
+      return {
+        ok: false,
+        attempts,
+        exhausted: true,
+        reason: `registry confirmation budget of ${budgetMs}ms was exhausted before another probe could finish`,
+      };
+    }
+    attempts += 1;
+    const result = await probe(url);
+    const verdict = classifyConfirmationProbe({ probe: result, expectedName, expectedVersion });
+    if (verdict.disposition === 'confirmed') return { ok: true, attempts, exhausted: false, reason: verdict.reason };
+    if (verdict.disposition === 'fail') return { ok: false, attempts, exhausted: false, reason: verdict.reason };
+    // Check the hard cap here, before scheduling the retry: re-entering the
+    // loop is the only way back to `probe`, so stopping now is what terminates
+    // a frozen-clock run, and it guarantees the final probe is never followed
+    // by an onRetry event or a trailing sleep.
+    if (attempts >= REGISTRY_CONFIRM_MAX_ATTEMPTS) {
+      return {
+        ok: false,
+        attempts,
+        exhausted: true,
+        reason: `registry confirmation exceeded the hard cap of ${REGISTRY_CONFIRM_MAX_ATTEMPTS} attempts; refusing to retry unbounded`,
+      };
+    }
+    const delay = nextConfirmationDelay(attempts);
+    const beforeSleep = now();
+    if (!Number.isFinite(beforeSleep)) return invalidConfirmationClock(attempts);
+    if (beforeSleep + delay + maxProbeMs > deadline) {
+      return {
+        ok: false,
+        attempts,
+        exhausted: true,
+        reason: `${verdict.reason}; no retry could finish within the ${budgetMs}ms confirmation budget`,
+      };
+    }
+    onRetry({ attempt: attempts, delay, reason: verdict.reason });
+    await sleep(delay);
+  }
 }
 
 export const GITHUB_API_BASE = 'https://api.github.com';
