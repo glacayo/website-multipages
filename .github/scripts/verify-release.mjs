@@ -15,8 +15,17 @@
  * Fails closed: an unexpected registry status, an inconclusive GitHub release
  * listing, or a git error exits non-zero.
  * A registry 200 is trusted only when its body names the exact version; the
- * probe never follows a redirect. It never publishes and never writes to the
- * repository.
+ * probe never follows a redirect. A status-0 (inconclusive) probe carries an
+ * additive `kind` cause so a caller can tell a transient failure from a
+ * fail-closed trust violation: redirects (including a fetch rejected by
+ * `redirect: 'error'`), malformed or missing metadata always fail closed, while
+ * network and timeout causes stay retryable. A bounded confirmation loop
+ * (`confirmRegistryVersion`) retries only those causes within a fixed budget
+ * and never sleeps after giving up. Only `registry --expect present --wait`
+ * uses that loop: an absent check and a non-wait present check stay
+ * single-probe and fail closed, and `--wait` with `--expect absent` is
+ * rejected before any probe. Probe evidence is sanitized before it reaches
+ * logs. It never publishes and never writes to the repository.
  */
 
 import { execFileSync } from 'node:child_process';
@@ -29,6 +38,36 @@ const STABLE_TAG_RE = /^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
 const FULL_SHA_RE = /^[0-9a-f]{40}$/;
 export const DEFAULT_REGISTRY = 'https://registry.npmjs.org';
 export const REGISTRY_TIMEOUT_MS = 10_000;
+
+/**
+ * Additive classification of a status-0 probe result. A `0` status means the
+ * probe was inconclusive, but the *cause* decides whether the failure is
+ * transient or a fail-closed trust violation: a network or timeout failure can
+ * clear on its own, while a redirect or a malformed body must never be treated
+ * as retryable and retried into a false success.
+ */
+export const PROBE_KIND = Object.freeze({
+  NETWORK: 'network',
+  TIMEOUT: 'timeout',
+  REDIRECT: 'redirect',
+  MALFORMED: 'malformed',
+});
+
+/** Total wall-clock budget for one bounded registry confirmation. */
+export const REGISTRY_CONFIRM_BUDGET_MS = 300_000;
+/** First retry delay after a not-yet-visible published version. */
+export const REGISTRY_CONFIRM_BASE_DELAY_MS = 10_000;
+/** Ceiling for the exponential retry delay. */
+export const REGISTRY_CONFIRM_MAX_DELAY_MS = 60_000;
+/**
+ * Conservative hard ceiling on the number of confirmation probes, independent
+ * of any injected clock or sleep. The default 300s budget with the 10s->60s
+ * backoff schedule needs at most ~7 probes, so this never constrains normal
+ * operation, but it guarantees termination when an injected `now` is frozen
+ * (never advances) and an injected `sleep` resolves without advancing time, so
+ * neither the budget nor the backoff can retire the loop.
+ */
+export const REGISTRY_CONFIRM_MAX_ATTEMPTS = 100;
 
 /**
  * @param {unknown} value
@@ -129,6 +168,81 @@ export function registryVersionUrl({ registry = DEFAULT_REGISTRY, package: pkgNa
   return `${registry.replace(/\/+$/, '')}/${pkgName}/${version}`;
 }
 
+/** Conservative redirect evidence for a rejected fetch, matched case-insensitively. */
+const REDIRECT_EVIDENCE_RE = /\bredirect(?:ed|ion|s)?\b/i;
+/** Bounded cause-chain depth so a cyclic or pathological error can never hang a probe. */
+const MAX_ERROR_CAUSE_DEPTH = 5;
+
+/**
+ * Collects the `name`/`message` evidence from a thrown value and its `cause`
+ * chain, bounded in depth and cycle-safe. Only evidence the runtime actually
+ * exposes is used, so a classification is never invented from an unproven
+ * assumption about the error.
+ *
+ * @param {unknown} error
+ * @returns {string[]}
+ */
+function fetchErrorEvidence(error) {
+  const seen = new Set();
+  const evidence = [];
+  let current = error;
+  for (let depth = 0; depth < MAX_ERROR_CAUSE_DEPTH; depth += 1) {
+    if (current === null || typeof current !== 'object' || seen.has(current)) break;
+    seen.add(current);
+    if (typeof current.name === 'string') evidence.push(current.name);
+    if (typeof current.message === 'string') evidence.push(current.message);
+    current = current.cause;
+  }
+  return evidence;
+}
+
+/**
+ * Sanitizes probe evidence before it reaches logs or workflow output: collapses
+ * control characters and whitespace, redacts URL userinfo, and caps the length
+ * so a hostile or pathological error message can never inject output or leak
+ * credentials.
+ *
+ * @param {unknown} value
+ * @param {number} [maxLength]
+ * @returns {string}
+ */
+function sanitizeProbeEvidence(value, maxLength = 200) {
+  const text = typeof value === 'string' ? value : String(value);
+  const collapsed = text.replace(/[\u0000-\u001f\u007f]+/g, ' ').replace(/\s+/g, ' ').trim();
+  const redacted = collapsed.replace(/\/\/[^/\s@]+@/g, '//[redacted]@');
+  return redacted.length > maxLength ? `${redacted.slice(0, maxLength)}...` : redacted;
+}
+
+/**
+ * Classifies a rejected fetch into a probe kind plus a sanitized error.
+ *
+ * `redirect: 'error'` makes native fetch reject with `TypeError: fetch failed`
+ * whose `cause` ("unexpected redirect") is the only redirect evidence
+ * available, so the cause chain is inspected for a redirect pattern. That
+ * rejection is a fail-closed trust violation (`PROBE_KIND.REDIRECT`) that must
+ * never be retried into a false success, while genuine network failures and
+ * `TimeoutError`/`AbortError` stay retryable.
+ *
+ * @param {unknown} error
+ * @returns {{ kind: string, error: string }}
+ */
+export function classifyProbeFetchError(error) {
+  const evidence = fetchErrorEvidence(error);
+  const primary =
+    error !== null && typeof error === 'object' && typeof error.message === 'string' ? error.message : String(error);
+  if (evidence.includes('TimeoutError') || evidence.includes('AbortError')) {
+    return { kind: PROBE_KIND.TIMEOUT, error: sanitizeProbeEvidence(primary) };
+  }
+  const redirect = evidence.find((text) => REDIRECT_EVIDENCE_RE.test(text));
+  if (redirect !== undefined) {
+    return {
+      kind: PROBE_KIND.REDIRECT,
+      error: `registry probe was rejected because the request redirected (${sanitizeProbeEvidence(redirect)})`,
+    };
+  }
+  return { kind: PROBE_KIND.NETWORK, error: sanitizeProbeEvidence(primary) };
+}
+
 /**
  * Probes the exact canonical registry version URL.
  *
@@ -140,9 +254,14 @@ export function registryVersionUrl({ registry = DEFAULT_REGISTRY, package: pkgNa
  * A hung connection is bounded by an unref'd 10s AbortSignal timeout and is
  * reported the same fail-closed way.
  *
+ * A rejection is classified from the caught error itself: a fetch rejected by
+ * `redirect: 'error'` is reported as `PROBE_KIND.REDIRECT` (fail closed, never
+ * retried by a confirmation caller), while a genuine network failure or a
+ * `TimeoutError`/`AbortError` stays `PROBE_KIND.NETWORK`/`PROBE_KIND.TIMEOUT`.
+ *
  * @param {string} url canonical registry version URL
  * @param {typeof fetch} [fetchImpl]
- * @returns {Promise<{ status: number, metadata?: { name: string, version: string }, error?: string }>}
+ * @returns {Promise<{ status: number, kind?: string, metadata?: { name: string, version: string }, error?: string }>}
  */
 export async function probeRegistry(url, fetchImpl = fetch) {
   let response;
@@ -153,24 +272,227 @@ export async function probeRegistry(url, fetchImpl = fetch) {
       signal: AbortSignal.timeout(REGISTRY_TIMEOUT_MS),
     });
   } catch (error) {
-    return { status: 0, error: error instanceof Error ? error.message : String(error) };
+    const { kind, error: message } = classifyProbeFetchError(error);
+    return { status: 0, kind, error: message };
   }
   if (typeof response.url === 'string' && response.url !== '' && response.url !== url) {
-    return { status: 0, error: `registry redirected to a non-canonical URL: ${response.url}` };
+    return {
+      status: 0,
+      kind: PROBE_KIND.REDIRECT,
+      error: `registry redirected to a non-canonical URL: ${sanitizeProbeEvidence(response.url)}`,
+    };
   }
   if (response.status !== 200) return { status: response.status };
   let body;
   try {
     body = await response.json();
   } catch (error) {
-    return { status: 0, error: `registry 200 body was not valid JSON: ${error instanceof Error ? error.message : error}` };
+    return {
+      status: 0,
+      kind: PROBE_KIND.MALFORMED,
+      error: `registry 200 body was not valid JSON: ${sanitizeProbeEvidence(error instanceof Error ? error.message : error)}`,
+    };
   }
   const name = body && typeof body.name === 'string' ? body.name : '';
   const version = body && typeof body.version === 'string' ? body.version : '';
   if (!name || !version) {
-    return { status: 0, error: 'registry 200 body had no name/version metadata' };
+    return { status: 0, kind: PROBE_KIND.MALFORMED, error: 'registry 200 body had no name/version metadata' };
   }
   return { status: 200, metadata: { name, version } };
+}
+
+/**
+ * Bounded exponential backoff for registry confirmation. `attempt` is the
+ * number of the attempt that just failed (1-based), so the first retry waits a
+ * single base delay, the delay doubles per attempt, and it never exceeds the
+ * cap.
+ *
+ * @param {number} attempt
+ * @returns {number} delay in milliseconds
+ */
+export function nextConfirmationDelay(attempt) {
+  const safeAttempt = Number.isFinite(attempt) && attempt >= 1 ? Math.floor(attempt) : 1;
+  const exponential = REGISTRY_CONFIRM_BASE_DELAY_MS * 2 ** (safeAttempt - 1);
+  return Math.min(REGISTRY_CONFIRM_MAX_DELAY_MS, exponential);
+}
+
+/**
+ * Decides what a single confirmation probe means:
+ *   confirmed — the exact expected name/version is live; success
+ *   retry     — a transient visibility condition (404/429/5xx/network/timeout)
+ *   fail      — a definitive, fail-closed failure that must never be retried
+ *               into a false success (redirect, malformed/missing metadata,
+ *               identity mismatch, other 4xx/3xx/unknown)
+ *
+ * @param {{ probe: { status?: number, kind?: string, metadata?: unknown, error?: string }, expectedName: string, expectedVersion: string }} input
+ * @returns {{ disposition: 'confirmed' | 'retry' | 'fail', reason: string }}
+ */
+export function classifyConfirmationProbe({ probe, expectedName, expectedVersion }) {
+  const status = probe && typeof probe.status === 'number' ? probe.status : 0;
+  if (status === 200) {
+    const metadata = verifyRegistryMetadata({ metadata: probe.metadata ?? null, expectedName, expectedVersion });
+    if (!metadata.ok) return { disposition: 'fail', reason: metadata.reason };
+    return { disposition: 'confirmed', reason: metadata.reason };
+  }
+  if (status === 0) {
+    const error = probe && probe.error ? probe.error : 'registry probe was inconclusive';
+    if (probe && (probe.kind === PROBE_KIND.NETWORK || probe.kind === PROBE_KIND.TIMEOUT)) {
+      return { disposition: 'retry', reason: error };
+    }
+    return { disposition: 'fail', reason: error };
+  }
+  if (status === 404 || status === 429 || (status >= 500 && status <= 599)) {
+    return { disposition: 'retry', reason: `registry check was transient (status ${status})` };
+  }
+  return { disposition: 'fail', reason: `registry confirmation failed closed (status ${status})` };
+}
+
+/** @param {number} ms */
+function defaultSleep(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+/**
+ * Monotonic default clock. `Date.now` tracks the wall clock, which can jump
+ * backward across an NTP or manual adjustment; a backward jump would move the
+ * confirmation deadline forward and let the bounded loop keep retrying.
+ * `performance.now()` is monotonic and process-relative, so the deadline can
+ * only be reached, never pushed away.
+ *
+ * @returns {number}
+ */
+export function monotonicNow() {
+  return performance.now();
+}
+
+/**
+ * A confirmation timing bound must be a finite, positive number of
+ * milliseconds. `NaN`, `Infinity`, `0`, and negatives each make a
+ * `now() + bound > deadline` comparison permanently false (or trivially true),
+ * which would let the confirmation loop probe and sleep without limit, so they
+ * are rejected before any probe runs. The documented defaults (300s budget, 10s
+ * probe) are finite and positive and stay valid.
+ *
+ * @param {unknown} value
+ * @returns {boolean}
+ */
+function isPositiveFiniteMs(value) {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0;
+}
+
+/**
+ * Fail-closed result for an unusable clock. A non-finite `now()` reading makes
+ * every deadline comparison permanently false, so the loop must stop instead of
+ * probing and sleeping forever.
+ *
+ * @param {number} attempts
+ * @returns {{ ok: false, attempts: number, exhausted: false, reason: string }}
+ */
+function invalidConfirmationClock(attempts) {
+  return {
+    ok: false,
+    attempts,
+    exhausted: false,
+    reason: 'registry confirmation now() returned a non-finite clock value; refusing to probe unbounded',
+  };
+}
+
+/**
+ * Bounded, injectable confirmation loop for a just-published version.
+ *
+ * Probes the exact version URL until the expected name/version is live,
+ * retrying only transient conditions, and abandons the wait as soon as another
+ * probe could no longer finish inside the budget. It never sleeps after giving
+ * up, so the last action is always a bounded decision instead of a trailing
+ * wait.
+ *
+ * Fails closed before any probe when `budgetMs`/`maxProbeMs` are not finite and
+ * positive or when `now()` ever returns a non-finite value, so no injected
+ * timing input can turn the bounded loop into an unbounded one. The default
+ * clock is monotonic (`performance.now()`), and a conservative hard attempt cap
+ * (`REGISTRY_CONFIRM_MAX_ATTEMPTS`) terminates the loop even if an injected
+ * clock is frozen and an injected sleep resolves without advancing time.
+ *
+ * @param {{
+ *   url: string,
+ *   expectedName: string,
+ *   expectedVersion: string,
+ *   probe?: (url: string) => Promise<{ status: number, kind?: string, metadata?: unknown, error?: string }>,
+ *   sleep?: (ms: number) => Promise<void>,
+ *   now?: () => number,
+ *   budgetMs?: number,
+ *   maxProbeMs?: number,
+ *   onRetry?: (event: { attempt: number, delay: number, reason: string }) => void,
+ * }} input
+ * @returns {Promise<{ ok: boolean, attempts: number, exhausted: boolean, reason: string }>}
+ */
+export async function confirmRegistryVersion({
+  url,
+  expectedName,
+  expectedVersion,
+  probe = probeRegistry,
+  sleep = defaultSleep,
+  now = monotonicNow,
+  budgetMs = REGISTRY_CONFIRM_BUDGET_MS,
+  maxProbeMs = REGISTRY_TIMEOUT_MS,
+  onRetry = () => {},
+}) {
+  if (!isPositiveFiniteMs(budgetMs) || !isPositiveFiniteMs(maxProbeMs)) {
+    return {
+      ok: false,
+      attempts: 0,
+      exhausted: false,
+      reason: 'registry confirmation requires a finite, positive budgetMs and maxProbeMs; refusing to probe unbounded',
+    };
+  }
+  const start = now();
+  if (!Number.isFinite(start)) return invalidConfirmationClock(0);
+  const deadline = start + budgetMs;
+  let attempts = 0;
+  for (;;) {
+    const beforeProbe = now();
+    if (!Number.isFinite(beforeProbe)) return invalidConfirmationClock(attempts);
+    if (beforeProbe + maxProbeMs > deadline) {
+      return {
+        ok: false,
+        attempts,
+        exhausted: true,
+        reason: `registry confirmation budget of ${budgetMs}ms was exhausted before another probe could finish`,
+      };
+    }
+    attempts += 1;
+    const result = await probe(url);
+    const verdict = classifyConfirmationProbe({ probe: result, expectedName, expectedVersion });
+    if (verdict.disposition === 'confirmed') return { ok: true, attempts, exhausted: false, reason: verdict.reason };
+    if (verdict.disposition === 'fail') return { ok: false, attempts, exhausted: false, reason: verdict.reason };
+    // Check the hard cap here, before scheduling the retry: re-entering the
+    // loop is the only way back to `probe`, so stopping now is what terminates
+    // a frozen-clock run, and it guarantees the final probe is never followed
+    // by an onRetry event or a trailing sleep.
+    if (attempts >= REGISTRY_CONFIRM_MAX_ATTEMPTS) {
+      return {
+        ok: false,
+        attempts,
+        exhausted: true,
+        reason: `registry confirmation exceeded the hard cap of ${REGISTRY_CONFIRM_MAX_ATTEMPTS} attempts; refusing to retry unbounded`,
+      };
+    }
+    const delay = nextConfirmationDelay(attempts);
+    const beforeSleep = now();
+    if (!Number.isFinite(beforeSleep)) return invalidConfirmationClock(attempts);
+    if (beforeSleep + delay + maxProbeMs > deadline) {
+      return {
+        ok: false,
+        attempts,
+        exhausted: true,
+        reason: `${verdict.reason}; no retry could finish within the ${budgetMs}ms confirmation budget`,
+      };
+    }
+    onRetry({ attempt: attempts, delay, reason: verdict.reason });
+    await sleep(delay);
+  }
 }
 
 export const GITHUB_API_BASE = 'https://api.github.com';
@@ -598,9 +920,30 @@ async function runRegistry(args) {
   if (!version) fail(`tag "${tag}" is not an exact stable semver tag (expected vX.Y.Z).`);
   const expected = args.expect === 'present' || args.expect === 'absent' ? args.expect : null;
   if (!expected) fail('registry requires --expect absent|present.');
+  const wait = args.wait === true;
+  if (wait && expected !== 'present') {
+    fail('registry --wait is only supported with --expect present.');
+  }
   const repoRoot = path.resolve(typeof args['repo-root'] === 'string' ? args['repo-root'] : process.cwd());
   const pkgName = readJson(path.join(repoRoot, 'packages/create-contractor-site/package.json')).name;
   const url = registryVersionUrl({ registry: DEFAULT_REGISTRY, package: pkgName, version });
+
+  // `--wait` owns its own bounded retry/backoff policy; absent and non-wait
+  // present keep the original single-probe, fail-closed behavior.
+  if (wait) {
+    const confirmation = await confirmRegistryVersion({
+      url,
+      expectedName: pkgName,
+      expectedVersion: version,
+      onRetry: ({ attempt, delay, reason }) => {
+        console.log(`registry not yet confirmed (attempt ${attempt}: ${reason}); retrying in ${Math.round(delay / 1000)}s`);
+      },
+    });
+    if (!confirmation.ok) fail(`${pkgName}@${version} ${confirmation.reason}.`);
+    console.log(`registry OK: ${pkgName}@${version} ${confirmation.reason}`);
+    return 0;
+  }
+
   const probe = await probeRegistry(url);
   const result = classifyRegistryStatus({ expected, status: probe.status });
   if (!result.ok) {
