@@ -15,8 +15,10 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import {
   MAX_RELEASES_PAGES,
+  PROBE_KIND,
   REGISTRY_TIMEOUT_MS,
   RELEASES_TIMEOUT_MS,
+  classifyProbeFetchError,
   classifyRegistryStatus,
   describeReleasesUrlProblem,
   findReleaseByTag,
@@ -174,6 +176,180 @@ test('probeRegistry bounds each request with a 10s timeout and fails closed on a
   assert.equal(REGISTRY_TIMEOUT_MS, 10_000, 'the registry probe timeout must be 10s');
   assert.ok(seen.signal instanceof AbortSignal, 'the probe must pass an AbortSignal to fetch');
   assert.equal(aborted.status, 0, 'an aborted probe must be inconclusive, never a trusted status');
+});
+
+// --- Registry probe status-0 cause classification ------------------------
+
+/** Canonical version URL used by the registry probe classification checks. */
+const CONFIRM_URL = 'https://registry.npmjs.org/create-contractor-site/2.3.1';
+
+test('probeRegistry classifies status-0 causes for bounded retry decisions', async () => {
+  const url = CONFIRM_URL;
+
+  const network = await probeRegistry(url, async () => {
+    throw new Error('socket hang up');
+  });
+  assert.equal(network.status, 0);
+  assert.equal(network.kind, PROBE_KIND.NETWORK);
+
+  const timeout = await probeRegistry(url, async () => {
+    throw new DOMException('The operation was aborted due to timeout', 'TimeoutError');
+  });
+  assert.equal(timeout.kind, PROBE_KIND.TIMEOUT);
+  const aborted = await probeRegistry(url, async () => {
+    throw new DOMException('aborted', 'AbortError');
+  });
+  assert.equal(aborted.kind, PROBE_KIND.TIMEOUT);
+
+  const redirect = await probeRegistry(url, async () => ({
+    status: 200,
+    url: 'https://evil.example/create-contractor-site/2.3.1',
+    json: async () => ({ name: 'create-contractor-site', version: '2.3.1' }),
+  }));
+  assert.equal(redirect.kind, PROBE_KIND.REDIRECT);
+
+  const badJson = await probeRegistry(url, async () => ({
+    status: 200,
+    url,
+    json: async () => {
+      throw new Error('not JSON');
+    },
+  }));
+  assert.equal(badJson.kind, PROBE_KIND.MALFORMED);
+
+  const noMetadata = await probeRegistry(url, async () => ({ status: 200, url, json: async () => ({}) }));
+  assert.equal(noMetadata.kind, PROBE_KIND.MALFORMED);
+
+  const ok = await probeRegistry(url, async () => ({
+    status: 200,
+    url,
+    json: async () => ({ name: 'create-contractor-site', version: '2.3.1' }),
+  }));
+  assert.equal(ok.status, 200);
+  assert.equal(ok.kind, undefined, 'a trusted 200 carries no status-0 kind');
+});
+
+test('classifyProbeFetchError reads redirect evidence conservatively from the cause chain', () => {
+  assert.equal(classifyProbeFetchError(new TypeError('fetch failed')).kind, PROBE_KIND.NETWORK);
+
+  // Node/undici rejects `redirect: 'error'` with `TypeError: fetch failed`
+  // whose cause is `Error: unexpected redirect`.
+  const redirectRejection = new TypeError('fetch failed');
+  redirectRejection.cause = new Error('unexpected redirect');
+  assert.equal(classifyProbeFetchError(redirectRejection).kind, PROBE_KIND.REDIRECT);
+
+  // The evidence may also sit deeper in the chain.
+  const nested = new TypeError('fetch failed');
+  nested.cause = Object.assign(new Error('inner'), { cause: new Error('unexpected redirect') });
+  assert.equal(classifyProbeFetchError(nested).kind, PROBE_KIND.REDIRECT);
+
+  // A cyclic chain must terminate and stay a retryable network failure.
+  const cyclic = new TypeError('fetch failed');
+  cyclic.cause = cyclic;
+  assert.equal(classifyProbeFetchError(cyclic).kind, PROBE_KIND.NETWORK);
+
+  // A genuine network failure must never be mistaken for a redirect.
+  const networkFailure = new TypeError('fetch failed');
+  networkFailure.cause = new Error('getaddrinfo ENOTFOUND registry.npmjs.org');
+  assert.equal(classifyProbeFetchError(networkFailure).kind, PROBE_KIND.NETWORK);
+
+  // Timeout/abort evidence stays retryable and wins over other evidence.
+  assert.equal(classifyProbeFetchError(new DOMException('aborted', 'AbortError')).kind, PROBE_KIND.TIMEOUT);
+  const timeout = new DOMException('The operation was aborted due to timeout', 'TimeoutError');
+  timeout.cause = new Error('unexpected redirect');
+  assert.equal(classifyProbeFetchError(timeout).kind, PROBE_KIND.TIMEOUT);
+
+  // Non-error throwables are handled without crashing and stay retryable.
+  assert.equal(classifyProbeFetchError('boom').kind, PROBE_KIND.NETWORK);
+  assert.equal(classifyProbeFetchError(undefined).kind, PROBE_KIND.NETWORK);
+  assert.equal(typeof classifyProbeFetchError(undefined).error, 'string');
+});
+
+test('probeRegistry classifies a native redirect rejection as a fail-closed redirect', async () => {
+  const url = CONFIRM_URL;
+  const redirectRejection = new TypeError('fetch failed');
+  redirectRejection.cause = new Error('unexpected redirect');
+  const throwingFetch = async () => {
+    throw redirectRejection;
+  };
+
+  const probe = await probeRegistry(url, throwingFetch);
+  assert.equal(probe.status, 0);
+  assert.equal(probe.kind, PROBE_KIND.REDIRECT, 'a redirect rejection must not be classified as a retryable network error');
+  assert.equal(typeof probe.error, 'string');
+  assert.ok(probe.error.length > 0, 'a fail-closed probe must keep a sanitized error');
+  assert.match(probe.error, /redirect/i);
+  assert.doesNotMatch(probe.error, /[\n\r]/, 'the sanitized error must not carry raw control characters');
+});
+
+test('probeRegistry keeps native network failures and timeouts retryable', async () => {
+  const url = CONFIRM_URL;
+  const networkFailure = new TypeError('fetch failed');
+  networkFailure.cause = new Error('getaddrinfo ENOTFOUND registry.npmjs.org');
+  const timeoutFailure = new DOMException('The operation was aborted due to timeout', 'TimeoutError');
+
+  const network = await probeRegistry(url, async () => {
+    throw networkFailure;
+  });
+  assert.equal(network.status, 0);
+  assert.equal(network.kind, PROBE_KIND.NETWORK, 'a genuine network failure must stay retryable');
+
+  const timeout = await probeRegistry(url, async () => {
+    throw timeoutFailure;
+  });
+  assert.equal(timeout.status, 0);
+  assert.equal(timeout.kind, PROBE_KIND.TIMEOUT, 'a timeout must stay retryable');
+});
+
+test('probeRegistry sanitizes probe evidence before it can reach logs', async () => {
+  const url = CONFIRM_URL;
+  const hostile = new Error(`fetch failed for https://token:secret@registry.npmjs.org/pkg\n\u0007${'x'.repeat(500)}`);
+
+  const probe = await probeRegistry(url, async () => {
+    throw hostile;
+  });
+  assert.equal(probe.status, 0);
+  assert.doesNotMatch(probe.error, /token:secret/, 'URL userinfo must be redacted');
+  assert.doesNotMatch(probe.error, /[\u0000-\u001f\u007f]/, 'control characters must be collapsed');
+  assert.match(probe.error, /\[redacted\]@/, 'redaction must be visible in the sanitized evidence');
+  assert.ok(probe.error.length <= 210, `sanitized evidence must be length-capped, got ${probe.error.length}`);
+});
+
+test('probeRegistry sanitizes non-canonical redirect URLs and parser errors', async () => {
+  const url = CONFIRM_URL;
+
+  // A followed redirect whose final URL carries userinfo and control characters
+  // must not leak either into the status-0 redirect evidence.
+  const hostileRedirect = await probeRegistry(url, async () => ({
+    status: 200,
+    url: `https://user:secret@evil.example/pkg\u0007\n${'y'.repeat(500)}`,
+    json: async () => ({ name: 'create-contractor-site', version: '2.3.1' }),
+  }));
+  assert.equal(hostileRedirect.status, 0);
+  assert.equal(hostileRedirect.kind, PROBE_KIND.REDIRECT);
+  assert.match(hostileRedirect.error, /non-canonical/);
+  assert.doesNotMatch(hostileRedirect.error, /user:secret/, 'redirect URL userinfo must be redacted');
+  assert.doesNotMatch(hostileRedirect.error, /[\u0000-\u001f\u007f]/, 'redirect URL control characters must be collapsed');
+  assert.ok(hostileRedirect.error.length <= 260, `redirect evidence must be length-capped, got ${hostileRedirect.error.length}`);
+
+  // A JSON parser error carrying hostile text and URL userinfo must be
+  // sanitized before it reaches the status-0 malformed evidence.
+  const hostileParseError = new Error(
+    `bad JSON at https://token:secret@registry.npmjs.org/pkg\n\u0007${'z'.repeat(500)}`,
+  );
+  const badJson = await probeRegistry(url, async () => ({
+    status: 200,
+    url,
+    json: async () => {
+      throw hostileParseError;
+    },
+  }));
+  assert.equal(badJson.status, 0);
+  assert.equal(badJson.kind, PROBE_KIND.MALFORMED);
+  assert.doesNotMatch(badJson.error, /token:secret/, 'parser error userinfo must be redacted');
+  assert.doesNotMatch(badJson.error, /[\u0000-\u001f\u007f]/, 'parser error control characters must be collapsed');
+  assert.match(badJson.error, /\[redacted\]@/, 'redaction must be visible in the sanitized parser error');
+  assert.ok(badJson.error.length <= 260, `parser error evidence must be length-capped, got ${badJson.error.length}`);
 });
 
 test('readDefaultTemplateRef tracks the current CLI version contract', () => {
