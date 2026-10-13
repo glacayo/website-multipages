@@ -40,7 +40,7 @@ const [primary, ...rest] = data.slides;
               {primary.headline}
             </h1>
             <p class="text-white/80 mb-6">{primary.text}</p>
-            <Button href={primary.cta_primary.href} variant="primary" size="lg">
+            <Button data-raven-cta="primary" data-raven-call="true" href={primary.cta_primary.href} variant="primary" size="lg">
               {primary.cta_primary.label}
             </Button>
           </div>
@@ -68,7 +68,7 @@ const [primary, ...rest] = data.slides;
               <div class="absolute inset-0 bg-dark/55 group-hover:bg-dark/65 transition-colors" />
               <div class="relative z-10 p-6 text-white h-full flex flex-col justify-end">
                 <h2 class="font-heading text-xl font-bold mb-2">{slide.headline}</h2>
-                <Button href={slide.cta_primary.href} variant="outline" size="sm" class="!border-white/40 !text-white w-fit">
+                <Button data-raven-cta="primary" data-raven-call="true" href={slide.cta_primary.href} variant="outline" size="sm" class="!border-white/40 !text-white w-fit">
                   {slide.cta_primary.label}
                 </Button>
               </div>

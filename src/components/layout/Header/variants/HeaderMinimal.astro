@@ -2,7 +2,8 @@
 /**
  * Minimal header: slim bar with logo + compact nav + phone CTA.
  */
-import { getBusiness, getContactPath, getSite } from '../../../../data/loaders';
+import { getBusiness, getSite } from '../../../../data/loaders';
+import { toPhoneHref } from '../../../../utils/phone';
 import NavMenu from '../../NavMenu.astro';
 import Menu from '@lucide/astro/icons/menu';
 import X from '@lucide/astro/icons/x';
@@ -11,7 +12,7 @@ import Phone from '@lucide/astro/icons/phone';
 const site = getSite();
 const business = getBusiness();
 const primaryPhone = business.phones[0];
-const telHref = primaryPhone ? `tel:${primaryPhone.replace(/\D/g, '')}` : getContactPath();
+const telHref = toPhoneHref(primaryPhone);
 ---
 
 <header
@@ -38,9 +39,11 @@ const telHref = primaryPhone ? `tel:${primaryPhone.replace(/\D/g, '')}` : getCon
 
       <div class="flex items-center gap-3">
         {
-          primaryPhone && (
+          telHref && (
             <a
               href={telHref}
+              data-raven-cta="primary"
+              data-raven-call="true"
               class="hidden items-center gap-1.5 text-sm font-semibold text-primary hover:text-accent sm:inline-flex"
             >
               <Phone class="size-3.5" aria-hidden="true" />
@@ -75,9 +78,11 @@ const telHref = primaryPhone ? `tel:${primaryPhone.replace(/\D/g, '')}` : getCon
     <div class="container-site py-3" x-on:click="if ($event.target.closest('a')) menuOpen = false">
       <NavMenu mobile />
       {
-        primaryPhone && (
+        telHref && (
           <a
             href={telHref}
+            data-raven-cta="primary"
+            data-raven-call="true"
             class="mt-3 flex items-center justify-center gap-2 rounded-md bg-accent px-4 py-3 text-sm font-semibold text-white"
           >
             <Phone class="size-4" aria-hidden="true" />

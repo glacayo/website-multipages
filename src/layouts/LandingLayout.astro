@@ -4,6 +4,7 @@
  * Merges landings.json (when present) with services.json; falls back to service + business.
  */
 import BaseLayout from './BaseLayout.astro';
+import { toPhoneHref } from '../utils/phone';
 import Breadcrumb from '../components/ui/Breadcrumb.astro';
 import Button from '../components/ui/Button.astro';
 import ResponsiveImage from '../components/ui/ResponsiveImage.astro';
@@ -89,7 +90,7 @@ const description =
   page.meta_description ||
   page.hero.paragraph.slice(0, 160);
 const primaryPhone = business.phones[0] ?? '';
-const phoneHref = `tel:${primaryPhone.replace(/\D/g, '')}`;
+const phoneHref = toPhoneHref(primaryPhone);
 const highlights = service?.highlights ?? [];
 
 const uiBreadcrumbs = [
@@ -141,12 +142,12 @@ const schemaBreadcrumbs = [
             {page.hero.paragraph}
           </p>
           <div class="flex flex-col items-start gap-3 sm:flex-row">
-            <Button href={contactHref} variant="primary" size="md">
+            <Button data-raven-cta="primary" href={contactHref} variant="primary" size="md">
               {page.cta.button_label}
             </Button>
             {
-              primaryPhone && (
-                <Button href={phoneHref} variant="outline" size="md" class="border-white/40 text-white hover:bg-white hover:text-primary">
+              phoneHref && (
+                <Button data-raven-call="true" href={phoneHref} variant="outline" size="md" class="border-white/40 text-white hover:bg-white hover:text-primary">
                   {primaryPhone}
                 </Button>
               )
@@ -252,7 +253,7 @@ const schemaBreadcrumbs = [
       <h2 class="font-heading max-w-2xl text-2xl font-bold text-white md:text-3xl">
         {page.cta.headline}
       </h2>
-      <Button href={contactHref} variant="primary" size="lg">
+      <Button data-raven-cta="primary" href={contactHref} variant="primary" size="lg">
         {page.cta.button_label}
       </Button>
     </div>

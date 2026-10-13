@@ -8,6 +8,7 @@ import Textarea from '../../ui/Textarea.astro';
 import Button from '../../ui/Button.astro';
 import SectionHeader from '../../ui/SectionHeader.astro';
 import { getBusiness, getServices } from '../../../data/loaders';
+import { toPhoneHref } from '../../../utils/phone';
 
 interface Props {
   /** Optional heading override for embedded usage. */
@@ -28,6 +29,7 @@ const {
 const business = getBusiness();
 const services = getServices().services;
 const primaryPhone = business.phones[0] ?? '';
+const phoneHref = toPhoneHref(primaryPhone);
 ---
 
 <section id="contact" class:list={[!compact && 'bg-surface py-16 md:py-24', className]}>
@@ -135,12 +137,17 @@ const primaryPhone = business.phones[0] ?? '';
 
         <p class="text-center text-xs text-muted">
           Or call us at{' '}
-          <a
-            href={`tel:${primaryPhone.replace(/\D/g, '')}`}
-            class="font-medium text-primary hover:text-accent"
-          >
-            {primaryPhone}
-          </a>
+          {phoneHref ? (
+            <a
+              href={phoneHref}
+              data-raven-call="true"
+              class="font-medium text-primary hover:text-accent"
+            >
+              {primaryPhone}
+            </a>
+          ) : (
+            <span>{primaryPhone}</span>
+          )}
           . {business.free_estimate}.
         </p>
       </form>

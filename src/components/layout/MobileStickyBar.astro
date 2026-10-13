@@ -5,14 +5,19 @@
  */
 import { getBusiness, getContactPath, getNavigation } from '../../data/loaders';
 import Phone from '@lucide/astro/icons/phone';
+import { toPhoneHref } from '../../utils/phone';
 
 const business = getBusiness();
 const navigation = getNavigation();
 const primaryPhone = business.phones[0];
-const ctaLabel = navigation.mobile.cta_label || 'Call Now';
-const ctaHref =
-  navigation.mobile.cta_href ||
-  (primaryPhone ? `tel:${primaryPhone.replace(/\D/g, '')}` : getContactPath());
+const configuredHref = navigation.mobile.cta_href?.trim();
+const requestedHref = configuredHref || toPhoneHref(primaryPhone) || getContactPath();
+const phoneHref = /^tel:/i.test(requestedHref) ? toPhoneHref(requestedHref) : undefined;
+const invalidPhone = /^tel:/i.test(requestedHref) && !phoneHref;
+const ctaHref = invalidPhone ? getContactPath() : phoneHref || requestedHref;
+const ctaLabel = invalidPhone || (!configuredHref && !phoneHref)
+  ? 'Contact Us'
+  : navigation.mobile.cta_label || (phoneHref ? 'Call Now' : 'Contact Us');
 ---
 
 <div
@@ -32,6 +37,8 @@ const ctaHref =
 >
   <a
     href={ctaHref}
+    data-raven-cta="primary"
+    data-raven-call={phoneHref ? 'true' : undefined}
     class="flex items-center justify-center gap-2 whitespace-nowrap rounded-full bg-accent px-8 py-3.5 text-sm font-semibold text-white shadow-2xl shadow-accent/30 transition-colors hover:bg-accent/90 active:bg-accent/80 animate-float"
   >
     <Phone class="size-4" aria-hidden="true" />
