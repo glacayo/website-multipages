@@ -6,19 +6,21 @@ The format is release-note style. Versions follow the monorepo package version (
 
 ## [Unreleased]
 
-## [2.4.0] — Release candidate (not yet published)
+## [2.4.0] — 2026-10-13
+
+Published: [GitHub release v2.4.0](https://github.com/glacayo/website-multipages/releases/tag/v2.4.0) (UTC); [automated release run 38337745249](https://github.com/glacayo/website-multipages/actions/runs/38337745249) succeeded.
 
 ### Highlights
 
-- Optional analytics coverage with privacy-focused event handling.
+- Semantic Raven CTA/call hooks and a queue-preserving `window.dataLayer` bootstrap; client integrations own consent and event delivery.
 - Guarded, token-free tag-triggered publication with bounded registry confirmation.
 
 ### Changed / Improved
 
 - Template and CLI package version **2.4.0**; default published template clone ref **`v2.4.0`** (environment override still supported), with matching CLI help and regression smoke assertions.
-- **Analytics** — analytics foundation and deterministic coverage for the optional integration, without changing the 12-file JSON contract or embedding client identity in components.
+- **Analytics** — semantic hooks and deterministic coverage for the optional integration, without changing the 12-file JSON contract or embedding client identity in components. No GTM installation, event delivery, or runtime form-success event is included; see [`docs/analytics-hooks.md`](./docs/analytics-hooks.md).
 - **Guarded autopublishing** — stable annotated `v*` tag pushes trigger publication; manual dispatch from `main` remains a recovery path. Both entry points preserve annotated tag == HEAD == fresh `origin/main`, shared per-tag concurrency, OIDC/provenance, token refusal, registry absence checks, and remote-tag drift checks.
-- Dependency ranges, lockfile, pnpm-only enforcement, and minimum release-age policy remain unchanged. Release/tag/registry verification is still pending; this entry is candidate preparation, not publication evidence.
+- Dependency ranges, lockfile, pnpm-only enforcement, and minimum release-age policy remain unchanged. Publication uses native pnpm with OIDC/provenance; registry confirmation precedes GitHub release creation. See [`docs/releasing.md`](./docs/releasing.md) for the authoritative recovery contract.
 
 - **Bounded registry confirmation** — the publish workflow's post-publish shell retry loop is replaced by a single `verify-release.mjs registry --expect present --wait` call. It probes the exact canonical version URL and retries only transient visibility conditions (`404`, `429`, `5xx`, network/timeout) with bounded exponential backoff (10s base, doubling to a 60s ceiling) inside a fixed ~5 minute budget, never starting or sleeping for a probe that could not finish in time. Redirects, malformed/missing metadata, identity mismatches, and every other status still fail closed immediately. Publish stays a single irreversible command with its adjacent absence re-check, and non-wait behavior is unchanged.
 

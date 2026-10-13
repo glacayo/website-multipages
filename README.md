@@ -1,9 +1,11 @@
-# Contractor Multipages Template (v2.3.1)
+# Contractor Multipages Template (v2.4.0)
 
 Reusable **Astro 7** static template for contractor and local service-business websites.
 This repository is a template base — placeholder content only, not a client project.
 
-**Release notes:** see [`CHANGELOG.md`](./CHANGELOG.md) for v2.3.1 highlights (supported Astro/Sharp refresh, hosted pnpm CI, guarded token-free trusted publishing infrastructure), v2.3.0 (page-shell reuse, isolated smart-image capsule, scaffold/state protections, agent-owned image fulfillment, pnpm/Corepack fix), and v2.2.0 (CLI intake, `siteType` modes, theme palette lint, route policy/prune/audit).
+**Current release — v2.4.0:** semantic Raven CTA/call hooks and an early, queue-preserving `window.dataLayer` bootstrap (no GTM installation or event delivery), plus guarded automatic tag-push publishing. See [`docs/analytics-hooks.md`](./docs/analytics-hooks.md) for the integration contract.
+
+**Release notes:** see [`CHANGELOG.md`](./CHANGELOG.md) for v2.4.0 and historical v2.3.1 highlights (supported Astro/Sharp refresh, hosted pnpm CI, guarded token-free trusted publishing infrastructure), v2.3.0 (page-shell reuse, isolated smart-image capsule, scaffold/state protections, agent-owned image fulfillment, pnpm/Corepack fix), and v2.2.0 (CLI intake, `siteType` modes, theme palette lint, route policy/prune/audit).
 
 ## Quick path
 
@@ -13,7 +15,7 @@ From this monorepo, use the direct Node entrypoint so the target path is resolve
 
 ```bash
 node ./packages/create-contractor-site/bin/create-contractor-site.mjs ../acme-contractor
-# or, once published: pnpm create contractor-site ../acme-contractor
+# or use the published CLI: pnpm create contractor-site ../acme-contractor
 ```
 
 If you use `pnpm --filter create-contractor-site exec`, remember pnpm runs from the package directory (`packages/create-contractor-site`), so relative target paths must be written from there:
@@ -70,7 +72,7 @@ The published npm package ships only the CLI (`bin`/`src`/`scripts`). Template f
 |----------|--------|
 | 1 | `CREATE_CONTRACTOR_TEMPLATE_ROOT` — local checkout path (best for monorepo/dev) |
 | 2 | Local monorepo root discovered by walking parents from the package |
-| 3 | Temporary `git clone` of `CREATE_CONTRACTOR_TEMPLATE_REPO` @ `CREATE_CONTRACTOR_TEMPLATE_REF` (defaults: this GitHub repo @ `v2.3.1`), cleaned up afterward |
+| 3 | Temporary `git clone` of `CREATE_CONTRACTOR_TEMPLATE_REPO` @ `CREATE_CONTRACTOR_TEMPLATE_REF` (defaults: this GitHub repo @ `v2.4.0`), cleaned up afterward |
 
 ```bash
 # Force a local template root
@@ -254,13 +256,10 @@ Node 22 and pnpm frozen lockfile are set in build environment.
 
 ## Releasing
 
-`create-contractor-site` releases are **manual and token-free**, driven by
-[`.github/workflows/publish.yml`](./.github/workflows/publish.yml) through npm
-trusted publishing (OIDC). No local `npm login` or npm token is ever used, and
-the template root stays `private: true` so only the CLI package can be published.
+`create-contractor-site` releases are **tag-triggered and token-free**: pushing a stable **annotated** `vX.Y.Z` tag at the exact `main` HEAD starts
+[`.github/workflows/publish.yml`](./.github/workflows/publish.yml). Native pnpm publishing uses npm trusted publishing (OIDC) with provenance; bounded registry confirmation precedes GitHub release creation. No local `npm login` or stored npm token is used, and the template root stays `private: true` so only the CLI package can be published.
 
-Runbook — one-time npm trusted-publisher binding, ordering, and failure
-recovery: [`docs/releasing.md`](./docs/releasing.md).
+Guarded manual dispatch from `main` is recovery only, after proving nothing was published. An unknown outcome requires registry inspection — never blindly rerun publishing. The authoritative runbook covers binding, recommended protections, ordering, and recovery: [`docs/releasing.md`](./docs/releasing.md).
 
 ## pnpm enforcement
 
