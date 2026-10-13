@@ -1,4 +1,4 @@
-# Contractor Multipages — Template Skill (v2.4.0)
+# Contractor Multipages — Template Skill (v2.4.1)
 
 > Reusable static website template for contractors (masonry, hardscape, roofing, landscaping, tree services, etc.).
 > Customize via JSON only. Never use npm.
@@ -12,7 +12,11 @@ Spin up a multi-page contractor marketing site that is:
 - deployable to Netlify (or any static host)
 - customizable without editing component source for normal client work
 
-## Current release — v2.4.0
+## Current release — v2.4.1
+
+Documentation-only patch prepared to ship the corrected npm package README and require documentation review before tagging; no new runtime features. See [`docs/releasing.md`](./docs/releasing.md).
+
+### Features introduced in v2.4.0
 
 - **Semantic analytics hooks:** Raven CTA/call selectors and a queue-preserving `window.dataLayer` bootstrap; no GTM installation, event delivery, or runtime form-success event. Client integrations own consent and tracking: [`docs/analytics-hooks.md`](./docs/analytics-hooks.md).
 - **Guarded automatic publishing:** stable annotated tags at exact `main` HEAD trigger native pnpm OIDC/provenance publication; registry confirmation precedes GitHub release creation. Manual `main` dispatch is recovery only after proving no publication: [`docs/releasing.md`](./docs/releasing.md).
@@ -111,7 +115,7 @@ Package runners may start the binary; **install/build inside the scaffold always
 | Template env | Behavior |
 |--------------|----------|
 | `CREATE_CONTRACTOR_TEMPLATE_ROOT` | Use this local template path (preferred for monorepo/dev) |
-| `CREATE_CONTRACTOR_TEMPLATE_REPO` / `CREATE_CONTRACTOR_TEMPLATE_REF` | Remote clone fallback when published (default repo + `v2.4.0`) |
+| `CREATE_CONTRACTOR_TEMPLATE_REPO` / `CREATE_CONTRACTOR_TEMPLATE_REF` | Remote clone fallback when published (default repo + `v2.4.1`) |
 
 Published package contents are CLI-only; template files are resolved via env, local monorepo discovery, or a temporary git clone (cleaned up).
 

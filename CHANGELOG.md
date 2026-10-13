@@ -6,6 +6,16 @@ The format is release-note style. Versions follow the monorepo package version (
 
 ## [Unreleased]
 
+## [2.4.1] — Unreleased documentation patch
+
+### Changed / Improved
+
+- Prepare the corrected `create-contractor-site` README for npm distribution, with current version/default-ref documentation and absolute repository documentation links.
+- Require review of all public documentation, CLI help, changelog, and the exact candidate tarball README **before** creating or pushing a release tag.
+- Synchronize root/CLI versions to **2.4.1**, default template ref to **`v2.4.1`**, CLI help, and smoke assertions. No new runtime features, dependency or lockfile changes, or publishing guard changes; the features introduced in 2.4.0 remain unchanged.
+
+This entry does not assert publication. Registry and GitHub release confirmation remain required by [`docs/releasing.md`](./docs/releasing.md).
+
 ## [2.4.0] — 2026-10-13
 
 Published: [GitHub release v2.4.0](https://github.com/glacayo/website-multipages/releases/tag/v2.4.0) (UTC); [automated release run 38337745249](https://github.com/glacayo/website-multipages/actions/runs/38337745249) succeeded.

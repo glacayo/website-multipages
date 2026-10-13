@@ -2,15 +2,19 @@
 
 Scaffold a client contractor website from the [website-multipages](https://github.com/glacayo/website-multipages) Astro template.
 
-**Package version:** `2.4.0` · **Default template ref:** `v2.4.0` (`CREATE_CONTRACTOR_TEMPLATE_REF`)
+**Package version:** `2.4.1` · **Default template ref:** `v2.4.1` (`CREATE_CONTRACTOR_TEMPLATE_REF`)
 
 The CLI validates the target, copies the template, replaces placeholder values in `src/data/*.json`, installs with **pnpm**, validates data, builds, and initializes git **only after** success.
 
-## What's new in 2.4.0
+## What's new in 2.4.1
+
+Documentation-only patch prepared to ship the corrected npm README and add mandatory pre-tag documentation review to the release runbook. No new runtime features; version, default template ref, and help are synchronized for this patch.
+
+## Features introduced in 2.4.0
 
 - **Semantic analytics hooks** — the template provides Raven CTA/call selectors and a queue-preserving `window.dataLayer` bootstrap, without installing GTM, delivering events, or emitting runtime form-success events. Client integrations own consent and tracking; see [`docs/analytics-hooks.md`](https://github.com/glacayo/website-multipages/blob/main/docs/analytics-hooks.md).
 - **Guarded automatic publishing** — stable annotated `vX.Y.Z` tags at exact `main` HEAD trigger native pnpm OIDC/provenance publication. Bounded registry confirmation precedes GitHub release creation; guarded manual dispatch from `main` is recovery only after proving nothing was published. Unknown outcomes require inspection, never blind republishing. See the authoritative [`docs/releasing.md`](https://github.com/glacayo/website-multipages/blob/main/docs/releasing.md) runbook. The template root remains `private: true`.
-- **Template clone default** — published fallback uses git ref **`v2.4.0`** unless you set `CREATE_CONTRACTOR_TEMPLATE_ROOT` or `CREATE_CONTRACTOR_TEMPLATE_REF`.
+- **Template clone default at 2.4.0** — that release used git ref **`v2.4.0`**. The current default is **`v2.4.1`** unless you set `CREATE_CONTRACTOR_TEMPLATE_ROOT` or `CREATE_CONTRACTOR_TEMPLATE_REF`.
 
 Full release notes: repository root [`CHANGELOG.md`](https://github.com/glacayo/website-multipages/blob/main/CHANGELOG.md).
 
@@ -87,7 +91,7 @@ See the template root `AGENTS.md`, `SKILL.md`, and `README.md` for the full agen
 | `CREATE_CONTRACTOR_SITE_ANSWERS_JSON` | JSON object with client answers for scripted/non-interactive scaffolds |
 | `CREATE_CONTRACTOR_TEMPLATE_ROOT` | Path to a local template checkout (preferred for monorepo/dev) |
 | `CREATE_CONTRACTOR_TEMPLATE_REPO` | Git URL for the published fallback clone (default: this template repo) |
-| `CREATE_CONTRACTOR_TEMPLATE_REF` | Git branch/tag/ref to clone (default: `v2.4.0`) |
+| `CREATE_CONTRACTOR_TEMPLATE_REF` | Git branch/tag/ref to clone (default: `v2.4.1`) |
 
 Template source precedence: `CREATE_CONTRACTOR_TEMPLATE_ROOT` → local monorepo discovery → temporary clone of repo @ ref.
 
