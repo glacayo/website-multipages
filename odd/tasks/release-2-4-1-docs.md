@@ -9,7 +9,7 @@ Documentationpatch only plus unavoidableversion/ref/help/smoke bookkeeping. Root
 ## Tasks
 - [x] P1 (prepared and independently verified at76e9d03): Test-first synchronized2.4.1 version/ref/help/smoke, allcurrentversiondocs, docs-onlychangelog and explicitpretagdocumentationchecklist. No newruntimebehavior.
 - [x] P2 (exactpackREADME and freshremoteCI passed): Independentverify versions/docs/history/guards/links; pack exactCLIcandidate withpnpm intoisolatedtemp and inspect tarballREADME to prove correctedcontentwillship. Guard/analytics/CLItests asapplicable; no meaningfulREDforprose, versioncontractRED/GREEN meaningful.
-- [ ] P3 (in progress): Commit/pushreleaseunit, createissue-linkedtype:chore PR for review, freshremoteCIbuild/data/CLI/secretpass before authorizedmerge. Then refreshedmain/tag/registrypreflight, oneannotatedv2.4.1tagpush, monitorautomaticallytriggeredexactworkflow, verify registryandGitHubrelease. Stopunknown/failurewithoutblindrepublish.
+- [x] P3 (merged and published; final documentation confirmation merged): Commit/pushreleaseunit, createissue-linkedtype:chore PR for review, freshremoteCIbuild/data/CLI/secretpass before authorizedmerge. Then refreshedmain/tag/registrypreflight, oneannotatedv2.4.1tagpush, monitorautomaticallytriggeredexactworkflow, verify registryandGitHubrelease. Stopunknown/failurewithoutblindrepublish.
 
 ## Evidence
 #86 merged with docsupdated2.4.0 and publishedstatuscorrected. Stablev2.4.0OIDCautopublishrun38337745249success,62guardtests; immutablepublishedtarballholdsolderCLIREADME. Userpreference savedrelease/documentation-before-tag: docs/ref/help/checklist must be coherent BEFOREtag. Thispatch suppliescorrectedpackagedREADME via newversionratherthanoverwrite2.4.0.
@@ -29,5 +29,8 @@ PR87 mergedatc772d2ff702e1b663802d564072fe8edadf15e50 afterfinal622a07aCI/secret
 Independentpostreleaseverifier confirmed registrylatest2.4.1/top-levelREADMEcurrent2.4.1/v2.4.1/docs-onlysection byte-identicaltosource; downloadedexactpublishedtarballsha512matchesdistintegrityandREADMEcmpmatches. Registryversion200 andGitHubreleasev2.4.1 published2026-10-13T03:59:47Z notdraft/prerelease. Sourceofnpmpageupdated; automatedwebsitefetch403Cloudflare so visualbrowsernotclaimed.
 Finaldocumentationconfirmation ondocs/release-2.4.1-confirmation recordsactualrelease date/status nowknown, no newversion/tag/upload. NeedPRreview/CI beforemergingthisconfirmationonly. P3releaseoperationscomplete; finaldocsrecordinprogress.
 
+## Final confirmation
+DocsconfirmationPR88 https://github.com/glacayo/website-multipages/pull/88 commit4306ba80f07d3146105dee1cf22e8f86bed1b9c8 independentlyverifiedonlychangelog/currentreleaseODDrecordchanged, historypreserved/tagunchanged. FreshCI38344665689/gitleaks38344665775SUCCESS, mergedascce5e56de7a2e0df74437bcbe6c4f5981ee5bd9f. MainREADME/docs/changelognowconsistentwithpublished2.4.1; annotatedtagremainsc772d2fexactoriginalreleasecommit, nevermoved. ThisfinalODDcompletionrecordlivesondocs/release-2.4.1-confirmation afterfastforwardtomergedmain; no furtherproductionchange/newrelease.
+
 ## Next step
-Commit/pushdatedchangelog+evidenceconfirmation, verifyCIandmerge docs-onlyconfirmation. No additionalrelease. Userpreferencepersisted andpretagchecklistexplicitallpublicdocs/help/changelog/exacttarballREADME; postpublicationconfirmation recordsactualregistry/releaseresult without falseclaims beforepublish.
+Releasecomplete: npmregistrylatest/readme/tarballverifiedandGitHubreleaseconfirmed. AllpublicdocsbeforetagandexactpackagedREADMEinspectionnowinreleasechecklist, userpreferencepersisted. Postpublicationchangelogconfirmationmergedwithoutanotherpackageupload. No browsernpmpagerenderclaim (Cloudflare403); authoritativeREADMEdataupdated.
