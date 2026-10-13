@@ -6,7 +6,19 @@ The format is release-note style. Versions follow the monorepo package version (
 
 ## [Unreleased]
 
+## [2.4.0] — Release candidate (not yet published)
+
+### Highlights
+
+- Optional analytics coverage with privacy-focused event handling.
+- Guarded, token-free tag-triggered publication with bounded registry confirmation.
+
 ### Changed / Improved
+
+- Template and CLI package version **2.4.0**; default published template clone ref **`v2.4.0`** (environment override still supported), with matching CLI help and regression smoke assertions.
+- **Analytics** — analytics foundation and deterministic coverage for the optional integration, without changing the 12-file JSON contract or embedding client identity in components.
+- **Guarded autopublishing** — stable annotated `v*` tag pushes trigger publication; manual dispatch from `main` remains a recovery path. Both entry points preserve annotated tag == HEAD == fresh `origin/main`, shared per-tag concurrency, OIDC/provenance, token refusal, registry absence checks, and remote-tag drift checks.
+- Dependency ranges, lockfile, pnpm-only enforcement, and minimum release-age policy remain unchanged. Release/tag/registry verification is still pending; this entry is candidate preparation, not publication evidence.
 
 - **Bounded registry confirmation** — the publish workflow's post-publish shell retry loop is replaced by a single `verify-release.mjs registry --expect present --wait` call. It probes the exact canonical version URL and retries only transient visibility conditions (`404`, `429`, `5xx`, network/timeout) with bounded exponential backoff (10s base, doubling to a 60s ceiling) inside a fixed ~5 minute budget, never starting or sleeping for a probe that could not finish in time. Redirects, malformed/missing metadata, identity mismatches, and every other status still fail closed immediately. Publish stays a single irreversible command with its adjacent absence re-check, and non-wait behavior is unchanged.
 
