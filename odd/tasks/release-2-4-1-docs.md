@@ -24,5 +24,10 @@ Actual pnpm pack exited0outsidecheckout:9files38,567byte2.4.1tgz SHA256934bde445
 ## PR and merge gate evidence
 Releasecommit76e9d039c62d93c5047b1db68c0f2e5c5ca13965 pushed PR87 https://github.com/glacayo/website-multipages/pull/87, type:chore base main. Independentverifier observed freshCIruns38343167384/38343167415 SUCCESSat76e9d03: frozeninstall/12JSON/Astro130files0diagnostics/16pages/62releaseguards/fullCLI32pass3expectedcapsuleskips/gitleaksnoleaks. Worktreeclean,mergeableCLEAN, version/refonlyruntimechanges. No newageexemption or publicationyet.
 
+## Confirmed publication evidence
+PR87 mergedatc772d2ff702e1b663802d564072fe8edadf15e50 afterfinal622a07aCI/secretgreen. MainCI38343900491SUCCESSbeforetag. Freshcanonical404andtagabsence/exactmaincleantree checked; annotatedv2.4.1 pushedonceatc772d2f, identityguardpassed. Automaticpushworkflow38344047587 completedSUCCESS validate31s/OIDCpublish2m45s/registryconfirmation/GitHubrelease5s, no manualdispatch or retry.
+Independentpostreleaseverifier confirmed registrylatest2.4.1/top-levelREADMEcurrent2.4.1/v2.4.1/docs-onlysection byte-identicaltosource; downloadedexactpublishedtarballsha512matchesdistintegrityandREADMEcmpmatches. Registryversion200 andGitHubreleasev2.4.1 published2026-10-13T03:59:47Z notdraft/prerelease. Sourceofnpmpageupdated; automatedwebsitefetch403Cloudflare so visualbrowsernotclaimed.
+Finaldocumentationconfirmation ondocs/release-2.4.1-confirmation recordsactualrelease date/status nowknown, no newversion/tag/upload. NeedPRreview/CI beforemergingthisconfirmationonly. P3releaseoperationscomplete; finaldocsrecordinprogress.
+
 ## Next step
-Thisevidence-onlycommitchangesonlyparenttaskdoc; requirefreshCIexactfinalheadthenauthorizedmergePR87,refreshmain/tag/registrypreflight, oneannotatedv2.4.1tagpush andwatchautomaticrun. No parallelmanualdispatch/blindretry.
+Commit/pushdatedchangelog+evidenceconfirmation, verifyCIandmerge docs-onlyconfirmation. No additionalrelease. Userpreferencepersisted andpretagchecklistexplicitallpublicdocs/help/changelog/exacttarballREADME; postpublicationconfirmation recordsactualregistry/releaseresult without falseclaims beforepublish.
