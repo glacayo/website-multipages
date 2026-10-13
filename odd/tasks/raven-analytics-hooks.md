@@ -37,8 +37,15 @@ Independent verifier observed: pnpm run test:analytics PASS 10/10; pnpm run vali
 Browser interactions, GTM Preview, client consent behavior and Netlify server acceptance were not executed; generated HTML checks are static and cover configured variants, source tests cover inactive variants. No runtime form_success claim.
 
 ## Delivery tasks
-- [ ] D1 (in progress): Prepare two cohesive review slices, keep tests/docs with each behavior. Initial 529-line full candidate; foundation (phone/Button/bootstrap) then call-site coverage. Tracker starts with this task document as a draft/no-merge PR.
-- [ ] D2 (pending): Verify slice boundaries, commit with Conventional Commits, push tracker and both child branches, create issue-linked type:feature PRs and report CI. No merge.
+- [x] D1 (done): Prepare two cohesive review slices, keep tests/docs with each behavior. Initial 529-line full candidate; foundation (phone/Button/bootstrap) then call-site coverage. Tracker starts with this task document as a draft/no-merge PR.
+- [ ] D2 (in progress): Verify slice boundaries, commit with Conventional Commits, push tracker and both child branches, create issue-linked type:feature PRs and report CI. No merge.
+
+## Delivery evidence
+- Tracker commit 2b70f3e: task document, draft/no-merge integration target.
+- Foundation commit 0815213 on feat/71-raven-analytics-core: 199 changed lines, bootstrap/phone/Button plus 5 self-contained tests and contract docs. Independent verifier ran core tests against bare git archive with no dependencies, 5/5 pass.
+- Coverage commit f578775 on feat/71-raven-analytics-coverage: 312 changed lines, all semantic call sites plus full runner and coverage docs. Source tests 10/10 and rendered tests 11/11 pass after test reorganization; 16 pages/2 native forms checked using prior generated artifacts, not a new build. Release guard tests 57/57 pass. git diff --check clean.
+- No runtime source behavior changed during split; no fresh per-slice build performed. Full original runtime build passed earlier with approved transient exact-version exception; remote frozen install/build/CLI CI still pending.
+- Chain: main <- feat/71-raven-analytics-hooks (draft tracker, Closes #71) <- feat/71-raven-analytics-core (Refs #71) <- feat/71-raven-analytics-coverage (Refs #71).
 
 ## Next step
-Prepare slice-specific tests and docs with one bounded writer. No code-golf or removal of coverage; retain all verified behavior. Native review remains off by clone-local setting.
+Push all three branches and create target-bound PRs with exactly one type:feature label, explicit bases, dependency diagrams and no merge. Record URLs/checks after creation. Native review remains off by clone-local setting.
