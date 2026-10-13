@@ -1,11 +1,13 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import { toPhoneHref } from '../utils/phone';
 import Breadcrumb from '../components/ui/Breadcrumb.astro';
 import { getBusiness, getSite } from '../data/loaders';
 
 const business = getBusiness();
 const site = getSite();
 const primaryPhone = business.phones[0] ?? '';
+const phoneHref = toPhoneHref(primaryPhone);
 const primaryEmail = business.emails[0] ?? '';
 ---
 
@@ -66,9 +68,13 @@ const primaryEmail = business.emails[0] ?? '';
           {business.name}<br />
           {business.address.full}<br />
           Phone:{' '}
-          <a href={`tel:${primaryPhone.replace(/\D/g, '')}`} class="text-accent hover:underline">
-            {primaryPhone}
-          </a>
+          {phoneHref ? (
+            <a href={phoneHref} data-raven-call="true" class="text-accent hover:underline">
+              {primaryPhone}
+            </a>
+          ) : (
+            <span>{primaryPhone}</span>
+          )}
           <br />
           Email:{' '}
           <a href={`mailto:${primaryEmail}`} class="text-accent hover:underline">

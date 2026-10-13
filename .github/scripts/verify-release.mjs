@@ -6,6 +6,7 @@
  *   identity    — exact stable annotated tag, tag/Main/HEAD commit identity,
  *                 manifest + DEFAULT_TEMPLATE_REF version equality
  *   registry    — exact version absent (preflight) or present (post-publish)
+ *   prepare-publish — attach local main only after fresh identity + clean checks
  *   drift       — re-fetch origin/main and re-check commit identity
  *   commit      — print only the validated commit SHA (for a job output)
  *   release-tag — remote annotated tag is still at the publish-validated commit
@@ -25,7 +26,8 @@
  * uses that loop: an absent check and a non-wait present check stay
  * single-probe and fail closed, and `--wait` with `--expect absent` is
  * rejected before any probe. Probe evidence is sanitized before it reaches
- * logs. It never publishes and never writes to the repository.
+ * logs. It never publishes. Only prepare-publish rewrites a local branch, in
+ * a disposable CI checkout; it never changes the verified commit or files.
  */
 
 import { execFileSync } from 'node:child_process';
@@ -34,7 +36,7 @@ import path from 'node:path';
 import process from 'node:process';
 import { pathToFileURL } from 'node:url';
 
-const STABLE_TAG_RE = /^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
+const STABLE_TAG_RE = /^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$(?![\s\S])/;
 const FULL_SHA_RE = /^[0-9a-f]{40}$/;
 export const DEFAULT_REGISTRY = 'https://registry.npmjs.org';
 export const REGISTRY_TIMEOUT_MS = 10_000;
@@ -76,6 +78,25 @@ export const REGISTRY_CONFIRM_MAX_ATTEMPTS = 100;
 export function parseStableTag(value) {
   if (typeof value !== 'string' || !STABLE_TAG_RE.test(value)) return null;
   return value.slice(1);
+}
+
+/** Resolve only supported trusted workflow events; optionally verify the job handoff. */
+export function resolveReleaseTag({ eventName, ref, inputTag = '', expectedTag }) {
+  let tag;
+  if (eventName === 'push') {
+    if (typeof ref !== 'string' || !ref.startsWith('refs/tags/') || inputTag !== '') {
+      throw new Error('release event push requires a tag ref and no dispatch input.');
+    }
+    tag = ref.slice('refs/tags/'.length);
+  } else if (eventName === 'workflow_dispatch') {
+    if (ref !== 'refs/heads/main') throw new Error('release event dispatch must originate from main.');
+    tag = inputTag;
+  } else {
+    throw new Error('unsupported release event.');
+  }
+  if (!parseStableTag(tag)) throw new Error('release event requires an exact stable vX.Y.Z tag.');
+  if (expectedTag !== undefined && expectedTag !== tag) throw new Error('release event tag does not match validated tag.');
+  return tag;
 }
 
 /**
@@ -1036,6 +1057,39 @@ async function runCli(argv) {
   const tag = typeof args.tag === 'string' ? args.tag : '';
   const repoRoot = path.resolve(typeof args['repo-root'] === 'string' ? args['repo-root'] : process.cwd());
 
+  if (command === 'event') {
+    const effectiveTag = resolveReleaseTag({
+      eventName: process.env.EVENT_NAME,
+      ref: process.env.EVENT_REF,
+      inputTag: process.env.INPUT_TAG || '',
+      expectedTag: args.tag === undefined ? undefined : tag,
+    });
+    process.stdout.write(`${effectiveTag}\n`);
+    return 0;
+  }
+  if (command === 'prepare-publish') {
+    if (!parseStableTag(tag)) fail(`tag "${tag}" is not an exact stable semver tag (expected vX.Y.Z).`);
+    // Never run this in a maintainer workspace: CI owns this disposable checkout.
+    // Resolve manifests from the same repository whose refs are being checked.
+    const root = git(['rev-parse', '--show-toplevel']);
+    const assertClean = () => {
+      if (git(['status', '--porcelain', '--untracked-files=all']) !== '') {
+        fail('dirty repository; refusing to prepare local main for publish.');
+      }
+    };
+    assertClean();
+    const commit = runIdentity(tag, root); // freshly fetches annotated tag + main
+    assertClean();
+    git(['checkout', '-B', 'main', commit]);
+    if (git(['symbolic-ref', 'HEAD']) !== 'refs/heads/main') fail('publish requires attached main.');
+    if (git(['rev-parse', 'HEAD']) !== commit) fail('HEAD changed while preparing publish.');
+    assertClean();
+    const rechecked = runIdentity(tag, root);
+    if (rechecked !== commit) fail('verified commit changed while preparing publish.');
+    assertClean();
+    console.log(`prepare-publish OK: attached main at unchanged verified commit ${commit}`);
+    return 0;
+  }
   if (command === 'identity') {
     runIdentity(tag, repoRoot);
     return 0;
@@ -1059,7 +1113,7 @@ async function runCli(argv) {
   if (command === 'release-absent') {
     return runReleaseAbsent(args);
   }
-  fail(`unknown command "${command ?? ''}" (expected identity | registry | drift | commit | release-tag | release-absent).`);
+  fail(`unknown command "${command ?? ''}" (expected event | identity | prepare-publish | registry | drift | commit | release-tag | release-absent).`);
   return 1;
 }
 

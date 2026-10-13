@@ -56,6 +56,51 @@ function readJson(file) {
   }
 }
 
+test('release event resolves one stable tag and rejects untrusted event/ref/input combinations', async () => {
+  const { resolveReleaseTag } = await import('./verify-release.mjs');
+  assert.equal(typeof resolveReleaseTag, 'function');
+  const push = { eventName: 'push', ref: 'refs/tags/v2.4.0', inputTag: '' };
+  const dispatch = { eventName: 'workflow_dispatch', ref: 'refs/heads/main', inputTag: 'v2.4.0' };
+  assert.equal(resolveReleaseTag(push), 'v2.4.0');
+  assert.equal(resolveReleaseTag(dispatch), 'v2.4.0');
+  assert.equal(resolveReleaseTag({ ...push, expectedTag: 'v2.4.0' }), 'v2.4.0');
+  for (const bad of [
+    { ...push, eventName: 'release' },
+    { ...push, eventName: '' },
+    { ...push, ref: 'refs/heads/main' },
+    { ...push, inputTag: 'v2.4.0' },
+    { ...dispatch, ref: 'refs/heads/feature' },
+    { ...dispatch, ref: 'refs/tags/v2.4.0' },
+    { ...push, expectedTag: 'v2.4.1' },
+    { ...dispatch, expectedTag: 'v2.4.1' },
+    ...['', 'v02.4.0', 'v2.04.0', 'v2.4.00', 'v2.4.0-rc.1', 'v2.4.0+build', 'v2.4.0\n', '$(id)'].flatMap((tag) => [
+      { ...push, ref: `refs/tags/${tag}` }, { ...dispatch, inputTag: tag },
+    ]),
+  ]) assert.throws(() => resolveReleaseTag(bad), /release event|stable|match/);
+});
+
+test('publish.yml binds tag-push and recovery dispatch consistently across all jobs', () => {
+  const source = fs.readFileSync(WORKFLOW, 'utf8');
+  assert.match(source, /push:\n\s+tags:\n\s+- 'v\*'/);
+  assert.doesNotMatch(source.slice(0, source.indexOf('\njobs:')), /^\s*(release:|branches:)/m);
+  assert.match(source, /group: publish-\$\{\{ github.event_name == 'push' && github.ref_name \|\| inputs.tag \}\}/);
+  assert.match(source, /cancel-in-progress: false/);
+  assert.match(source, /effective_tag: \$\{\{ steps.event.outputs.tag \}\}/);
+  for (const job of ['validate', 'publish', 'release']) {
+    const block = source.split(`\n  ${job}:`)[1]?.split(/\n  [a-z]+:/)[0];
+    assert.ok(block, job);
+    if (job === 'validate') assert.match(block, /ref: \$\{\{ github.ref \}\}/);
+    else assert.match(block, /ref: \$\{\{ github.event_name == 'push' && format\('refs\/tags\/\{0\}', needs.validate.outputs.effective_tag\) \|\| github.ref \}\}/);
+    assert.match(block, /verify-release\.mjs event/);
+    if (job !== 'validate') assert.match(block, /RELEASE_TAG: \$\{\{ needs.validate.outputs.effective_tag \}\}/);
+  }
+  assert.match(source, /needs: \[validate, publish\]/);
+  assert.equal((source.match(/event --tag "\$RELEASE_TAG"/g) || []).length, 4);
+  assert.match(source, /EVENT_NAME: \$\{\{ github.event_name \}\}/);
+  assert.match(source, /EVENT_REF: \$\{\{ github.ref \}\}/);
+  assert.match(source, /INPUT_TAG: \$\{\{ inputs.tag \}\}/);
+});
+
 test('parseStableTag accepts only exact stable vX.Y.Z tags', () => {
   for (const good of ['v0.0.0', 'v2.3.1', 'v10.20.30']) {
     assert.equal(parseStableTag(good), good.slice(1), `expected ${good} to parse`);
@@ -1183,7 +1228,7 @@ test('findReleaseByTag bounds each request with a 10s timeout and sends an authe
 
 test('publish.yml keeps the token-free OIDC safety invariants', () => {
   const source = fs.readFileSync(WORKFLOW, 'utf8');
-  assert.match(source, /^\s*workflow_dispatch:/m, 'must be manual dispatch only');
+  assert.match(source, /^\s*workflow_dispatch:/m, 'must retain recovery dispatch');
   assert.match(source, /^\s*id-token: write\s*$/m, 'publish job needs id-token: write');
   assert.match(source, /^\s*environment: npm\s*$/m, 'publish job must use the npm environment');
   assert.match(source, /^\s*contents: write\s*$/m, 'release job needs contents: write');
@@ -1218,7 +1263,7 @@ test('publish.yml keeps the token-free OIDC safety invariants', () => {
   // env bindings and the concurrency group key, never inside a run script.
   for (const line of source.split('\n')) {
     if (line.includes('${{ inputs.tag }}')) {
-      assert.match(line, /^\s*(RELEASE_TAG:|group:)/, `tag input must bind to env only, got: ${line.trim()}`);
+      assert.match(line, /^\s*(INPUT_TAG:|RELEASE_TAG:|group:)/, `tag input must bind to env only, got: ${line.trim()}`);
     }
   }
 });
@@ -1379,6 +1424,82 @@ test('ci.yml runs the release guard self-tests and never invokes image tooling',
   const source = fs.readFileSync(CI_WORKFLOW, 'utf8');
   assert.match(source, /node --test \.github\/scripts\/test-release-guards\.mjs/, 'CI must self-test the release guards');
   assert.doesNotMatch(source, /images:(check|setup|run)/, 'image tooling must never enter CI');
+});
+
+// Local-only git fixtures: no remote release tags or user-worktree rewrites.
+function publishFixture() {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'release-main-'));
+  const origin = path.join(root, 'origin');
+  const checkout = path.join(root, 'checkout');
+  fs.mkdirSync(origin);
+  const git = (cwd, ...args) => execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+  git(origin, 'init', '-b', 'main');
+  git(origin, 'config', 'user.email', 'fixture@example.invalid');
+  git(origin, 'config', 'user.name', 'Release fixture');
+  fs.mkdirSync(path.join(origin, 'packages/create-contractor-site/src'), { recursive: true });
+  fs.writeFileSync(path.join(origin, 'package.json'), JSON.stringify({ version: '1.0.0', private: true }));
+  fs.writeFileSync(path.join(origin, 'packages/create-contractor-site/package.json'), JSON.stringify({ name: 'release-guard-fixture', version: '1.0.0' }));
+  fs.writeFileSync(path.join(origin, 'packages/create-contractor-site/src/copy-template.mjs'), 'const DEFAULT_TEMPLATE_REF = env || "v1.0.0";');
+  git(origin, 'add', '.');
+  git(origin, 'commit', '-m', 'local fixture');
+  git(origin, 'tag', '-a', 'v1.0.0', '-m', 'local fixture tag');
+  git(root, 'clone', origin, checkout);
+  git(checkout, 'checkout', '--detach', 'v1.0.0');
+  const sha = git(checkout, 'rev-parse', 'HEAD');
+  const prepare = (tag = 'v1.0.0') => {
+    try {
+      return { status: 0, output: execFileSync(process.execPath, [path.join(__dirname, 'verify-release.mjs'), 'prepare-publish', '--tag', tag], { cwd: checkout, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }) };
+    } catch (error) {
+      return { status: error.status, output: String(error.stderr) };
+    }
+  };
+  return { origin, checkout, git, sha, prepare };
+}
+
+test('prepare-publish attaches clean detached tag checkout to main without changing HEAD', () => {
+  const f = publishFixture();
+  assert.equal(f.git(f.checkout, 'rev-parse', '--abbrev-ref', 'HEAD'), 'HEAD');
+  const result = f.prepare();
+  assert.equal(result.status, 0, result.output);
+  assert.equal(f.git(f.checkout, 'symbolic-ref', 'HEAD'), 'refs/heads/main');
+  assert.equal(f.git(f.checkout, 'rev-parse', 'HEAD'), f.sha);
+  assert.equal(f.git(f.checkout, 'status', '--porcelain'), '');
+  assert.match(result.output, /attached main/);
+  assert.equal(f.prepare().status, 0, 'already attached verified main is accepted');
+});
+
+test('prepare-publish rejects dirty and invalid identity before rewriting local main', () => {
+  for (const scenario of ['untracked', 'tracked', 'staged', 'main-drift', 'lightweight', 'version', 'bad-tag']) {
+    const f = publishFixture();
+    if (scenario === 'untracked') fs.writeFileSync(path.join(f.checkout, 'unexpected'), 'dirty');
+    if (scenario === 'tracked' || scenario === 'staged') {
+      fs.writeFileSync(path.join(f.checkout, 'package.json'), '{}');
+      if (scenario === 'staged') f.git(f.checkout, 'add', 'package.json');
+    }
+    if (scenario === 'main-drift') f.git(f.origin, '-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '--allow-empty', '-m', 'advance');
+    if (scenario === 'lightweight') f.git(f.origin, 'tag', 'v1.0.1');
+    if (scenario === 'version') f.git(f.origin, '-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'tag', '-a', 'v1.0.1', '-m', 'mismatch');
+    const mainBefore = f.git(f.checkout, 'rev-parse', 'refs/heads/main');
+    const result = f.prepare(scenario === 'bad-tag' ? 'latest' : ['lightweight', 'version'].includes(scenario) ? 'v1.0.1' : 'v1.0.0');
+    assert.equal(result.status, 1, `${scenario}: ${result.output}`);
+    assert.match(result.output, /dirty|origin\/main|annotated|version identity|stable semver/);
+    assert.equal(f.git(f.checkout, 'rev-parse', 'refs/heads/main'), mainBefore, scenario);
+    assert.equal(f.git(f.checkout, 'rev-parse', '--abbrev-ref', 'HEAD'), 'HEAD', scenario);
+    assert.equal(f.git(f.checkout, 'rev-parse', 'HEAD'), f.sha, scenario);
+  }
+});
+
+test('publish.yml prepares verified attached main for both dry-run and real publish', () => {
+  const source = fs.readFileSync(WORKFLOW, 'utf8');
+  assert.equal((source.match(/prepare-publish --tag "\$RELEASE_TAG"/g) || []).length, 2);
+  for (const job of ['validate', 'publish']) {
+    const block = source.split(`\n  ${job}:`)[1].split(/\n  [a-z]+:/)[0];
+    const prepare = block.indexOf('prepare-publish --tag');
+    const publish = block.indexOf('pnpm --dir packages/create-contractor-site publish');
+    assert.ok(prepare > block.lastIndexOf('identity --tag') && prepare < publish, job);
+    assert.doesNotMatch(block.slice(prepare, publish), /^\s*- name:/m, 'preparation must share publish shell step');
+  }
+  assert.doesNotMatch(source, /--no-git-checks|--publish-branch|git-checks:\s*false/);
 });
 
 test('manifests keep the publish guard rails', () => {

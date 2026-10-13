@@ -58,11 +58,12 @@ const overlayClass: Record<string, string> = {
           {slide.text}
         </p>
         <div class="flex flex-col sm:flex-row items-center justify-center gap-4" data-reveal>
-          <Button href={slide.cta_primary.href} variant="primary" size="lg">
+          <Button data-raven-cta="primary" data-raven-call="true" href={slide.cta_primary.href} variant="primary" size="lg">
             {slide.cta_primary.label}
           </Button>
           {slide.cta_secondary && (
             <Button
+              data-raven-call="true"
               href={slide.cta_secondary.href}
               variant="outline"
               size="lg"

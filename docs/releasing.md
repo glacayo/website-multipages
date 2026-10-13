@@ -1,8 +1,9 @@
 # Releasing `create-contractor-site`
 
-Releases are **manual and token-free**. A maintainer dispatches
-[`publish.yml`](../.github/workflows/publish.yml) from `main` with an existing
-stable annotated tag; GitHub OIDC trusted publishing authorizes npm, and the
+Releases are **tag-triggered and token-free**. Pushing a stable annotated
+`vX.Y.Z` tag at the exact `main` HEAD starts
+[`publish.yml`](../.github/workflows/publish.yml). Dispatch from `main` remains
+available for recovery, not as a second routine publish. GitHub OIDC authorizes npm, and the
 GitHub release is created only after the registry confirms the exact version.
 No `NPM_TOKEN`, `NODE_AUTH_TOKEN`, or local `npm login` is ever involved.
 
@@ -13,15 +14,33 @@ No `NPM_TOKEN`, `NODE_AUTH_TOKEN`, or local `npm login` is ever involved.
    in `packages/create-contractor-site/src/copy-template.mjs`; update `CHANGELOG.md`.
 2. Merge to `main`, then create and push an **annotated** tag at the exact
    `main` HEAD: `git tag -a vX.Y.Z -m "vX.Y.Z" && git push origin vX.Y.Z`.
-3. Actions → **Publish (trusted publishing)** → *Run workflow* → branch `main`,
-   input `tag` = `vX.Y.Z`.
+3. Watch the tag-push run in Actions → **Publish (trusted publishing)**.
+   Do not also dispatch it; both paths serialize under the same per-tag key.
 4. The workflow runs three jobs in order: `validate` → `publish` → `release`.
 5. Verify the npm version and its provenance attestation on npmjs.com.
 
 The tag commit must equal `origin/main` and the workflow commit. If `main`
 advances after the tag is pushed, the run fails by design: **never move or
 force-update a pushed tag.** Stop, prepare a new release commit with a new
-version and a new tag, and dispatch a fresh run after review.
+version and a new tag, and push that new tag after review.
+
+### Event and recovery contract
+
+| Entry point | Effective tag | Checkout |
+|-------------|---------------|----------|
+| Push to `v*` | Stable tag from the trusted event ref | Explicit tag ref in all three jobs |
+| Recovery dispatch from `main` | Stable `tag` input | Explicit dispatch ref (`main`); tag must still equal HEAD |
+
+The helper rejects branch pushes, unsupported events, prerelease/build tags,
+leading zeros, malformed tags, and event/tag handoff mismatches. Validation
+exports one effective tag; publish and release consume it and recheck the event.
+Neither entry point bypasses annotated tag == HEAD == freshly fetched
+`origin/main`. No GitHub release-created event triggers publication.
+
+Dispatch recovery only after proving **nothing was published**: Actions →
+**Publish (trusted publishing)** → *Run workflow* → branch `main`, input
+`tag` = the existing stable tag. An unknown publish outcome requires manual
+registry inspection, not dispatch. See the failure table below.
 
 ## One-time trusted publisher binding
 
@@ -41,7 +60,21 @@ The GitHub **environment `npm`** referenced by the publish job must exist in
 repository settings (add required reviewers there if you want a human approval
 gate). The OIDC `environment` claim and the filename binding must both match, or
 npm rejects the publish. See the official
-[npm trusted publishers docs](https://docs.npmjs.com/trusted-publishers/).
+[npm trusted publishers docs](https://docs.npmjs.com/trusted-publishers/), which
+document tag-push publishing with the same repository/workflow/environment
+identity. Version 2.3.1 previously succeeded with OIDC; current live npm settings
+have not been independently inspected. Verify the binding before a real release;
+never fall back to a token.
+
+### Environment setup checklist
+
+Before authorizing publication, verify these settings in GitHub:
+
+- [ ] Environment `npm` permits branch `main` for recovery dispatch **and tags matching `v*`** for tag-triggered publication. If selecting deployment branches and tags, add both explicitly; a branch-only policy blocks tag runs.
+- [ ] Consider required reviewers on `npm` if a human approval gate is desired.
+- [ ] Configure a tag ruleset for `v*` restricting creation to authorized release maintainers, as well as updates and deletions. Ensure the authorized maintainer can create the initial release tag.
+
+At the current preflight, environment `npm` has **no ref policy/protection rules** and the repository rulesets list is **empty**. The settings above are recommendations to configure and verify, not installed protections. Workflow identity and drift guards remain enforced independently.
 
 ## What each job is allowed to do
 
@@ -54,6 +87,26 @@ npm rejects the publish. See the official
 The publish command is `pnpm --dir packages/create-contractor-site publish
 --provenance --access public`. It never uses an auth token, and a guard step
 fails if `NODE_AUTH_TOKEN`/`NPM_TOKEN` is set.
+
+### Detached tag checkout and pnpm git checks
+
+Tag checkouts start at detached HEAD, which pnpm rejects with
+`ERR_PNPM_GIT_UNKNOWN_BRANCH` even when clean. Immediately before both the
+validation dry-run and the real publish, CI runs
+`verify-release.mjs prepare-publish --tag "$RELEASE_TAG"` in its **disposable
+checkout**. The helper rejects tracked, staged, or untracked changes, freshly
+fetches and verifies annotated tag == HEAD == `origin/main`, and verifies both
+manifest versions and `DEFAULT_TEMPLATE_REF`. Only then does it attach local
+`main` at that exact verified SHA with `git checkout -B main <verified SHA>`.
+It checks attached branch, unchanged HEAD, cleanliness, and fresh identity again.
+Merely naming an arbitrary branch `main` is not sufficient. No fetched source
+code is checked out at a different commit; no remote refs are pushed.
+
+Do not run this branch-preparation command in a maintainer workspace. It is not
+a git-check bypass: pnpm's default branch, cleanliness, and remote checks stay
+enabled, with no `--no-git-checks` or publish-branch exception. The real publish
+still has its canonical-404 check immediately adjacent, and token refusal,
+OIDC/provenance, drift, integrity, and post-publish confirmation gates remain.
 
 ## Tag protection (defense in depth)
 
@@ -150,8 +203,8 @@ and never delete a release just to force another automatic retry.
 - [ ] Both manifests and `DEFAULT_TEMPLATE_REF` equal `vX.Y.Z` on `main`
 - [ ] Annotated tag `vX.Y.Z` pushed at the exact `main` HEAD
 - [ ] npmjs.com trusted publisher bound to `publish.yml` + environment `npm`
-- [ ] GitHub environment `npm` exists
-- [ ] Tag ruleset protects `v*` (no updates, no deletions)
+- [ ] GitHub environment `npm` exists and permits `main` plus tags matching `v*`
+- [ ] Recommended tag ruleset protects `v*` (restricted creation, no updates, no deletions); verify actual configuration rather than assuming it exists
 - [ ] `pnpm run validate:data` and `pnpm run build` pass before tagging
-- [ ] After dispatch: `validate` → `publish` → `release` all green
+- [ ] After tag push (or justified recovery dispatch): `validate` → `publish` → `release` all green
 - [ ] npm version + provenance confirmed on npmjs.com

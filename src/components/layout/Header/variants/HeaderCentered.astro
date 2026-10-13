@@ -48,7 +48,7 @@ const contactHref = getContactPath();
 
     <div class="hidden items-center justify-center gap-6 border-t border-border/50 py-3 lg:flex">
       <NavMenu />
-      <Button href={contactHref} size="sm">
+      <Button data-raven-cta="primary" href={contactHref} size="sm">
         {business.free_estimate}
       </Button>
     </div>
@@ -65,7 +65,7 @@ const contactHref = getContactPath();
     <div class="container-site py-4" x-on:click="if ($event.target.closest('a')) menuOpen = false">
       <NavMenu mobile />
       <div class="mt-4 border-t border-border pt-4">
-        <Button href={contactHref} class="w-full">
+        <Button data-raven-cta="primary" href={contactHref} class="w-full">
           {business.free_estimate}
         </Button>
       </div>
