@@ -34,7 +34,7 @@ import path from 'node:path';
 import process from 'node:process';
 import { pathToFileURL } from 'node:url';
 
-const STABLE_TAG_RE = /^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
+const STABLE_TAG_RE = /^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$(?![\s\S])/;
 const FULL_SHA_RE = /^[0-9a-f]{40}$/;
 export const DEFAULT_REGISTRY = 'https://registry.npmjs.org';
 export const REGISTRY_TIMEOUT_MS = 10_000;
@@ -76,6 +76,25 @@ export const REGISTRY_CONFIRM_MAX_ATTEMPTS = 100;
 export function parseStableTag(value) {
   if (typeof value !== 'string' || !STABLE_TAG_RE.test(value)) return null;
   return value.slice(1);
+}
+
+/** Resolve only supported trusted workflow events; optionally verify the job handoff. */
+export function resolveReleaseTag({ eventName, ref, inputTag = '', expectedTag }) {
+  let tag;
+  if (eventName === 'push') {
+    if (typeof ref !== 'string' || !ref.startsWith('refs/tags/') || inputTag !== '') {
+      throw new Error('release event push requires a tag ref and no dispatch input.');
+    }
+    tag = ref.slice('refs/tags/'.length);
+  } else if (eventName === 'workflow_dispatch') {
+    if (ref !== 'refs/heads/main') throw new Error('release event dispatch must originate from main.');
+    tag = inputTag;
+  } else {
+    throw new Error('unsupported release event.');
+  }
+  if (!parseStableTag(tag)) throw new Error('release event requires an exact stable vX.Y.Z tag.');
+  if (expectedTag !== undefined && expectedTag !== tag) throw new Error('release event tag does not match validated tag.');
+  return tag;
 }
 
 /**
@@ -1036,6 +1055,16 @@ async function runCli(argv) {
   const tag = typeof args.tag === 'string' ? args.tag : '';
   const repoRoot = path.resolve(typeof args['repo-root'] === 'string' ? args['repo-root'] : process.cwd());
 
+  if (command === 'event') {
+    const effectiveTag = resolveReleaseTag({
+      eventName: process.env.EVENT_NAME,
+      ref: process.env.EVENT_REF,
+      inputTag: process.env.INPUT_TAG || '',
+      expectedTag: args.tag === undefined ? undefined : tag,
+    });
+    process.stdout.write(`${effectiveTag}\n`);
+    return 0;
+  }
   if (command === 'identity') {
     runIdentity(tag, repoRoot);
     return 0;
@@ -1059,7 +1088,7 @@ async function runCli(argv) {
   if (command === 'release-absent') {
     return runReleaseAbsent(args);
   }
-  fail(`unknown command "${command ?? ''}" (expected identity | registry | drift | commit | release-tag | release-absent).`);
+  fail(`unknown command "${command ?? ''}" (expected event | identity | registry | drift | commit | release-tag | release-absent).`);
   return 1;
 }
 

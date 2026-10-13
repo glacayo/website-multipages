@@ -56,6 +56,51 @@ function readJson(file) {
   }
 }
 
+test('release event resolves one stable tag and rejects untrusted event/ref/input combinations', async () => {
+  const { resolveReleaseTag } = await import('./verify-release.mjs');
+  assert.equal(typeof resolveReleaseTag, 'function');
+  const push = { eventName: 'push', ref: 'refs/tags/v2.4.0', inputTag: '' };
+  const dispatch = { eventName: 'workflow_dispatch', ref: 'refs/heads/main', inputTag: 'v2.4.0' };
+  assert.equal(resolveReleaseTag(push), 'v2.4.0');
+  assert.equal(resolveReleaseTag(dispatch), 'v2.4.0');
+  assert.equal(resolveReleaseTag({ ...push, expectedTag: 'v2.4.0' }), 'v2.4.0');
+  for (const bad of [
+    { ...push, eventName: 'release' },
+    { ...push, eventName: '' },
+    { ...push, ref: 'refs/heads/main' },
+    { ...push, inputTag: 'v2.4.0' },
+    { ...dispatch, ref: 'refs/heads/feature' },
+    { ...dispatch, ref: 'refs/tags/v2.4.0' },
+    { ...push, expectedTag: 'v2.4.1' },
+    { ...dispatch, expectedTag: 'v2.4.1' },
+    ...['', 'v02.4.0', 'v2.04.0', 'v2.4.00', 'v2.4.0-rc.1', 'v2.4.0+build', 'v2.4.0\n', '$(id)'].flatMap((tag) => [
+      { ...push, ref: `refs/tags/${tag}` }, { ...dispatch, inputTag: tag },
+    ]),
+  ]) assert.throws(() => resolveReleaseTag(bad), /release event|stable|match/);
+});
+
+test('publish.yml binds tag-push and recovery dispatch consistently across all jobs', () => {
+  const source = fs.readFileSync(WORKFLOW, 'utf8');
+  assert.match(source, /push:\n\s+tags:\n\s+- 'v\*'/);
+  assert.doesNotMatch(source.slice(0, source.indexOf('\njobs:')), /^\s*(release:|branches:)/m);
+  assert.match(source, /group: publish-\$\{\{ github.event_name == 'push' && github.ref_name \|\| inputs.tag \}\}/);
+  assert.match(source, /cancel-in-progress: false/);
+  assert.match(source, /effective_tag: \$\{\{ steps.event.outputs.tag \}\}/);
+  for (const job of ['validate', 'publish', 'release']) {
+    const block = source.split(`\n  ${job}:`)[1]?.split(/\n  [a-z]+:/)[0];
+    assert.ok(block, job);
+    if (job === 'validate') assert.match(block, /ref: \$\{\{ github.ref \}\}/);
+    else assert.match(block, /ref: \$\{\{ github.event_name == 'push' && format\('refs\/tags\/\{0\}', needs.validate.outputs.effective_tag\) \|\| github.ref \}\}/);
+    assert.match(block, /verify-release\.mjs event/);
+    if (job !== 'validate') assert.match(block, /RELEASE_TAG: \$\{\{ needs.validate.outputs.effective_tag \}\}/);
+  }
+  assert.match(source, /needs: \[validate, publish\]/);
+  assert.equal((source.match(/event --tag "\$RELEASE_TAG"/g) || []).length, 4);
+  assert.match(source, /EVENT_NAME: \$\{\{ github.event_name \}\}/);
+  assert.match(source, /EVENT_REF: \$\{\{ github.ref \}\}/);
+  assert.match(source, /INPUT_TAG: \$\{\{ inputs.tag \}\}/);
+});
+
 test('parseStableTag accepts only exact stable vX.Y.Z tags', () => {
   for (const good of ['v0.0.0', 'v2.3.1', 'v10.20.30']) {
     assert.equal(parseStableTag(good), good.slice(1), `expected ${good} to parse`);
@@ -1183,7 +1228,7 @@ test('findReleaseByTag bounds each request with a 10s timeout and sends an authe
 
 test('publish.yml keeps the token-free OIDC safety invariants', () => {
   const source = fs.readFileSync(WORKFLOW, 'utf8');
-  assert.match(source, /^\s*workflow_dispatch:/m, 'must be manual dispatch only');
+  assert.match(source, /^\s*workflow_dispatch:/m, 'must retain recovery dispatch');
   assert.match(source, /^\s*id-token: write\s*$/m, 'publish job needs id-token: write');
   assert.match(source, /^\s*environment: npm\s*$/m, 'publish job must use the npm environment');
   assert.match(source, /^\s*contents: write\s*$/m, 'release job needs contents: write');
@@ -1218,7 +1263,7 @@ test('publish.yml keeps the token-free OIDC safety invariants', () => {
   // env bindings and the concurrency group key, never inside a run script.
   for (const line of source.split('\n')) {
     if (line.includes('${{ inputs.tag }}')) {
-      assert.match(line, /^\s*(RELEASE_TAG:|group:)/, `tag input must bind to env only, got: ${line.trim()}`);
+      assert.match(line, /^\s*(INPUT_TAG:|RELEASE_TAG:|group:)/, `tag input must bind to env only, got: ${line.trim()}`);
     }
   }
 });

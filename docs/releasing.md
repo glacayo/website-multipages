@@ -1,8 +1,9 @@
 # Releasing `create-contractor-site`
 
-Releases are **manual and token-free**. A maintainer dispatches
-[`publish.yml`](../.github/workflows/publish.yml) from `main` with an existing
-stable annotated tag; GitHub OIDC trusted publishing authorizes npm, and the
+Releases are **tag-triggered and token-free**. Pushing a stable annotated
+`vX.Y.Z` tag at the exact `main` HEAD starts
+[`publish.yml`](../.github/workflows/publish.yml). Dispatch from `main` remains
+available for recovery, not as a second routine publish. GitHub OIDC authorizes npm, and the
 GitHub release is created only after the registry confirms the exact version.
 No `NPM_TOKEN`, `NODE_AUTH_TOKEN`, or local `npm login` is ever involved.
 
@@ -13,15 +14,33 @@ No `NPM_TOKEN`, `NODE_AUTH_TOKEN`, or local `npm login` is ever involved.
    in `packages/create-contractor-site/src/copy-template.mjs`; update `CHANGELOG.md`.
 2. Merge to `main`, then create and push an **annotated** tag at the exact
    `main` HEAD: `git tag -a vX.Y.Z -m "vX.Y.Z" && git push origin vX.Y.Z`.
-3. Actions → **Publish (trusted publishing)** → *Run workflow* → branch `main`,
-   input `tag` = `vX.Y.Z`.
+3. Watch the tag-push run in Actions → **Publish (trusted publishing)**.
+   Do not also dispatch it; both paths serialize under the same per-tag key.
 4. The workflow runs three jobs in order: `validate` → `publish` → `release`.
 5. Verify the npm version and its provenance attestation on npmjs.com.
 
 The tag commit must equal `origin/main` and the workflow commit. If `main`
 advances after the tag is pushed, the run fails by design: **never move or
 force-update a pushed tag.** Stop, prepare a new release commit with a new
-version and a new tag, and dispatch a fresh run after review.
+version and a new tag, and push that new tag after review.
+
+### Event and recovery contract
+
+| Entry point | Effective tag | Checkout |
+|-------------|---------------|----------|
+| Push to `v*` | Stable tag from the trusted event ref | Explicit tag ref in all three jobs |
+| Recovery dispatch from `main` | Stable `tag` input | Explicit dispatch ref (`main`); tag must still equal HEAD |
+
+The helper rejects branch pushes, unsupported events, prerelease/build tags,
+leading zeros, malformed tags, and event/tag handoff mismatches. Validation
+exports one effective tag; publish and release consume it and recheck the event.
+Neither entry point bypasses annotated tag == HEAD == freshly fetched
+`origin/main`. No GitHub release-created event triggers publication.
+
+Dispatch recovery only after proving **nothing was published**: Actions →
+**Publish (trusted publishing)** → *Run workflow* → branch `main`, input
+`tag` = the existing stable tag. An unknown publish outcome requires manual
+registry inspection, not dispatch. See the failure table below.
 
 ## One-time trusted publisher binding
 
@@ -41,7 +60,11 @@ The GitHub **environment `npm`** referenced by the publish job must exist in
 repository settings (add required reviewers there if you want a human approval
 gate). The OIDC `environment` claim and the filename binding must both match, or
 npm rejects the publish. See the official
-[npm trusted publishers docs](https://docs.npmjs.com/trusted-publishers/).
+[npm trusted publishers docs](https://docs.npmjs.com/trusted-publishers/), which
+document tag-push publishing with the same repository/workflow/environment
+identity. Version 2.3.1 previously succeeded with OIDC; current live npm settings
+have not been independently inspected. Verify the binding before a real release;
+never fall back to a token.
 
 ## What each job is allowed to do
 
@@ -153,5 +176,5 @@ and never delete a release just to force another automatic retry.
 - [ ] GitHub environment `npm` exists
 - [ ] Tag ruleset protects `v*` (no updates, no deletions)
 - [ ] `pnpm run validate:data` and `pnpm run build` pass before tagging
-- [ ] After dispatch: `validate` → `publish` → `release` all green
+- [ ] After tag push (or justified recovery dispatch): `validate` → `publish` → `release` all green
 - [ ] npm version + provenance confirmed on npmjs.com
