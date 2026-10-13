@@ -99,7 +99,9 @@ jobs:
 
       # Pack exactly what would be uploaded, without touching the registry.
       - name: CLI package dry-run (no publish)
-        run: pnpm --dir packages/create-contractor-site publish --dry-run --access public
+        run: |
+          node .github/scripts/verify-release.mjs prepare-publish --tag "$RELEASE_TAG"
+          pnpm --dir packages/create-contractor-site publish --dry-run --access public
 
   publish:
     name: Publish to npm (OIDC)
@@ -172,6 +174,7 @@ jobs:
       - name: Publish with provenance
         run: |
           node .github/scripts/verify-release.mjs event --tag "$RELEASE_TAG"
+          node .github/scripts/verify-release.mjs prepare-publish --tag "$RELEASE_TAG"
           node .github/scripts/verify-release.mjs registry --tag "$RELEASE_TAG" --expect absent
           pnpm --dir packages/create-contractor-site publish --provenance --access public
 

@@ -6,6 +6,7 @@
  *   identity    — exact stable annotated tag, tag/Main/HEAD commit identity,
  *                 manifest + DEFAULT_TEMPLATE_REF version equality
  *   registry    — exact version absent (preflight) or present (post-publish)
+ *   prepare-publish — attach local main only after fresh identity + clean checks
  *   drift       — re-fetch origin/main and re-check commit identity
  *   commit      — print only the validated commit SHA (for a job output)
  *   release-tag — remote annotated tag is still at the publish-validated commit
@@ -25,7 +26,8 @@
  * uses that loop: an absent check and a non-wait present check stay
  * single-probe and fail closed, and `--wait` with `--expect absent` is
  * rejected before any probe. Probe evidence is sanitized before it reaches
- * logs. It never publishes and never writes to the repository.
+ * logs. It never publishes. Only prepare-publish rewrites a local branch, in
+ * a disposable CI checkout; it never changes the verified commit or files.
  */
 
 import { execFileSync } from 'node:child_process';
@@ -1065,6 +1067,29 @@ async function runCli(argv) {
     process.stdout.write(`${effectiveTag}\n`);
     return 0;
   }
+  if (command === 'prepare-publish') {
+    if (!parseStableTag(tag)) fail(`tag "${tag}" is not an exact stable semver tag (expected vX.Y.Z).`);
+    // Never run this in a maintainer workspace: CI owns this disposable checkout.
+    // Resolve manifests from the same repository whose refs are being checked.
+    const root = git(['rev-parse', '--show-toplevel']);
+    const assertClean = () => {
+      if (git(['status', '--porcelain', '--untracked-files=all']) !== '') {
+        fail('dirty repository; refusing to prepare local main for publish.');
+      }
+    };
+    assertClean();
+    const commit = runIdentity(tag, root); // freshly fetches annotated tag + main
+    assertClean();
+    git(['checkout', '-B', 'main', commit]);
+    if (git(['symbolic-ref', 'HEAD']) !== 'refs/heads/main') fail('publish requires attached main.');
+    if (git(['rev-parse', 'HEAD']) !== commit) fail('HEAD changed while preparing publish.');
+    assertClean();
+    const rechecked = runIdentity(tag, root);
+    if (rechecked !== commit) fail('verified commit changed while preparing publish.');
+    assertClean();
+    console.log(`prepare-publish OK: attached main at unchanged verified commit ${commit}`);
+    return 0;
+  }
   if (command === 'identity') {
     runIdentity(tag, repoRoot);
     return 0;
@@ -1088,7 +1113,7 @@ async function runCli(argv) {
   if (command === 'release-absent') {
     return runReleaseAbsent(args);
   }
-  fail(`unknown command "${command ?? ''}" (expected event | identity | registry | drift | commit | release-tag | release-absent).`);
+  fail(`unknown command "${command ?? ''}" (expected event | identity | prepare-publish | registry | drift | commit | release-tag | release-absent).`);
   return 1;
 }
 

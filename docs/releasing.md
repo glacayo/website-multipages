@@ -66,6 +66,16 @@ identity. Version 2.3.1 previously succeeded with OIDC; current live npm setting
 have not been independently inspected. Verify the binding before a real release;
 never fall back to a token.
 
+### Environment setup checklist
+
+Before authorizing publication, verify these settings in GitHub:
+
+- [ ] Environment `npm` permits branch `main` for recovery dispatch **and tags matching `v*`** for tag-triggered publication. If selecting deployment branches and tags, add both explicitly; a branch-only policy blocks tag runs.
+- [ ] Consider required reviewers on `npm` if a human approval gate is desired.
+- [ ] Configure a tag ruleset for `v*` restricting creation to authorized release maintainers, as well as updates and deletions. Ensure the authorized maintainer can create the initial release tag.
+
+At the current preflight, environment `npm` has **no ref policy/protection rules** and the repository rulesets list is **empty**. The settings above are recommendations to configure and verify, not installed protections. Workflow identity and drift guards remain enforced independently.
+
 ## What each job is allowed to do
 
 | Job | Permissions | Purpose |
@@ -77,6 +87,26 @@ never fall back to a token.
 The publish command is `pnpm --dir packages/create-contractor-site publish
 --provenance --access public`. It never uses an auth token, and a guard step
 fails if `NODE_AUTH_TOKEN`/`NPM_TOKEN` is set.
+
+### Detached tag checkout and pnpm git checks
+
+Tag checkouts start at detached HEAD, which pnpm rejects with
+`ERR_PNPM_GIT_UNKNOWN_BRANCH` even when clean. Immediately before both the
+validation dry-run and the real publish, CI runs
+`verify-release.mjs prepare-publish --tag "$RELEASE_TAG"` in its **disposable
+checkout**. The helper rejects tracked, staged, or untracked changes, freshly
+fetches and verifies annotated tag == HEAD == `origin/main`, and verifies both
+manifest versions and `DEFAULT_TEMPLATE_REF`. Only then does it attach local
+`main` at that exact verified SHA with `git checkout -B main <verified SHA>`.
+It checks attached branch, unchanged HEAD, cleanliness, and fresh identity again.
+Merely naming an arbitrary branch `main` is not sufficient. No fetched source
+code is checked out at a different commit; no remote refs are pushed.
+
+Do not run this branch-preparation command in a maintainer workspace. It is not
+a git-check bypass: pnpm's default branch, cleanliness, and remote checks stay
+enabled, with no `--no-git-checks` or publish-branch exception. The real publish
+still has its canonical-404 check immediately adjacent, and token refusal,
+OIDC/provenance, drift, integrity, and post-publish confirmation gates remain.
 
 ## Tag protection (defense in depth)
 
@@ -173,8 +203,8 @@ and never delete a release just to force another automatic retry.
 - [ ] Both manifests and `DEFAULT_TEMPLATE_REF` equal `vX.Y.Z` on `main`
 - [ ] Annotated tag `vX.Y.Z` pushed at the exact `main` HEAD
 - [ ] npmjs.com trusted publisher bound to `publish.yml` + environment `npm`
-- [ ] GitHub environment `npm` exists
-- [ ] Tag ruleset protects `v*` (no updates, no deletions)
+- [ ] GitHub environment `npm` exists and permits `main` plus tags matching `v*`
+- [ ] Recommended tag ruleset protects `v*` (restricted creation, no updates, no deletions); verify actual configuration rather than assuming it exists
 - [ ] `pnpm run validate:data` and `pnpm run build` pass before tagging
 - [ ] After tag push (or justified recovery dispatch): `validate` → `publish` → `release` all green
 - [ ] npm version + provenance confirmed on npmjs.com
