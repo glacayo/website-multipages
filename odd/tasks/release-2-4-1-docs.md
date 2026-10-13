@@ -7,8 +7,8 @@ User authorized merging documentation PR86 and publishing patch2.4.1 so the corr
 Documentationpatch only plus unavoidableversion/ref/help/smoke bookkeeping. Root/CLI2.4.1, defaulttemplatev2.4.1 andCLIhelp/tests must match. PublicREADME/SKILL/AGENTS/CLIREADME currentrefs updated beforetag; preserve2.4.0andolderfeaturehistory. CHANGELOG2.4.1 notesdocumentationcorrectionnotruntimefeaturechanges. Add explicitpretagreleasechecklistdocs/releasing.md includingallpublicdocs/help/changelogandpackagedREADMEproof. No npmmanager, dependency/lock churn, codebehaviorchange, workflowguardrelaxation, permanentageexemption, tokenfallback, blindpublishretry or tagreplacement. Existingpnpm/OIDCstableannotatedtag pipeline remainsauthoritative. No newageexceptionauthorized; localpolicyblocks may be disclosed and freshremoteCI mustprovebuild/data/CLI beforemerge/tag.
 
 ## Tasks
-- [ ] P1 (implemented; closure pending independent verification/build): Test-first synchronized2.4.1 version/ref/help/smoke, allcurrentversiondocs, docs-onlychangelog and explicitpretagdocumentationchecklist. No newruntimebehavior.
-- [ ] P2 (pack/structural checks passed; fresh remote full build/CLI pending): Independentverify versions/docs/history/guards/links; pack exactCLIcandidate withpnpm intoisolatedtemp and inspect tarballREADME to prove correctedcontentwillship. Guard/analytics/CLItests asapplicable; no meaningfulREDforprose, versioncontractRED/GREEN meaningful.
+- [x] P1 (prepared and independently verified at76e9d03): Test-first synchronized2.4.1 version/ref/help/smoke, allcurrentversiondocs, docs-onlychangelog and explicitpretagdocumentationchecklist. No newruntimebehavior.
+- [x] P2 (exactpackREADME and freshremoteCI passed): Independentverify versions/docs/history/guards/links; pack exactCLIcandidate withpnpm intoisolatedtemp and inspect tarballREADME to prove correctedcontentwillship. Guard/analytics/CLItests asapplicable; no meaningfulREDforprose, versioncontractRED/GREEN meaningful.
 - [ ] P3 (in progress): Commit/pushreleaseunit, createissue-linkedtype:chore PR for review, freshremoteCIbuild/data/CLI/secretpass before authorizedmerge. Then refreshedmain/tag/registrypreflight, oneannotatedv2.4.1tagpush, monitorautomaticallytriggeredexactworkflow, verify registryandGitHubrelease. Stopunknown/failurewithoutblindrepublish.
 
 ## Evidence
@@ -21,5 +21,8 @@ Initialwriter andcontinuationtimedout, incidentreadbackconfirmedonlytestcontract
 Independentverify11authorizedfiles(+71/-33), runtimeunchangedapartversion/ref/help, workflows/lock/deps/23guardanddatahashesunchanged. Currentdocs2.4.1,2.4.0featuresclearlyhistorical,SKILLfullyloaded/coherent,checklistexplicitallconsumersBEFOREtag.62releaseguards/10analyticssources/12JSONdirectstructuralcheckspass. FullCLI31pass/1localtemp-scaffoldinstallfailedminimumage(nooverride); remotefullCIneeded.
 Actual pnpm pack exited0outsidecheckout:9files38,567byte2.4.1tgz SHA256934bde44594042028809a11ce20aa57229bccb9a30e5d5af4927019fc1fb73fb. PackedREADME7,915bytesexactsourcebyte-match, current2.4.1/v2.4.1/docspatchsection/absoluteURLs/historical2.4.0, noauth/cache/stateartifacts. Packedbinhelp/defaultrefmatch. Thisisverificationnotlivepublication.
 
+## PR and merge gate evidence
+Releasecommit76e9d039c62d93c5047b1db68c0f2e5c5ca13965 pushed PR87 https://github.com/glacayo/website-multipages/pull/87, type:chore base main. Independentverifier observed freshCIruns38343167384/38343167415 SUCCESSat76e9d03: frozeninstall/12JSON/Astro130files0diagnostics/16pages/62releaseguards/fullCLI32pass3expectedcapsuleskips/gitleaksnoleaks. Worktreeclean,mergeableCLEAN, version/refonlyruntimechanges. No newageexemption or publicationyet.
+
 ## Next step
-Commit/pushreleasePR, requirefreshCIbuild/fullCLI/secretgreenbeforemerge/tag. No localageexception or livepublicationyet.
+Thisevidence-onlycommitchangesonlyparenttaskdoc; requirefreshCIexactfinalheadthenauthorizedmergePR87,refreshmain/tag/registrypreflight, oneannotatedv2.4.1tagpush andwatchautomaticrun. No parallelmanualdispatch/blindretry.
