@@ -1,4 +1,4 @@
-# Contractor Multipages — Template Skill (v2.3.1)
+# Contractor Multipages — Template Skill (v2.4.0)
 
 > Reusable static website template for contractors (masonry, hardscape, roofing, landscaping, tree services, etc.).
 > Customize via JSON only. Never use npm.
@@ -11,6 +11,11 @@ Spin up a multi-page contractor marketing site that is:
 - buildable with one command
 - deployable to Netlify (or any static host)
 - customizable without editing component source for normal client work
+
+## Current release — v2.4.0
+
+- **Semantic analytics hooks:** Raven CTA/call selectors and a queue-preserving `window.dataLayer` bootstrap; no GTM installation, event delivery, or runtime form-success event. Client integrations own consent and tracking: [`docs/analytics-hooks.md`](./docs/analytics-hooks.md).
+- **Guarded automatic publishing:** stable annotated tags at exact `main` HEAD trigger native pnpm OIDC/provenance publication; registry confirmation precedes GitHub release creation. Manual `main` dispatch is recovery only after proving no publication: [`docs/releasing.md`](./docs/releasing.md).
 
 ## Stack
 
@@ -72,7 +77,7 @@ Prefer the workspace CLI so guards, pnpm enforcement, and the 12-file JSON contr
 
 ```bash
 node ./packages/create-contractor-site/bin/create-contractor-site.mjs ../client-site
-# once published: pnpm create contractor-site ../client-site
+# published CLI: pnpm create contractor-site ../client-site
 ```
 
 If using `pnpm --filter create-contractor-site exec`, target paths are resolved from `packages/create-contractor-site`, not the repo root:
@@ -106,7 +111,7 @@ Package runners may start the binary; **install/build inside the scaffold always
 | Template env | Behavior |
 |--------------|----------|
 | `CREATE_CONTRACTOR_TEMPLATE_ROOT` | Use this local template path (preferred for monorepo/dev) |
-| `CREATE_CONTRACTOR_TEMPLATE_REPO` / `CREATE_CONTRACTOR_TEMPLATE_REF` | Remote clone fallback when published (default repo + `v2.3.1`) |
+| `CREATE_CONTRACTOR_TEMPLATE_REPO` / `CREATE_CONTRACTOR_TEMPLATE_REF` | Remote clone fallback when published (default repo + `v2.4.0`) |
 
 Published package contents are CLI-only; template files are resolved via env, local monorepo discovery, or a temporary git clone (cleaned up).
 
