@@ -95,6 +95,10 @@ const googleFontsUrl = buildGoogleFontsUrl(site.theme);
 <!doctype html>
 <html lang={seo.lang || site.lang || 'en'}>
   <head>
+    <!-- Keep this before any client-supplied GTM injection; preserve queued events. -->
+    <script is:inline>
+      window.dataLayer = window.dataLayer || [];
+    </script>
     <SeoHead seo={seo} />
     <SchemaOrg schemas={schemas} />
 
