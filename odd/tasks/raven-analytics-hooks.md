@@ -38,7 +38,7 @@ Browser interactions, GTM Preview, client consent behavior and Netlify server ac
 
 ## Delivery tasks
 - [x] D1 (done): Prepare two cohesive review slices, keep tests/docs with each behavior. Initial 529-line full candidate; foundation (phone/Button/bootstrap) then call-site coverage. Tracker starts with this task document as a draft/no-merge PR.
-- [ ] D2 (in progress): Verify slice boundaries, commit with Conventional Commits, push tracker and both child branches, create issue-linked type:feature PRs and report CI. No merge.
+- [x] D2 (published; CI tracked separately): Verify slice boundaries, commit with Conventional Commits, push tracker and both child branches, create issue-linked type:feature PRs and report CI. No merge.
 
 ## Delivery evidence
 - Tracker commit 2b70f3e: task document, draft/no-merge integration target.
@@ -47,5 +47,11 @@ Browser interactions, GTM Preview, client consent behavior and Netlify server ac
 - No runtime source behavior changed during split; no fresh per-slice build performed. Full original runtime build passed earlier with approved transient exact-version exception; remote frozen install/build/CLI CI still pending.
 - Chain: main <- feat/71-raven-analytics-hooks (draft tracker, Closes #71) <- feat/71-raven-analytics-core (Refs #71) <- feat/71-raven-analytics-coverage (Refs #71).
 
+## Published chain
+- Draft tracker #83: https://github.com/glacayo/website-multipages/pull/83 (main <- feat/71-raven-analytics-hooks). Closes #71 on final main integration; do not merge doc-only tracker as-is.
+- Foundation #84: https://github.com/glacayo/website-multipages/pull/84 (tracker <- feat/71-raven-analytics-core), 199 changed lines, Refs #71.
+- Coverage #85: https://github.com/glacayo/website-multipages/pull/85 (core <- feat/71-raven-analytics-coverage), 325 changed lines before this publication record, Refs #71.
+All branches pushed; each PR has exactly one type:feature label. No merges executed. CI observed: #83 build/CLI and gitleaks SUCCESS; #84 build/CLI SUCCESS; #85 build/CLI IN_PROGRESS at first readback. Coverage evidence commit1a5d807 accompanies behavior commitf578775; this publication record is a separate docs work unit.
+
 ## Next step
-Push all three branches and create target-bound PRs with exactly one type:feature label, explicit bases, dependency diagrams and no merge. Record URLs/checks after creation. Native review remains off by clone-local setting.
+Review #84 then #85 against their immediate parent branches. Integrate approved children in order and update/recheck tracker only under explicit merge authorization; final tracker remains draft/no-merge. Native review remains off. Browser/GTM/Netlify deployment acceptance still not claimed.
