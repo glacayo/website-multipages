@@ -1,4 +1,6 @@
 ---
+import { toPhoneHref } from '../../utils/phone';
+
 interface Props {
   href?: string;
   type?: 'button' | 'submit' | 'reset';
@@ -7,6 +9,10 @@ interface Props {
   class?: string;
   disabled?: boolean;
   ariaLabel?: string;
+  /** Semantic opt-in, independent of visual variant. */
+  'data-raven-cta'?: 'primary';
+  /** Request a call hook; emitted only for a valid telephone destination. */
+  'data-raven-call'?: 'true';
 }
 
 const {
@@ -17,7 +23,13 @@ const {
   class: className = '',
   disabled = false,
   ariaLabel,
+  'data-raven-cta': cta,
+  'data-raven-call': call,
 } = Astro.props;
+
+const isTelephone = /^tel:/i.test(href?.trim() ?? '');
+const phoneHref = isTelephone ? toPhoneHref(href) : undefined;
+const resolvedHref = isTelephone ? phoneHref : href;
 
 const base =
   'inline-flex items-center justify-center gap-2 font-semibold rounded-md transition-all duration-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50 disabled:pointer-events-none';
@@ -44,12 +56,19 @@ const classes = [base, variants[variant], sizes[size], className]
 ---
 
 {
-  href ? (
-    <a href={href} class={classes} aria-label={ariaLabel} aria-disabled={disabled || undefined}>
+  resolvedHref ? (
+    <a
+      href={resolvedHref}
+      class={classes}
+      aria-label={ariaLabel}
+      aria-disabled={disabled || undefined}
+      data-raven-cta={cta}
+      data-raven-call={call && phoneHref ? 'true' : undefined}
+    >
       <slot />
     </a>
   ) : (
-    <button type={type} class={classes} disabled={disabled} aria-label={ariaLabel}>
+    <button type={type} class={classes} disabled={disabled} aria-label={ariaLabel} data-raven-cta={cta}>
       <slot />
     </button>
   )

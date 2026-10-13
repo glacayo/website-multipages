@@ -39,7 +39,7 @@ const slide = data.slides[0];
             >
               {slide.headline}
             </h1>
-            <Button href={slide.cta_primary.href} variant="primary" size="md" class="mt-1">
+            <Button data-raven-cta="primary" data-raven-call="true" href={slide.cta_primary.href} variant="primary" size="md" class="mt-1">
               {slide.cta_primary.label}
             </Button>
           </div>

@@ -33,11 +33,11 @@ const slide = data.slides[0];
               {slide.text}
             </p>
             <div class="flex flex-col sm:flex-row gap-4">
-              <Button href={slide.cta_primary.href} variant="primary" size="lg">
+              <Button data-raven-cta="primary" data-raven-call="true" href={slide.cta_primary.href} variant="primary" size="lg">
                 {slide.cta_primary.label}
               </Button>
               {slide.cta_secondary && (
-                <Button href={slide.cta_secondary.href} variant="outline" size="lg">
+                <Button data-raven-call="true" href={slide.cta_secondary.href} variant="outline" size="lg">
                   {slide.cta_secondary.label}
                 </Button>
               )}
