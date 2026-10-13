@@ -1,6 +1,6 @@
 # Connect GTM to semantic analytics hooks
 
-The foundation slice initializes `window.dataLayer` and adds explicit selector support to `Button.astro` without installing GTM or sending events. Component call-site hooks are planned for the next coverage slice; the full intended contract below does not claim those hooks are present in the foundation. Client integrations own consent, container configuration and event delivery. Business values still come from the twelve JSON files; no analytics IDs or channel computation belong in this template.
+The template initializes `window.dataLayer`, adds explicit selector support to `Button.astro` and applies semantic hooks at component call sites without installing GTM or sending events. Client integrations own consent, container configuration and event delivery. Business values still come from the twelve JSON files; no analytics IDs or channel computation belong in this template.
 
 ## Quick path
 
@@ -10,7 +10,7 @@ The foundation slice initializes `window.dataLayer` and adds explicit selector s
 
 ## Selector contract
 
-| Selector | Meaning | Planned component coverage (next slice) |
+| Selector | Meaning | Component coverage |
 | --- | --- | --- |
 | `[data-raven-cta="primary"]` | Explicit primary conversion CTA, independent of visual styling | Desktop/mobile headers (default, centered, transparent, minimal; solid aliases default), all five hero variants, AboutStory estimate CTA, CTABar, landing hero/mid-page, mobile sticky bar |
 | `a[data-raven-call="true"]` | Valid normalized telephone destination | TopBar, minimal header, phone-bearing footers, landing phone, hero telephone CTAs if configured, sticky telephone CTA, contact details/form, thank-you and legal pages |
@@ -29,7 +29,7 @@ A minimal-header or sticky call CTA may match **both** selectors. Choose one con
 
 `src/utils/phone.ts` preserves a supplied international `+` and never assumes `+1`. Display formatting is removed; `ext.`, `x` and `;ext=` extension digits become a separate `;ext=` parameter. Conservative validation accepts 7–15 number digits; short codes, empty values and unsupported text are not call destinations. This is syntax validation, not proof that a number is assigned or reachable.
 
-In the planned coverage slice, invalid business numbers are omitted as links (contact/legal details may retain plain display text), and an invalid configured sticky `tel:` destination falls back to the loader's contact path with a contact label and no call hook. In the foundation, invalid telephone Button hrefs render as non-link buttons, without a call hook. Maintain valid JSON values rather than using that fallback as a conversion action.
+Invalid business numbers are omitted as links (contact/legal details may retain plain display text), and an invalid configured sticky `tel:` destination falls back to the loader's contact path with a contact label and no call hook. Invalid telephone Button hrefs render as non-link buttons, without a call hook. Maintain valid JSON values rather than using that fallback as a conversion action.
 
 Canonical multipage destinations remain `/contact-us`, `/services` and `/gallery`. Existing one-page loader mappings (`/#contact`, `/#services`, `/#gallery`) remain authoritative; hooks do not rewrite them. No new share or related-content UI exists: those hooks are **N/A**, not substitutes for ordinary catalog links.
 
@@ -55,7 +55,7 @@ This is documentation only, not code to install on the current form or thank-you
 ## Review and verification
 
 - Run `pnpm run test:analytics`, `pnpm run validate:data` and `pnpm run build`.
-- In the foundation slice, `test:analytics` runs five checks: queue bootstrap, phone normalization, explicit Button attributes, Button call opt-in behavior and the documentation payload contract. It does not check component call sites or rendered markup.
-- In the next coverage slice, `test:analytics` will switch to `scripts/test-analytics.mjs`, importing the foundation checks and adding call-site regression cases. After building that slice, run `pnpm run test:analytics -- --rendered` for emitted HTML checks across the generated pages.
-- The planned source coverage checks inactive variants; generated markup checks cover the currently configured variants. Neither is a browser, GTM Preview or Netlify acceptance test.
+- `test:analytics` runs `scripts/test-analytics.mjs`, importing all five foundation checks and adding five coverage checks for ten source tests total. These cover queue bootstrap, phone normalization, explicit Button attributes and call opt-in, the documentation payload contract, CTA call sites (including AboutStory), phone surfaces, sticky CTA fallbacks and the unchanged native form flow.
+- After building, run `pnpm run test:analytics -- --rendered` to add emitted HTML checks across the generated pages: eleven tests total.
+- Source coverage checks inactive variants; generated markup checks cover the currently configured variants. Neither is a browser, GTM Preview or Netlify acceptance test.
 - Confirm no JSON, dependency, lockfile or package-manager safeguard changes; test client-specific GTM separately.

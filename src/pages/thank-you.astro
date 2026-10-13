@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import { toPhoneHref } from '../utils/phone';
 import Button from '../components/ui/Button.astro';
 import CTABar from '../components/sections/CTABar.astro';
 import { getBusiness, getSite } from '../data/loaders';
@@ -7,6 +8,7 @@ import { getBusiness, getSite } from '../data/loaders';
 const business = getBusiness();
 const site = getSite();
 const primaryPhone = business.phones[0] ?? '';
+const phoneHref = toPhoneHref(primaryPhone);
 ---
 
 <BaseLayout
@@ -34,9 +36,10 @@ const primaryPhone = business.phones[0] ?? '';
         <div class="flex flex-col items-center justify-center gap-3 sm:flex-row">
           <Button href="/" variant="primary" size="md">Back to home</Button>
           {
-            primaryPhone && (
+            phoneHref && (
               <Button
-                href={`tel:${primaryPhone.replace(/\D/g, '')}`}
+                data-raven-call="true"
+                href={phoneHref}
                 variant="outline"
                 size="md"
                 class="border-white/30 text-white hover:bg-white hover:text-primary"

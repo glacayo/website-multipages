@@ -19,7 +19,7 @@
     "validate:data": "node ./scripts/enforce-package-manager.cjs && node ./scripts/validate-data.cjs",
     "lint:theme": "node ./scripts/lint-theme.cjs",
     "test:theme": "node --experimental-strip-types ./scripts/test-theme.mjs && node ./scripts/lint-theme.cjs --self-test",
-    "test:analytics": "node ./scripts/enforce-package-manager.cjs && node --experimental-strip-types ./scripts/test-analytics-core.mjs",
+    "test:analytics": "node ./scripts/enforce-package-manager.cjs && node --experimental-strip-types ./scripts/test-analytics.mjs",
     "test:routes": "node --experimental-strip-types ./scripts/test-routes.mjs && node ./scripts/gate-routes.cjs --self-test",
     "test:cli": "node ./packages/create-contractor-site/scripts/smoke-test.mjs",
     "images:check": "node ./tools/smart-image/check.mjs",

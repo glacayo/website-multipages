@@ -4,6 +4,7 @@
  * Reads business.json + site.json via loaders (no client copy hardcoded).
  */
 import { getBusiness } from '../../data/loaders';
+import { toPhoneHref } from '../../utils/phone';
 import Phone from '@lucide/astro/icons/phone';
 import Mail from '@lucide/astro/icons/mail';
 import Clock from '@lucide/astro/icons/clock';
@@ -12,7 +13,7 @@ const business = getBusiness();
 const primaryPhone = business.phones[0];
 const primaryEmail = business.emails[0];
 const primaryHours = business.hours[0];
-const telHref = primaryPhone ? `tel:${primaryPhone.replace(/\D/g, '')}` : undefined;
+const telHref = toPhoneHref(primaryPhone);
 
 const socialEntries = [
   { label: 'Facebook', url: business.social.facebook },
@@ -35,6 +36,7 @@ const socialEntries = [
           primaryPhone && telHref && (
             <a
               href={telHref}
+              data-raven-call="true"
               class="inline-flex items-center gap-2 hover:text-accent transition-colors duration-300"
             >
               <Phone class="size-3.5 text-accent" aria-hidden="true" />

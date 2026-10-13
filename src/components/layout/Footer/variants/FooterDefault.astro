@@ -3,6 +3,7 @@
  * Default footer: brand blurb + nav columns + contact on light surface.
  */
 import { getBusiness, getNavigation, getSite } from '../../../../data/loaders';
+import { toPhoneHref } from '../../../../utils/phone';
 import MapPin from '@lucide/astro/icons/map-pin';
 import Phone from '@lucide/astro/icons/phone';
 import Mail from '@lucide/astro/icons/mail';
@@ -13,7 +14,7 @@ const navigation = getNavigation();
 const year = new Date().getFullYear();
 const primaryPhone = business.phones[0];
 const primaryEmail = business.emails[0];
-const telHref = primaryPhone ? `tel:${primaryPhone.replace(/\D/g, '')}` : undefined;
+const telHref = toPhoneHref(primaryPhone);
 ---
 
 <footer data-footer-variant="default" class="border-t border-border bg-white text-dark">
@@ -62,7 +63,7 @@ const telHref = primaryPhone ? `tel:${primaryPhone.replace(/\D/g, '')}` : undefi
           {
             primaryPhone && telHref && (
               <li>
-                <a href={telHref} class="inline-flex items-center gap-2 hover:text-accent">
+                <a href={telHref} data-raven-call="true" class="inline-flex items-center gap-2 hover:text-accent">
                   <Phone class="size-4 text-accent" aria-hidden="true" />
                   {primaryPhone}
                 </a>

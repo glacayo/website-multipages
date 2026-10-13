@@ -5,9 +5,11 @@
  */
 import ContactForm from './ContactForm/ContactForm.astro';
 import { getBusiness } from '../../data/loaders';
+import { toPhoneHref } from '../../utils/phone';
 
 const business = getBusiness();
 const primaryPhone = business.phones[0] ?? '';
+const phoneHref = toPhoneHref(primaryPhone);
 const primaryEmail = business.emails[0] ?? '';
 const hoursSummary = business.hours.map((h) => `${h.days}: ${h.time}`).join(' · ');
 ---
@@ -43,12 +45,17 @@ const hoursSummary = business.hours.map((h) => `${h.days}: ${h.time}`).join(' ·
           </div>
           <div>
             <p class="mb-1 text-sm font-semibold text-dark">Phone</p>
-            <a
-              href={`tel:${primaryPhone.replace(/\D/g, '')}`}
-              class="text-sm text-muted transition-colors hover:text-accent"
-            >
-              {primaryPhone}
-            </a>
+            {phoneHref ? (
+              <a
+                href={phoneHref}
+                data-raven-call="true"
+                class="text-sm text-muted transition-colors hover:text-accent"
+              >
+                {primaryPhone}
+              </a>
+            ) : (
+              <span class="text-sm text-muted">{primaryPhone}</span>
+            )}
           </div>
           <div>
             <p class="mb-1 text-sm font-semibold text-dark">Email</p>
