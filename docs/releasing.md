@@ -11,13 +11,17 @@ No `NPM_TOKEN`, `NODE_AUTH_TOKEN`, or local `npm login` is ever involved.
 
 1. On `main`, set the **same** `vX.Y.Z` in all three places: root `package.json`,
    `packages/create-contractor-site/package.json`, and `DEFAULT_TEMPLATE_REF`
-   in `packages/create-contractor-site/src/copy-template.mjs`; update `CHANGELOG.md`.
-2. Merge to `main`, then create and push an **annotated** tag at the exact
+   in `packages/create-contractor-site/src/copy-template.mjs`; synchronize CLI help,
+   smoke assertions, and all public version/default-ref documentation.
+2. Complete the **mandatory pre-tag documentation checklist** below, including
+   review of the README inside the exact candidate CLI tarball. Merge the reviewed
+   release changes to `main` and require fresh CI validation before tagging.
+3. Only then create and push an **annotated** tag at the exact
    `main` HEAD: `git tag -a vX.Y.Z -m "vX.Y.Z" && git push origin vX.Y.Z`.
-3. Watch the tag-push run in Actions → **Publish (trusted publishing)**.
+4. Watch the tag-push run in Actions → **Publish (trusted publishing)**.
    Do not also dispatch it; both paths serialize under the same per-tag key.
-4. The workflow runs three jobs in order: `validate` → `publish` → `release`.
-5. Verify the npm version and its provenance attestation on npmjs.com.
+5. The workflow runs three jobs in order: `validate` → `publish` → `release`.
+6. Verify the npm version and its provenance attestation on npmjs.com.
 
 The tag commit must equal `origin/main` and the workflow commit. If `main`
 advances after the tag is pushed, the run fails by design: **never move or
@@ -198,8 +202,22 @@ and never delete a release just to force another automatic retry.
 > pnpm performs the publish natively. Confirm OIDC trusted publishing on the
 > first real release and stop if provenance or auth behaves unexpectedly.
 
-## Checklist
+## Mandatory pre-tag documentation checklist
 
+Complete every item **before creating or pushing a release tag**. Documentation
+corrections made after tagging cannot change an already published npm tarball;
+ship those corrections in a new reviewed patch version instead.
+
+- [ ] Review root `README.md`, `SKILL.md`, `AGENTS.md`, and `packages/create-contractor-site/README.md`; current versions and default refs match the candidate, and older feature history remains attributed to its original release.
+- [ ] Review CLI `--help`, `DEFAULT_TEMPLATE_REF`, and smoke assertions against both manifest versions.
+- [ ] Review `CHANGELOG.md` for accurate scope and release status; do not claim publication before registry and GitHub confirmation.
+- [ ] Review `docs/releasing.md` and retain pnpm-only enforcement, OIDC/provenance, annotated-tag identity, registry absence, drift, and recovery guards unchanged.
+- [ ] Pack the exact candidate CLI with pnpm in an isolated location and inspect the README inside that tarball, not just the source README. Confirm corrected content, matching version/default ref, and working absolute repository documentation links; retain the packaging evidence before tagging.
+- [ ] Complete independent review and fresh CI data/build/core CLI validation for the exact release candidate before merge/tag; do not bypass minimum release-age policy for local verification.
+
+## Release checklist
+
+- [ ] Mandatory pre-tag documentation checklist above completed, with candidate tarball README evidence, before creating or pushing the tag
 - [ ] Both manifests and `DEFAULT_TEMPLATE_REF` equal `vX.Y.Z` on `main`
 - [ ] Annotated tag `vX.Y.Z` pushed at the exact `main` HEAD
 - [ ] npmjs.com trusted publisher bound to `publish.yml` + environment `npm`

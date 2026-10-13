@@ -1,11 +1,13 @@
-# Contractor Multipages Template (v2.4.0)
+# Contractor Multipages Template (v2.4.1)
 
 Reusable **Astro 7** static template for contractor and local service-business websites.
 This repository is a template base — placeholder content only, not a client project.
 
-**Current release — v2.4.0:** semantic Raven CTA/call hooks and an early, queue-preserving `window.dataLayer` bootstrap (no GTM installation or event delivery), plus guarded automatic tag-push publishing. See [`docs/analytics-hooks.md`](./docs/analytics-hooks.md) for the integration contract.
+**Current release — v2.4.1:** documentation-only patch prepared to ship the corrected npm package README and require documentation review before tagging; no new runtime features.
 
-**Release notes:** see [`CHANGELOG.md`](./CHANGELOG.md) for v2.4.0 and historical v2.3.1 highlights (supported Astro/Sharp refresh, hosted pnpm CI, guarded token-free trusted publishing infrastructure), v2.3.0 (page-shell reuse, isolated smart-image capsule, scaffold/state protections, agent-owned image fulfillment, pnpm/Corepack fix), and v2.2.0 (CLI intake, `siteType` modes, theme palette lint, route policy/prune/audit).
+**Introduced in v2.4.0:** semantic Raven CTA/call hooks and an early, queue-preserving `window.dataLayer` bootstrap (no GTM installation or event delivery), plus guarded automatic tag-push publishing. See [`docs/analytics-hooks.md`](./docs/analytics-hooks.md) for the integration contract.
+
+**Release notes:** see [`CHANGELOG.md`](./CHANGELOG.md) for v2.4.1 documentation corrections, v2.4.0 features, and historical v2.3.1 highlights (supported Astro/Sharp refresh, hosted pnpm CI, guarded token-free trusted publishing infrastructure), v2.3.0 (page-shell reuse, isolated smart-image capsule, scaffold/state protections, agent-owned image fulfillment, pnpm/Corepack fix), and v2.2.0 (CLI intake, `siteType` modes, theme palette lint, route policy/prune/audit).
 
 ## Quick path
 
@@ -72,7 +74,7 @@ The published npm package ships only the CLI (`bin`/`src`/`scripts`). Template f
 |----------|--------|
 | 1 | `CREATE_CONTRACTOR_TEMPLATE_ROOT` — local checkout path (best for monorepo/dev) |
 | 2 | Local monorepo root discovered by walking parents from the package |
-| 3 | Temporary `git clone` of `CREATE_CONTRACTOR_TEMPLATE_REPO` @ `CREATE_CONTRACTOR_TEMPLATE_REF` (defaults: this GitHub repo @ `v2.4.0`), cleaned up afterward |
+| 3 | Temporary `git clone` of `CREATE_CONTRACTOR_TEMPLATE_REPO` @ `CREATE_CONTRACTOR_TEMPLATE_REF` (defaults: this GitHub repo @ `v2.4.1`), cleaned up afterward |
 
 ```bash
 # Force a local template root
